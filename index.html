@@ -2198,7 +2198,10 @@ function saveAndPush(){
 function checkDateChange(){
   const today=todayStr();
   if(state.lastActiveDate && state.lastActiveDate!==today){
-    const prev=state.lastActiveDate;
+    // Always archive to yesterday regardless of how long the app was closed.
+    // Using stale lastActiveDate (e.g. May 5 when today is May 20) would put
+    // today's live board entries into a 2-week-old archive bucket.
+    const prev=addDays(today,-1);
     // Auto-snapshot previous day
     if(SECTIONS.some(s=>(state.sections[s.key]||[]).length>0)){
       createSnapshot(prev,'day',false);

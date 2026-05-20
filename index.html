@@ -5827,7 +5827,18 @@ function renderAccordion(sec,archKey){
     if(!stories.length&&!isFormOpen) html+=`<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-msg">No stories yet — click <strong>+ Add</strong></div></div>`;
     else {
       const _live=stories.filter(s=>!['completed','not-done'].includes(s.status));
-      const _done=all.filter(s=>['completed','not-done'].includes(s.status)&&s.status!=='shelved').sort((a,b)=>{
+      // Pull done/not-done from live board AND archive (same pattern as Stories accordion)
+      const _doneLive=all.filter(s=>['completed','not-done'].includes(s.status)&&s.status!=='shelved');
+      const _doneSeenIds=new Set(_doneLive.map(s=>s.id));
+      const _doneArchive=[];
+      if(!archKey){
+        Object.keys(state.archive||{}).sort().reverse().forEach(dateKey=>{
+          (state.archive[dateKey]?.sections?.[sec.key]||[])
+            .filter(s=>!s._deleted&&['completed','not-done'].includes(s.status)&&!_doneSeenIds.has(s.id))
+            .forEach(s=>{ _doneSeenIds.add(s.id); _doneArchive.push({...s,_archiveDate:dateKey}); });
+        });
+      }
+      const _done=[..._doneLive,..._doneArchive].sort((a,b)=>{
         const dd=(b.deadline_date||'').localeCompare(a.deadline_date||'');
         if(dd!==0) return dd;
         const tsA=a.completedOn||a.notDoneOn||a.updated||a.created||0;
@@ -5841,7 +5852,7 @@ function renderAccordion(sec,archKey){
         const _isDoneOpen=ui_storiesDoneOpen[_secDoneKey]===true;
         html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:6px" onclick="ui_storiesDoneOpen['${_secDoneKey}']=!ui_storiesDoneOpen['${_secDoneKey}'];const b=document.getElementById('sdone-body-${_secDoneKey.replace(/[^a-z0-9]/gi,'-')}');const c=document.getElementById('sdone-chev-${_secDoneKey.replace(/[^a-z0-9]/gi,'-')}');if(b)b.style.display=ui_storiesDoneOpen['${_secDoneKey}']?'block':'none';if(c)c.textContent=ui_storiesDoneOpen['${_secDoneKey}']?'▾':'▸'">↩ ${_done.length} done / not done <span id="sdone-chev-${_secDoneKey.replace(/[^a-z0-9]/gi,'-')}" class="tsd-chev">${_isDoneOpen?'▾':'▸'}</span></div>`;
         html+=`<div id="sdone-body-${_secDoneKey.replace(/[^a-z0-9]/gi,'-')}" style="display:${_isDoneOpen?'block':'none'}">`;
-        _done.forEach(s=>{ html+=renderCard(sec.key,s,archKey); });
+        _done.forEach(s=>{ html+=renderCard(sec.key,s,s._archiveDate||archKey); });
         html+=`</div>`;
       }
     }
@@ -8604,19 +8615,14 @@ function _teBuildForm(){
   const ed=editEntry?.data||{};
   const curStory=_te.storyId||editEntry?.storyId||'';
 
-  // Form dropdown shows ALL active stories (so user can link a new entry to any story)
-  // This is different from _teGetStories() which only returns stories with existing entries
+  // Form dropdown: only active live-board stories so user can't accidentally
+  // link new expenses to resolved/archived stories.
+  // Existing entries linked to archived stories remain intact via _teGetStories().
   const allStories=[];
   ['ibu','other','requests'].forEach(sec=>{
     (state.sections[sec]||[]).filter(s=>!s._deleted&&s.title).forEach(s=>{
       allStories.push({sec,s});
     });
-  });
-  // Also include archived stories that already have entries (so existing links stay selectable)
-  const linkedIds=new Set((state.travelEntries||[]).map(e=>e.storyId).filter(Boolean));
-  const seenIds=new Set(allStories.map(({s})=>s.id));
-  _teGetStories().forEach(({sec,s})=>{
-    if(!seenIds.has(s.id)){ allStories.push({sec,s}); seenIds.add(s.id); }
   });
   const secLabel={ibu:'Stories',other:'Other Stories',requests:'Requests'};
   const storyOpts=allStories.map(({sec,s})=>`<option value="${s.id}"${curStory===s.id?' selected':''}>${esc((s.title||'').slice(0,45))} · ${secLabel[sec]||sec}${s.field_location?' · '+esc(s.field_location):''}</option>`).join('');

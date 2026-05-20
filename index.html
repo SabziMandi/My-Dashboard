@@ -8604,8 +8604,22 @@ function _teBuildForm(){
   const ed=editEntry?.data||{};
   const curStory=_te.storyId||editEntry?.storyId||'';
 
-  const stories=_teGetStories();
-  const storyOpts=stories.map(({sec,s})=>`<option value="${s.id}"${curStory===s.id?' selected':''}>${esc((s.title||'').slice(0,45))} · ${{ibu:'Stories',other:'Other Stories',requests:'Requests'}[sec]||sec}${s.field_location?' · '+esc(s.field_location):''}</option>`).join('');
+  // Form dropdown shows ALL active stories (so user can link a new entry to any story)
+  // This is different from _teGetStories() which only returns stories with existing entries
+  const allStories=[];
+  ['ibu','other','requests'].forEach(sec=>{
+    (state.sections[sec]||[]).filter(s=>!s._deleted&&s.title).forEach(s=>{
+      allStories.push({sec,s});
+    });
+  });
+  // Also include archived stories that already have entries (so existing links stay selectable)
+  const linkedIds=new Set((state.travelEntries||[]).map(e=>e.storyId).filter(Boolean));
+  const seenIds=new Set(allStories.map(({s})=>s.id));
+  _teGetStories().forEach(({sec,s})=>{
+    if(!seenIds.has(s.id)){ allStories.push({sec,s}); seenIds.add(s.id); }
+  });
+  const secLabel={ibu:'Stories',other:'Other Stories',requests:'Requests'};
+  const storyOpts=allStories.map(({sec,s})=>`<option value="${s.id}"${curStory===s.id?' selected':''}>${esc((s.title||'').slice(0,45))} · ${secLabel[sec]||sec}${s.field_location?' · '+esc(s.field_location):''}</option>`).join('');
 
   const payOpts=(cur)=>['account','bbc-direct','card','cash','unpaid','upi'].map(v=>`<option value="${v}"${(cur||'cash')===v?' selected':''}>${_payLabel(v)}</option>`).join('');
   const fi=(id,lbl,val,tp,ph,extra)=>`<div class="fgroup"><label class="flabel">${lbl}</label><input class="finput" id="te-${id}" type="${tp||'text'}" value="${esc(val||'')}" placeholder="${ph||''}" ${extra||''}></div>`;

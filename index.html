@@ -6238,7 +6238,21 @@ function nextRecurrenceDate(task){
   if(task.recurFreq==='daily'){
     d.setDate(d.getDate()+1);
   } else if(task.recurFreq==='weekly'){
-    d.setDate(d.getDate()+7);
+    const dow=task.recurDaysOfWeek||[];
+    if(dow.length){
+      // Snap to the next occurrence of any of the specified days of week
+      // Start scanning from base+1 so we always advance (never return same date)
+      const DAYS=['sun','mon','tue','wed','thu','fri','sat'];
+      let found=false;
+      for(let i=1;i<=14;i++){ // scan up to 2 weeks forward
+        d.setDate(d.getDate()+1);
+        const dayName=DAYS[d.getDay()];
+        if(dow.includes(dayName)){ found=true; break; }
+      }
+      if(!found) d.setDate(new Date(base+'T00:00:00').getDate()+7); // fallback
+    } else {
+      d.setDate(d.getDate()+7);
+    }
   } else if(task.recurFreq==='monthly'){
     d.setMonth(d.getMonth()+1);
   } else if(task.recurFreq==='custom' && task.recurDays>0){
@@ -6264,6 +6278,19 @@ function mostRecentRecurOccurrence(task, today){
   // Returns the most recent expected occurrence date on or before today
   const base=task.deadline_date||today;
   if(base>=today) return base; // not yet overdue
+  // For weekly tasks with specific days-of-week: scan backwards from today
+  if(task.recurFreq==='weekly'&&(task.recurDaysOfWeek||[]).length){
+    const DAYS=['sun','mon','tue','wed','thu','fri','sat'];
+    const dow=task.recurDaysOfWeek;
+    for(let i=0;i<=14;i++){
+      const d=new Date(today+'T00:00:00');
+      d.setDate(d.getDate()-i);
+      const ds=dateStr(d);
+      if(ds<base) break; // gone past base — base is most recent
+      if(dow.includes(DAYS[d.getDay()])) return ds;
+    }
+    return base;
+  }
   const interval=recurIntervalDays(task);
   const baseMs=new Date(base+'T00:00:00').getTime();
   const todayMs=new Date(today+'T00:00:00').getTime();
@@ -8334,14 +8361,26 @@ function _teGetStories(){
   const archKeys=Object.keys(state.archive||{}).sort().reverse(); // newest first
   linkedIds.forEach(sid=>{
     if(seen.has(sid)) return;
+    // Diagnostic: log when we have to scan archive for a linked story
+    console.debug('[T&E] Story not on live board, scanning archive for id='+sid,
+      'archKeys='+archKeys.slice(0,5).join(',')+' ('+archKeys.length+' total)');
+    let foundInArchive=false;
     for(const key of archKeys){
       const arch=state.archive[key];
       if(!arch?.sections) continue;
       for(const sec of ['ibu','other','requests']){
         const found=(arch.sections[sec]||[]).find(s=>s.id===sid&&!s._deleted);
-        if(found){ seen.add(sid); out.push({sec,s:found}); break; }
+        if(found){
+          console.debug('[T&E] Found story in archive key='+key+' sec='+sec);
+          seen.add(sid); out.push({sec,s:found}); foundInArchive=true; break;
+        }
       }
       if(seen.has(sid)) break;
+    }
+    if(!foundInArchive){
+      console.warn('[T&E] Story id='+sid+' NOT found in archive. Archive has',archKeys.length,'keys.',
+        'travelEntries linked to this id:',
+        (state.travelEntries||[]).filter(e=>e.storyId===sid).length);
     }
   });
   return out;
@@ -8816,6 +8855,35 @@ function _teRenderBody(){
     const secLabel={ibu:'Stories',other:'Other Stories',requests:'Requests'}[sec]||sec;
     html+=`<div style="margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden"><div style="display:flex;align-items:center;gap:7px;padding:9px 13px;background:rgba(13,148,136,.06);border-bottom:1px solid rgba(13,148,136,.15);flex-wrap:wrap"><span style="font-size:13px">📡</span><span style="font-size:13px;font-weight:600;color:var(--working);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:80px">${esc(s.title||'Untitled')}</span>${deadlineStr}${bookPayBadge}${claimBadge}<button onclick="_teDismissStory('${s.id}')" style="padding:2px 7px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--text3);cursor:pointer;flex-shrink:0" title="Hide from this list">✕ Hide</button></div><div style="padding:10px 13px;display:flex;flex-direction:column;gap:8px">${_teSubAccordion(s.id,sec)}</div></div>`;
   });
+  // Safety net: any entries linked to a story not found by _teGetStories()
+  // (story may not yet be in archive if sync hasn't completed) — show them anyway
+  const foundStoryIds=new Set(stories.map(({s})=>s.id));
+  const orphanedEntries=(state.travelEntries||[]).filter(e=>
+    e.storyId && !e._deleted &&
+    !foundStoryIds.has(e.storyId) &&
+    !(state.travelDismissed||[]).includes(e.storyId)
+  );
+  if(orphanedEntries.length){
+    // Group orphaned entries by storyId
+    const byStory={};
+    orphanedEntries.forEach(e=>{
+      if(!byStory[e.storyId]) byStory[e.storyId]=[];
+      byStory[e.storyId].push(e);
+    });
+    Object.entries(byStory).forEach(([sid,entries])=>{
+      const unclaimed=entries.filter(e=>e.type==='expense'&&_teGetClaimed(e)!=='yes').length;
+      const claimBadge=unclaimed?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${unclaimed} unclaimed</span>`:'';
+      html+=`<div style="margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:7px;padding:9px 13px;background:rgba(13,148,136,.06);border-bottom:1px solid rgba(13,148,136,.15);flex-wrap:wrap">
+          <span style="font-size:13px">📡</span>
+          <span style="font-size:13px;font-weight:600;color:var(--working);flex:1">Story (syncing…)</span>
+          ${claimBadge}
+          <button onclick="_teDismissStory('${sid}')" style="padding:2px 7px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--text3);cursor:pointer;flex-shrink:0">✕ Hide</button>
+        </div>
+        <div style="padding:10px 13px;display:flex;flex-direction:column;gap:8px">${_teSubAccordion(sid,'ibu')}</div>
+      </div>`;
+    });
+  }
   const genEntries=_teEntriesGeneral();
   if((genEntries.length||stories.length===0)&&!state.travelGeneralDismissed){
     const genExp=genEntries.filter(e=>e.type==='expense'),genUnclaimed=genExp.filter(e=>_teGetClaimed(e)!=='yes').length;

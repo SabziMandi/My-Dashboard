@@ -1,228 +1,138 @@
-/* ══════════════════════════════════════════════════════════════
-   BBC Dashboard — Service Worker
-   Handles background notifications so reminders fire even when
-   the app is closed or the screen is locked.
-   ══════════════════════════════════════════════════════════════ */
+// BBC Dashboard — Service Worker
+// Strategy:
+//   index.html        → network-first (always fresh, fall back to cache if offline)
+//   static assets     → cache-first (fonts, icons, manifests)
+//   notifications     → handled via message channel (SCHEDULE / CANCEL / CANCEL_ALL / PING)
 
-const SW_VERSION = 'bbc-dashboard-sw-v1';
-const APP_CACHE  = 'bbc-dashboard-cache-v1';
+const CACHE_NAME = 'bbc-dashboard-v5';
+const STATIC_ASSETS = [
+  './manifest.json',
+  './icon-192.png',
+];
 
-/* Files to cache for offline use */
-const PRECACHE = ['./index.html'];
-
-/* ── Install: cache the app shell ── */
+// ── Install ────────────────────────────────────────────────────────────────
 self.addEventListener('install', event => {
+  // Skip waiting so the new SW activates immediately on deploy
+  self.skipWaiting();
   event.waitUntil(
-    caches.open(APP_CACHE)
-      .then(cache => cache.addAll(PRECACHE))
-      .then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS).catch(() => {}))
   );
 });
 
-/* ── Activate: clean old caches, take control immediately ── */
+// ── Activate ───────────────────────────────────────────────────────────────
 self.addEventListener('activate', event => {
+  // Delete any old caches from previous versions
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
-        keys.filter(k => k !== APP_CACHE).map(k => caches.delete(k))
+        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
       )
-    ).then(() => {
-      self.clients.claim();
-      // Check for any overdue reminders as soon as SW activates
-      return checkAndFireDueReminders();
-    })
+    ).then(() => self.clients.claim()) // take control of all open pages immediately
   );
 });
 
-/* ── Fetch: serve from cache when offline ── */
+// ── Fetch ──────────────────────────────────────────────────────────────────
 self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
-  event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request))
-  );
-});
+  const url = new URL(event.request.url);
 
-/* ══════════════════════════════════════════════════════════════
-   REMINDER STORAGE
-   Reminders are stored in a simple key-value store using the
-   Cache API (available in SW context) as an IndexedDB-free
-   persistence layer. Each entry is stored as a JSON Response.
-   ══════════════════════════════════════════════════════════════ */
+  // Only handle same-origin requests
+  if (url.origin !== self.location.origin) return;
 
-const REMINDER_STORE = 'bbc-reminders-v1';
+  const path = url.pathname;
+  const isHTML = path.endsWith('/') || path.endsWith('.html') || path === self.location.pathname;
 
-async function getReminders() {
-  try {
-    const cache = await caches.open(REMINDER_STORE);
-    const keys  = await cache.keys();
-    const results = await Promise.all(
-      keys.map(async req => {
-        try {
-          const res  = await cache.match(req);
-          const data = await res.json();
-          return data;
-        } catch { return null; }
+  if (isHTML) {
+    // Network-first for HTML: always try to get the latest index.html
+    // Falls back to cache only when offline
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .then(response => {
+          // Cache the fresh response for offline fallback
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request)) // offline fallback
+    );
+  } else {
+    // Cache-first for static assets (fonts, icons, manifests)
+    event.respondWith(
+      caches.match(event.request).then(cached => {
+        if (cached) return cached;
+        return fetch(event.request).then(response => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        }).catch(() => cached); // offline and not cached — nothing to serve
       })
     );
-    return results.filter(Boolean);
-  } catch { return []; }
-}
-
-async function saveReminder(reminder) {
-  try {
-    const cache = await caches.open(REMINDER_STORE);
-    const url   = `https://bbc-dashboard-reminders/${reminder.id}`;
-    const res   = new Response(JSON.stringify(reminder), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-    await cache.put(url, res);
-  } catch (e) { console.error('[SW] saveReminder failed:', e); }
-}
-
-async function deleteReminder(id) {
-  try {
-    const cache = await caches.open(REMINDER_STORE);
-    await cache.delete(`https://bbc-dashboard-reminders/${id}`);
-  } catch { /* silent */ }
-}
-
-async function clearAllReminders() {
-  try { await caches.delete(REMINDER_STORE); } catch { /* silent */ }
-}
-
-/* ══════════════════════════════════════════════════════════════
-   FIRE OVERDUE REMINDERS
-   Called on SW activate and after any message so that reminders
-   missed while the SW was asleep are never silently dropped.
-   ══════════════════════════════════════════════════════════════ */
-
-async function checkAndFireDueReminders() {
-  const now       = Date.now();
-  const reminders = await getReminders();
-  const due       = reminders.filter(r => r.fireAt <= now);
-
-  for (const r of due) {
-    await self.registration.showNotification('BBC Dashboard', {
-      body:    r.body,
-      icon:    './icon-192.png',
-      badge:   './icon-192.png',
-      tag:     r.id,           // deduplicates if fired more than once
-      data:    { url: './' },
-      requireInteraction: false,
-    });
-    await deleteReminder(r.id);
-  }
-
-  return due.length;
-}
-
-/* ══════════════════════════════════════════════════════════════
-   IN-PROCESS TIMERS
-   For reminders due soon (within the next 2 hours) the SW keeps
-   a live setTimeout so the notification fires precisely on time
-   without relying on the SW being woken up externally.
-   ══════════════════════════════════════════════════════════════ */
-
-const _swTimers = {};   // id → timer handle
-
-async function rescheduleTimers() {
-  const now       = Date.now();
-  const reminders = await getReminders();
-
-  // Cancel any existing timers for reminders no longer stored
-  const ids = new Set(reminders.map(r => r.id));
-  for (const [id, t] of Object.entries(_swTimers)) {
-    if (!ids.has(id)) { clearTimeout(t); delete _swTimers[id]; }
-  }
-
-  for (const r of reminders) {
-    if (_swTimers[r.id]) continue;   // already scheduled
-    const delay = r.fireAt - now;
-
-    if (delay <= 0) {
-      // Overdue — fire immediately
-      await self.registration.showNotification('BBC Dashboard', {
-        body:  r.body,
-        icon:  './icon-192.png',
-        tag:   r.id,
-        data:  { url: './' },
-      });
-      await deleteReminder(r.id);
-    } else if (delay < 2 * 60 * 60 * 1000) {
-      // Due within 2 hours — keep a live timer
-      _swTimers[r.id] = setTimeout(async () => {
-        await self.registration.showNotification('BBC Dashboard', {
-          body:  r.body,
-          icon:  './icon-192.png',
-          tag:   r.id,
-          data:  { url: './' },
-        });
-        await deleteReminder(r.id);
-        delete _swTimers[r.id];
-      }, delay);
-    }
-    // Reminders > 2 h away: stored in REMINDER_STORE, picked up when SW
-    // next activates (triggered by opening the app or periodic background sync)
-  }
-}
-
-/* ══════════════════════════════════════════════════════════════
-   MESSAGE HANDLER
-   The page sends messages here to schedule / cancel reminders.
-   ══════════════════════════════════════════════════════════════ */
-
-self.addEventListener('message', async event => {
-  const { type, reminder, id } = event.data || {};
-
-  if (type === 'SCHEDULE') {
-    // reminder = { id, title, body, fireAt (ms timestamp) }
-    if (!reminder || !reminder.id || !reminder.fireAt) return;
-    await saveReminder(reminder);
-    await rescheduleTimers();
-    event.ports[0]?.postMessage({ ok: true });
-  }
-
-  else if (type === 'CANCEL') {
-    if (!id) return;
-    if (_swTimers[id]) { clearTimeout(_swTimers[id]); delete _swTimers[id]; }
-    await deleteReminder(id);
-    event.ports[0]?.postMessage({ ok: true });
-  }
-
-  else if (type === 'CANCEL_ALL') {
-    Object.values(_swTimers).forEach(clearTimeout);
-    Object.keys(_swTimers).forEach(k => delete _swTimers[k]);
-    await clearAllReminders();
-    event.ports[0]?.postMessage({ ok: true });
-  }
-
-  else if (type === 'PING') {
-    // Page pings the SW periodically to keep it alive & check for overdue
-    await checkAndFireDueReminders();
-    await rescheduleTimers();
-    event.ports[0]?.postMessage({ ok: true, ts: Date.now() });
   }
 });
 
-/* ══════════════════════════════════════════════════════════════
-   NOTIFICATION CLICK
-   Tapping the notification opens / focuses the dashboard.
-   ══════════════════════════════════════════════════════════════ */
+// ── Notification scheduling ────────────────────────────────────────────────
+const _timers = {};
 
+self.addEventListener('message', event => {
+  const data = event.data;
+  if (!data || !data.type) return;
+
+  if (data.type === 'PING') {
+    event.ports[0]?.postMessage({ ok: true });
+    return;
+  }
+
+  if (data.type === 'SCHEDULE') {
+    const { id, title, body, fireAt } = data.reminder || {};
+    if (!id || !fireAt) return;
+    const delay = fireAt - Date.now();
+    if (delay <= 0) return;
+    clearTimeout(_timers[id]);
+    _timers[id] = setTimeout(() => {
+      self.registration.showNotification(title || 'BBC Dashboard', {
+        body: body || '',
+        icon: './icon-192.png',
+        badge: './icon-192.png',
+        tag: id,
+        requireInteraction: false,
+      });
+      delete _timers[id];
+    }, Math.min(delay, 2147483647)); // clamp to max setTimeout value
+    event.ports[0]?.postMessage({ ok: true, id });
+    return;
+  }
+
+  if (data.type === 'CANCEL') {
+    if (data.id && _timers[data.id]) {
+      clearTimeout(_timers[data.id]);
+      delete _timers[data.id];
+    }
+    event.ports[0]?.postMessage({ ok: true });
+    return;
+  }
+
+  if (data.type === 'CANCEL_ALL') {
+    Object.keys(_timers).forEach(id => {
+      clearTimeout(_timers[id]);
+      delete _timers[id];
+    });
+    event.ports[0]?.postMessage({ ok: true });
+    return;
+  }
+});
+
+// ── Notification click ─────────────────────────────────────────────────────
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const target = event.notification.data?.url || './';
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then(clients => {
-        // If the app is already open, focus it
-        for (const client of clients) {
-          if (client.url.includes(self.location.origin) && 'focus' in client) {
-            return client.focus();
-          }
-        }
-        // Otherwise open a new window
-        if (self.clients.openWindow) return self.clients.openWindow(target);
-      })
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+      if (clients.length > 0) {
+        return clients[0].focus();
+      }
+      return self.clients.openWindow('./');
+    })
   );
 });

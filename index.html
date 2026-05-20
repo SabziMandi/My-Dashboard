@@ -7140,6 +7140,7 @@ function renderCombinedAccordion(archKey){
   const _todayResolved=[
     ...ibuAll.filter(s=>RESOLVED_S.includes(s.status)).map(s=>({...s,_subsec:'ibu'})),
     ...otherAll.filter(s=>RESOLVED_S.includes(s.status)).map(s=>({...s,_subsec:'other'})),
+    ...((archKey?state.archive[archKey]?.sections?.requests:state.sections.requests)||[]).filter(s=>!s._deleted&&RESOLVED_S.includes(s.status)).map(s=>({...s,_subsec:'requests'})),
   ];
   // Also pull resolved from all archive dates
   const _seenIds=new Set(_todayResolved.map(s=>s.id));
@@ -7148,7 +7149,7 @@ function renderCombinedAccordion(archKey){
   _archiveDates.forEach(dateKey=>{
     const arch=state.archive[dateKey];
     if(!arch?.sections) return;
-    ['ibu','other'].forEach(sub=>{
+    ['ibu','other','requests'].forEach(sub=>{
       (arch.sections[sub]||[]).filter(s=>!s._deleted&&RESOLVED_S.includes(s.status)&&!_seenIds.has(s.id)).forEach(s=>{
         _seenIds.add(s.id);
         _archiveResolved.push({...s,_subsec:sub,_archiveDate:dateKey});

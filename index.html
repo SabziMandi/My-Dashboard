@@ -8816,8 +8816,8 @@ function _teSubAccordion(sid,sec){
   const expenses=entries.filter(e=>e.type==='expense');
   const allClaimed=expenses.length>0&&expenses.every(e=>_teGetClaimed(e)==='yes');
   const expTotal=(()=>{const t=expenses.reduce((s,e)=>{const _m=String(e.data?.amount||'').match(/[0-9]+(?:\.[0-9]+)?/);const n=_m?parseFloat(_m[0]):0;return s+(isNaN(n)?0:n);},0);return t>0?'Rs '+t.toLocaleString('en-IN'):'';})();
-  const bookOpen=ui_teBookingsOpen[sid]!==undefined ? ui_teBookingsOpen[sid] : bookings.length>0;
-  const expOpen=ui_teExpensesOpen[sid]!==undefined ? ui_teExpensesOpen[sid] : expenses.length>0;
+  const bookOpen=ui_teBookingsOpen[sid]===true;
+  const expOpen=ui_teExpensesOpen[sid]===true;
   // Booking payment badges: unpaid count + entry count (only when unpaid) or "All paid"
   // Cab/flight/hotel: unpaid = data.payment === 'unpaid'
   // Fixer: unpaid = _teGetClaimed(e) !== 'yes' (uses claimed field, same as expenses)

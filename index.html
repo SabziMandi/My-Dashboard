@@ -2324,6 +2324,10 @@ function checkDateChange(){
     const archivedOther=toAutoArchive.filter(x=>x.sec==='other').map(x=>x.story.id);
     // IBU: remove only stories that were auto-archived — preserve carried-forward moved stories
     state.sections.ibu=(state.sections.ibu||[]).filter(s=>!archivedIBU.includes(s.id));
+    // Add archived IBU IDs to deletedIds so Firebase sync doesn't restore them
+    if(!state.deletedIds) state.deletedIds={};
+    if(!state.deletedIds.ibu) state.deletedIds.ibu=[];
+    archivedIBU.forEach(id=>{ if(!state.deletedIds.ibu.includes(id)) state.deletedIds.ibu.push(id); });
     // Other/requests: remove terminal stories (completed, not-done, shelved) — they had their day
     const TERM_MIDNIGHT=['completed','not-done','shelved'];
     state.sections.other=(state.sections.other||[]).filter(s=>!TERM_MIDNIGHT.includes(s.status));
@@ -2408,7 +2412,8 @@ function checkDateChange(){
     }
   }
   state.lastActiveDate=today;
-  saveLocal();
+  window._checkDateChangeRan=true; // flag for init() to delay Firebase sync
+  saveAndPush(); // push to Firebase immediately so deletedIds reach remote before next sync
 }
 function getCarriedStories(){
   const today=todayStr();
@@ -10127,12 +10132,16 @@ function init(){
 
   scheduleAllReminders();
   const cfg=getFireConfig();
-  if(cfg) initFirebase(cfg, true);
-  else if(!window._firebaseAuthLoadFailed && typeof firebase !== 'undefined'){
-    // No Firebase config yet — but still try auth so session is ready when user connects
-    // (only works if app was previously initialised in this browser)
-    try{ firebase.app(); ensureSignedIn().catch(()=>{}); }catch(e){}
-  }
+  // Delay Firebase sync slightly if checkDateChange ran today — gives saveAndPush
+  // time to write the updated deletedIds to Firebase before onSnapshot fires and
+  // potentially restores stale data from the old Firebase state.
+  const syncDelay=window._checkDateChangeRan?2000:0;
+  setTimeout(()=>{
+    if(cfg) initFirebase(cfg, true);
+    else if(!window._firebaseAuthLoadFailed && typeof firebase !== 'undefined'){
+      try{ firebase.app(); ensureSignedIn().catch(()=>{}); }catch(e){}
+    }
+  }, syncDelay);
   window.addEventListener('online', ()=>{ if(fireDb){ setSyncUI('syncing'); /* onSnapshot will fire automatically on reconnect and merge before we push */ } });
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState==='visible'&&fireDb){

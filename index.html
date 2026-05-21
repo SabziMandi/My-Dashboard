@@ -1817,7 +1817,40 @@ function loadLocal(){
     state._upcomingRepaired=true;
     saveLocal();
   }
-  // One-time cleanup: remove story IDs from deletedIds that are archive entries,
+  // One-time: ensure all stories have created/updated timestamps for sync comparison
+  if(!state._timestampsFixed){
+    const now=Date.now();
+    ['ibu','other','requests','upcoming'].forEach(sec=>{
+      (state.sections[sec]||[]).forEach(s=>{
+        if(!s.created) s.created=now;
+        if(!s.updated) s.updated=s.created;
+      });
+    });
+    Object.values(state.archive||{}).forEach(entry=>{
+      ['ibu','other','requests','upcoming'].forEach(sec=>{
+        (entry.sections?.[sec]||[]).forEach(s=>{
+          if(!s.created) s.created=now;
+          if(!s.updated) s.updated=s.created;
+        });
+      });
+    });
+    state._timestampsFixed=true;
+    saveLocal();
+  }
+  // InstaMaids (mp088s8hz9ada) was marked not-done but has no updated timestamp — keeps reappearing.
+  // Taxi Strike (mpecu7ad25urg) was moved to ibu but deletedIds.requests wasn't set on all devices.
+  if(!state._requestsRepaired){
+    const stuckInRequests=['mp088s8hz9ada','mpecu7ad25urg'];
+    if(!state.deletedIds) state.deletedIds={};
+    if(!state.deletedIds.requests) state.deletedIds.requests=[];
+    stuckInRequests.forEach(id=>{
+      if(!state.deletedIds.requests.includes(id)) state.deletedIds.requests.push(id);
+    });
+    // Remove them from live requests if present
+    state.sections.requests=(state.sections.requests||[]).filter(s=>!stuckInRequests.includes(s.id));
+    state._requestsRepaired=true;
+    saveLocal();
+  }
   // not explicit user deletes. These were wrongly added by a previous buggy fix.
   // A story ID belongs in deletedIds ONLY if the user explicitly deleted it.
   // We identify archive-only IDs as those that exist in state.archive but were
@@ -2068,37 +2101,34 @@ function startRealtimeSync(){
           }
         }
       });
-      // Smart merge state.sections by story ID — newer updated/created wins
+      // Smart merge state.sections by story ID — latest updated timestamp wins across all devices
       const mergedSections={};
       SECTIONS.forEach(sec=>{
         const localSec=state.sections[sec.key]||[];
         const remoteSec=incoming.sections?.[sec.key]||[];
         const deletedForSec=(mergedDeletedIds[sec.key]||[]);
         const secMap=new Map();
-        // Local first, then remote overrides — but compare timestamps for same ID
+        // Seed with local
         localSec.forEach(s=>{ if(s.id) secMap.set(s.id,s); });
+        // Remote: latest timestamp wins — deletedIds is the only veto
         remoteSec.forEach(s=>{
           if(!s.id) return;
-          if(deletedForSec.includes(s.id)) return; // never resurrect locally deleted entries
-          // Don't restore stories archived this session — they were just moved to archive by checkDateChange
-          if(window._sessionArchivedIds&&window._sessionArchivedIds.has(s.id)) return;
+          if(deletedForSec.includes(s.id)) return; // locally deleted/moved — never restore
+          if(window._sessionArchivedIds&&window._sessionArchivedIds.has(s.id)) return; // archived this session
           const existing=secMap.get(s.id);
           if(!existing){
-            secMap.set(s.id,s);
+            secMap.set(s.id,s); // new on remote — add
           } else {
-            // Remote wins only if strictly newer — local wins on tie (prevents own-echo from overwriting local move/delete)
             const remoteTs=s.updated||s.created||0;
             const localTs=existing.updated||existing.created||0;
-            if(remoteTs>localTs) secMap.set(s.id,s);
+            if(remoteTs>localTs) secMap.set(s.id,s); // remote is newer — take it
+            // local is newer or equal — keep local (local wins on tie)
           }
         });
-        mergedSections[sec.key]=[...secMap.values()].filter(s=>{
-          if(!(mergedDeletedIds[sec.key]||[]).includes(s.id)) return true; // not deleted — keep
-          // ID is in deletedIds — but only remove if remote also doesn't have it alive
-          // If remote has the story, it means another device explicitly kept/moved it there — respect that
-          const aliveInRemote=(incoming.sections?.[sec.key]||[]).some(r=>r.id===s.id);
-          return aliveInRemote; // keep if remote has it alive, remove if remote also doesn't have it
-        });
+        // Final filter: deletedIds is absolute
+        mergedSections[sec.key]=[...secMap.values()].filter(s=>
+          !(mergedDeletedIds[sec.key]||[]).includes(s.id)
+        );
       });
 
       // Apply all other scalar fields from remote — but preserve local-only fields
@@ -2292,6 +2322,7 @@ function checkDateChange(){
           story.carriedForward=true;
           story.carriedFromDate=story.carriedFromDate||prev;
           story.carriedDays=(story.carriedDays||0)+1;
+          story.updated=Date.now(); // ensure timestamp is always set for sync comparison
           carried++;
         }
         return;
@@ -2311,6 +2342,7 @@ function checkDateChange(){
       story.carriedForward=true;
       story.carriedFromDate=story.carriedFromDate||prev;
       story.carriedDays=(story.carriedDays||0)+1;
+      story.updated=Date.now();
       carried++;
     });
 
@@ -2331,6 +2363,7 @@ function checkDateChange(){
         story.carriedForward=true;
         story.carriedFromDate=story.carriedFromDate||prev;
         story.carriedDays=(story.carriedDays||0)+1;
+        story.updated=Date.now();
         carried++;
       });
     });

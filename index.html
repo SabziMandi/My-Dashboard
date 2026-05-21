@@ -1846,8 +1846,25 @@ function loadLocal(){
     stuckInRequests.forEach(id=>{
       if(!state.deletedIds.requests.includes(id)) state.deletedIds.requests.push(id);
     });
-    // Remove them from live requests if present
+    // Remove from live requests if present
     state.sections.requests=(state.sections.requests||[]).filter(s=>!stuckInRequests.includes(s.id));
+    // Add Taxi Strike to ibu archive as completed so it shows in Done group
+    const taxiStrike=(()=>{
+      // Find it in any archive section to get its data
+      for(const key of Object.keys(state.archive||{}).sort().reverse()){
+        const found=(state.archive[key]?.sections?.requests||[]).find(s=>s.id==='mpecu7ad25urg');
+        if(found) return found;
+      }
+      return null;
+    })();
+    if(taxiStrike){
+      const today2=todayStr();
+      if(!state.archive[today2]) state.archive[today2]={type:'day',label:archiveLabel(today2),sections:{ibu:[],other:[],requests:[],upcoming:[]},notes:'',created:Date.now()};
+      if(!state.archive[today2].sections.ibu) state.archive[today2].sections.ibu=[];
+      if(!state.archive[today2].sections.ibu.some(s=>s.id===taxiStrike.id)){
+        state.archive[today2].sections.ibu.push({...taxiStrike,status:'completed',completedOn:Date.now(),movedFrom:'requests',updated:Date.now()});
+      }
+    }
     state._requestsRepaired=true;
     saveLocal();
   }
@@ -6639,7 +6656,22 @@ function renderTasksSection(){
     <div class="acc-header" onclick="toggleAccordion('tasks')">
       <span class="acc-icon">☑</span><span class="acc-name">Tasks</span>
 
-      <span class="acc-summary">${(()=>{ const today=todayStr(); const pending=(state.tasks||[]).filter(t=>t.taskStatus==='pending'||t.taskStatus==='postponed-to'); if(!pending.length)return ''; const sorted=pending.slice().sort((a,b)=>{ const da=a.deadline_date?Math.abs(new Date(a.deadline_date+'T00:00:00').getTime()-new Date(today+'T00:00:00').getTime()):Infinity; const db=b.deadline_date?Math.abs(new Date(b.deadline_date+'T00:00:00').getTime()-new Date(today+'T00:00:00').getTime()):Infinity; return da-db; }); return esc(sorted[0].title||''); })()}</span>
+      <span class="acc-summary">${(()=>{
+        const today=todayStr();
+        const todayMs=new Date(today+'T00:00:00').getTime();
+        const pending=(state.tasks||[]).filter(t=>t.taskStatus==='pending'||t.taskStatus==='postponed-to');
+        if(!pending.length) return '';
+        const key=t=>{
+          const d=t.deadline_date;
+          if(!d) return 500000;
+          const diff=Math.round((new Date(d+'T00:00:00').getTime()-todayMs)/86400000);
+          if(diff===0) return 0;
+          if(diff<0) return 1+Math.abs(diff)/100000;
+          return 2+diff;
+        };
+        const sorted=pending.slice().sort((a,b)=>key(a)-key(b));
+        return esc(sorted[0].title||'');
+      })()}</span>
       <div class="acc-meta">
         ${pendingCount?`<span class="sbadge sb-in-progress">${pendingCount} pending</span>`:''}
       </div>

@@ -1817,7 +1817,30 @@ function loadLocal(){
     state._upcomingRepaired=true;
     saveLocal();
   }
-  if(!state.staffNames) state.staffNames={correspondents:[],producers:[],shootEdit:[]};
+  // One-time cleanup: remove story IDs from deletedIds that are archive entries,
+  // not explicit user deletes. These were wrongly added by a previous buggy fix.
+  // A story ID belongs in deletedIds ONLY if the user explicitly deleted it.
+  // We identify archive-only IDs as those that exist in state.archive but were
+  // never explicitly deleted (no completion note, no user-initiated delete action).
+  if(!state._deletedIdsClean){
+    if(state.deletedIds?.ibu?.length){
+      // Keep only IDs that are NOT found in any archive section
+      // (those are genuine deletes with no archive copy)
+      const archiveIbuIds=new Set();
+      Object.values(state.archive||{}).forEach(entry=>{
+        (entry.sections?.ibu||[]).forEach(s=>{ if(s.id) archiveIbuIds.add(s.id); });
+      });
+      // An ID in deletedIds.ibu that also exists in archive = was archived not deleted
+      // Only remove from deletedIds if it's ONLY in archive (not also in a live section)
+      const liveIbuIds=new Set((state.sections?.ibu||[]).map(s=>s.id));
+      state.deletedIds.ibu=state.deletedIds.ibu.filter(id=>{
+        // Keep if NOT in archive (genuine delete) OR if in live ibu (explicitly kept)
+        return !archiveIbuIds.has(id)||liveIbuIds.has(id);
+      });
+    }
+    state._deletedIdsClean=true;
+    saveLocal();
+  }
   if(!state.staffNames.correspondents) state.staffNames.correspondents=[];
   if(!state.staffNames.producers) state.staffNames.producers=[];
   if(!state.staffNames.shootEdit) state.staffNames.shootEdit=[];
@@ -2057,6 +2080,8 @@ function startRealtimeSync(){
         remoteSec.forEach(s=>{
           if(!s.id) return;
           if(deletedForSec.includes(s.id)) return; // never resurrect locally deleted entries
+          // Don't restore stories archived this session — they were just moved to archive by checkDateChange
+          if(window._sessionArchivedIds&&window._sessionArchivedIds.has(s.id)) return;
           const existing=secMap.get(s.id);
           if(!existing){
             secMap.set(s.id,s);
@@ -2324,10 +2349,11 @@ function checkDateChange(){
     const archivedOther=toAutoArchive.filter(x=>x.sec==='other').map(x=>x.story.id);
     // IBU: remove only stories that were auto-archived — preserve carried-forward moved stories
     state.sections.ibu=(state.sections.ibu||[]).filter(s=>!archivedIBU.includes(s.id));
-    // Add archived IBU IDs to deletedIds so Firebase sync doesn't restore them
-    if(!state.deletedIds) state.deletedIds={};
-    if(!state.deletedIds.ibu) state.deletedIds.ibu=[];
-    archivedIBU.forEach(id=>{ if(!state.deletedIds.ibu.includes(id)) state.deletedIds.ibu.push(id); });
+    // Track recently archived IDs in a session-scoped set so the sync merge
+    // doesn't restore them to the live board during this session.
+    // This is NOT deletedIds — these stories remain in archive and sync normally.
+    if(!window._sessionArchivedIds) window._sessionArchivedIds=new Set();
+    archivedIBU.forEach(id=>window._sessionArchivedIds.add(id));
     // Other/requests: remove terminal stories (completed, not-done, shelved) — they had their day
     const TERM_MIDNIGHT=['completed','not-done','shelved'];
     state.sections.other=(state.sections.other||[]).filter(s=>!TERM_MIDNIGHT.includes(s.status));

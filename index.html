@@ -2042,22 +2042,18 @@ function startRealtimeSync(){
         clearTimeout(window._mergeBackPushTimer);
         window._mergeBackPushTimer=setTimeout(()=>pushToCloud(), 1500);
       }
-      // Clean up any stuck not-done entries that remote data may have restored,
-      // then push the cleaned state back so all devices stay in sync.
-          if(!cleaned) {
-        const hasOpenForm=ui.openForms.size>0||_te.open;
-        // Also block render if user is actively typing in a remark field
-        const activeEl=document.activeElement;
-        const typingInRemark=activeEl&&(activeEl.id&&activeEl.id.startsWith('sr-')||activeEl.closest&&activeEl.closest('.sremark-add'));
-        if(hasOpenForm||typingInRemark){
-          // Form is open — don't re-render (would lose user's input focus and feel jarring)
-          // Mark that a sync arrived so render fires when the form closes
-          window._pendingSyncRender=true;
-          setSyncUI('live');
-        } else {
-          render(); setSyncUI('live'); _teRefresh();
-          window._pendingSyncRender=false;
-        }
+      const hasOpenForm=ui.openForms.size>0||_te.open;
+      // Also block render if user is actively typing in a remark field
+      const activeEl=document.activeElement;
+      const typingInRemark=activeEl&&(activeEl.id&&activeEl.id.startsWith('sr-')||activeEl.closest&&activeEl.closest('.sremark-add'));
+      if(hasOpenForm||typingInRemark){
+        // Form is open — don't re-render (would lose user's input focus and feel jarring)
+        // Mark that a sync arrived so render fires when the form closes
+        window._pendingSyncRender=true;
+        setSyncUI('live');
+      } else {
+        render(); setSyncUI('live'); _teRefresh();
+        window._pendingSyncRender=false;
       }
     }
     else pushToCloud();

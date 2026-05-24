@@ -1579,6 +1579,12 @@ let ui = {
   showPassedUpcoming: false,   // toggle passed upcoming events sub-section
 };
 let fireDb=null, firestoreUnsub=null, reminderTimers={};
+// ── Multi-doc sync ─────────────────────────────────────────────────────────
+const _arcFetchedMonths = new Set();
+const _arcPendingWrite  = new Set();
+let   _arcWriteTimer    = null;
+const ND_LIVE_DOC  = 'live';
+const ND_ARC_PFX   = 'arc-';
 function p2(n){ return String(n).padStart(2,'0'); }
 function dateStr(d){ return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate()); }
 function todayStr()    { return dateStr(new Date()); }
@@ -1985,6 +1991,7 @@ function initFirebase(cfg, silent){
         if(user){
           startRealtimeSync(); setSyncUI('syncing');
           const b=document.getElementById('auth-banner'); if(b) b.style.display='none';
+          setTimeout(() => migrateToMultiDoc(), 2000);
         } else {
           // Not signed in — show sign-in banner
           setSyncUI('offline');
@@ -1995,10 +2002,53 @@ function initFirebase(cfg, silent){
     return true;
   }catch(e){ toast('Firebase error: '+e.message); return false; }
 }
+async function migrateToMultiDoc() {
+  if (!fireDb) return;
+  const MIG_KEY = 'nd_multiDocMigrated_v2';
+  if (localStorage.getItem(MIG_KEY) === '1') return;
+  toast('☁️ Upgrading sync format… please keep the app open (takes ~30s).');
+  try {
+    const liveSnap = await fireDb.collection('nd').doc(ND_LIVE_DOC).get();
+    if (liveSnap.exists && (liveSnap.data() || {})._docVersion === 2) {
+      localStorage.setItem(MIG_KEY, '1'); toast('✅ Sync already upgraded.'); return;
+    }
+    const legacySnap = await fireDb.collection('nd').doc('data').get();
+    const srcArc = { ...state.archive };
+    if (legacySnap.exists) {
+      const legData = legacySnap.data() || {};
+      Object.entries(legData.archive || {}).forEach(([k, v]) => {
+        if (!srcArc[k]) { srcArc[k] = v; state.archive[k] = v; }
+      });
+      saveLocal();
+    }
+    const byMonth = {};
+    Object.entries(srcArc).forEach(([k, v]) => {
+      const docId = _arcDocId(k); if (!docId) return;
+      if (!byMonth[docId]) byMonth[docId] = {}; byMonth[docId][k] = v;
+    });
+    let written = 0, skipped = 0;
+    for (const docId of Object.keys(byMonth)) {
+      const entries = byMonth[docId];
+      const sz = new Blob([JSON.stringify(entries)]).size;
+      if (sz > 950000) { skipped++; console.warn('[BBC Dashboard] Migration: ' + docId + ' too large, skipped.'); continue; }
+      await fireDb.collection('nd').doc(docId).set({ entries, _updated: Date.now() });
+      written++;
+      if (written % 5 === 0) await new Promise(r => setTimeout(r, 600));
+    }
+    await pushToCloud();
+    localStorage.setItem(MIG_KEY, '1');
+    toast(skipped
+      ? '✅ Sync upgraded. ' + written + ' months synced, ' + skipped + ' too large (kept locally — data safe).'
+      : '✅ Sync upgraded. ' + written + ' monthly archive docs created.');
+  } catch(e) {
+    console.error('[BBC Dashboard] Migration error:', e);
+    toast('⚠️ Sync upgrade error: ' + e.message + '. Will retry. Local data safe.');
+  }
+}
 function startRealtimeSync(){
   if(!fireDb) return;
   if(firestoreUnsub) firestoreUnsub();
-  firestoreUnsub=fireDb.collection('nd').doc('data').onSnapshot(snap=>{
+  firestoreUnsub=fireDb.collection('nd').doc(ND_LIVE_DOC).onSnapshot(snap=>{
     if(snap.exists){
       const incoming=snap.data();
       // Compute merged deletedIds — remote is authoritative base (we clean it intentionally via console/code)
@@ -2161,6 +2211,12 @@ function startRealtimeSync(){
       const localTravelDismissed=[...(state.travelDismissed||[])];
       const localTravelRestored=[...(state.travelRestored||[])];
       Object.assign(state, incoming, mergedArrays, {archive:mergedArchive, sections:mergedSections});
+      const _inAM = incoming.archiveMonthly || {};
+      Object.entries(_inAM).forEach(([k, v]) => {
+        if (!state.archive[k]) state.archive[k] = v;
+        else { const rt = v.created||0, lt = state.archive[k].created||0; if (rt > lt) state.archive[k] = v; }
+      });
+      delete state.archiveMonthly;
       // travelDismissed is a per-device UI preference — keep local state only, don't merge with remote
       // This prevents one device's hide/show from affecting the other device
       state.travelDismissed=localTravelDismissed;
@@ -2215,34 +2271,72 @@ function startRealtimeSync(){
     else pushToCloud();
   }, ()=>setSyncUI('offline'));
 }
-async function pushToCloud(){
-  if(!fireDb) return;
-  try{
-    window._lastPushTs=Date.now();
+// ── Archive helpers ────────────────────────────────────────────
+function _arcDocId(archKey) {
+  if (!archKey || archKey.startsWith('month-')) return null;
+  const ds = archKey.startsWith('week-') ? archKey.slice(5) : archKey;
+  return ND_ARC_PFX + ds.slice(0, 7);
+}
+async function _pushArcMonth(docId) {
+  if (!fireDb || !docId) return;
+  const entries = {};
+  Object.entries(state.archive || {}).forEach(([k, v]) => { if (_arcDocId(k) === docId) entries[k] = v; });
+  try {
+    const sz = new Blob([JSON.stringify(entries)]).size;
+    if (sz > 950000) { console.warn('[BBC Dashboard] ' + docId + ' too large (' + Math.round(sz/1024) + 'KB) — skipped. Local data intact.'); return; }
+    await fireDb.collection('nd').doc(docId).set({ entries, _updated: Date.now() });
+  } catch(e) { console.warn('[BBC Dashboard] _pushArcMonth failed:', e.message); }
+}
+function _queueArcWrite(archKey) {
+  if (!fireDb) return;
+  const docId = _arcDocId(archKey); if (!docId) return;
+  _arcPendingWrite.add(docId);
+  clearTimeout(_arcWriteTimer);
+  _arcWriteTimer = setTimeout(async () => {
+    const toWrite = [..._arcPendingWrite]; _arcPendingWrite.clear();
+    for (const id of toWrite) await _pushArcMonth(id);
+  }, 1200);
+}
+async function _fetchArcMonth(archKey) {
+  if (!fireDb) return;
+  const docId = _arcDocId(archKey); if (!docId) return;
+  if (_arcFetchedMonths.has(docId)) return;
+  _arcFetchedMonths.add(docId);
+  try {
+    const snap = await fireDb.collection('nd').doc(docId).get();
+    if (!snap.exists) return;
+    const { entries = {} } = snap.data() || {};
+    Object.entries(entries).forEach(([k, v]) => {
+      if (!state.archive[k]) { state.archive[k] = v; }
+      else {
+        if (v.sections) { SECTIONS.forEach(sec => { const ls=state.archive[k].sections?.[sec.key]||[],rs=v.sections?.[sec.key]||[],m=new Map(); ls.forEach(s=>{if(s.id)m.set(s.id,s);}); rs.forEach(s=>{if(!s.id)return; const ex=m.get(s.id); if(!ex)m.set(s.id,s); else{const rt=s.updated||s.created||0,lt=ex.updated||ex.created||0; if(rt>lt)m.set(s.id,s);}}); if(!state.archive[k].sections)state.archive[k].sections={}; state.archive[k].sections[sec.key]=[...m.values()]; }); }
+        ['notesLog','tasksLog'].forEach(lk => { const ll=state.archive[k][lk]||[],rl=v[lk]||[],lm=new Map(); ll.forEach(x=>{if(x.id)lm.set(x.id,x);}); rl.forEach(x=>{if(!x.id)return; const ex=lm.get(x.id); if(!ex)lm.set(x.id,x); else{const rt=x.updated||x.created||0,lt=ex.updated||ex.created||0; if(rt>lt)lm.set(x.id,x);}}); state.archive[k][lk]=[...lm.values()]; });
+      }
+    });
+    saveLocal();
+  } catch(e) { console.warn('[BBC Dashboard] _fetchArcMonth failed:', e.message); }
+}
+async function pushToCloud() {
+  if (!fireDb) return;
+  try {
+    window._lastPushTs = Date.now();
     setSyncUI('syncing');
-    // Strip backupSnapshots — they're large and stored locally only
-    // Also strip any undefined/function values that Firestore can't handle
-    const {backupSnapshots, ...cloudState} = state;
-    // Ensure size safety — estimate payload
-    const payload=JSON.stringify(cloudState);
-    if(payload.length > 900000){ // ~900KB safety limit (Firestore max is 1MB)
-      // Strip archive entries older than 90 days to reduce size
-      const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-90);
-      const cutoffStr=cutoff.toISOString().slice(0,10);
-      const trimmedArchive={};
-      Object.entries(cloudState.archive||{}).forEach(([k,v])=>{
-        if(k>=cutoffStr || k.startsWith('week-') || k.startsWith('month-')) trimmedArchive[k]=v;
-      });
-      cloudState.archive=trimmedArchive;
+    const { backupSnapshots, archive: fullArchive, ...liveRest } = state;
+    const archiveMonthly = {};
+    Object.entries(fullArchive || {}).forEach(([k, v]) => { if (k.startsWith('month-')) archiveMonthly[k] = v; });
+    const livePayload = { ...liveRest, archiveMonthly, _docVersion: 2 };
+    const sz = new Blob([JSON.stringify(livePayload)]).size;
+    if (sz > 950000) {
+      setSyncUI('offline');
+      toast('⚠️ Live data ' + Math.round(sz/1024) + 'KB — unexpectedly large. Archive docs are separate and safe.');
+      return;
     }
-    await fireDb.collection('nd').doc('data').set(cloudState);
+    await fireDb.collection('nd').doc(ND_LIVE_DOC).set(livePayload);
     setSyncUI('live');
-  }catch(e){
+  } catch(e) {
     setSyncUI('offline');
-    // Show user-visible error if it looks like a size issue
-    if(e.message&&(e.message.includes('size')||e.message.includes('limit')||e.code==='invalid-argument')){
-      toast('⚠ Sync failed: data too large. Try clearing old archive entries.');
-    }
+    console.error('[BBC Dashboard] pushToCloud:', e);
+    toast('⚠️ Sync failed (' + e.message + '). Local data is safe.');
   }
 }
 function setSyncUI(s){
@@ -2265,6 +2359,15 @@ function saveAndPush(){
     setSyncUI('syncing');
     clearTimeout(window._saveAndPushDebounce);
     window._saveAndPushDebounce = setTimeout(()=>{ pushToCloud(); }, 800);
+  }
+}
+function saveAndPushWithArchive(archKey) {
+  saveLocal();
+  if (fireDb) {
+    setSyncUI('syncing');
+    clearTimeout(window._saveAndPushDebounce);
+    window._saveAndPushDebounce = setTimeout(()=>{ pushToCloud(); }, 800);
+    if (archKey) _queueArcWrite(archKey);
   }
 }
 function checkDateChange(){
@@ -2466,6 +2569,7 @@ function checkDateChange(){
     }
     if(upcomingMigrated>0) toast(`🗓 ${upcomingMigrated} Upcoming stor${upcomingMigrated===1?'y':'ies'} auto-migrated to archive`);
     if(carried>0) saveLocal();
+    if(fireDb && prev) _queueArcWrite(prev);
 
     // ── Backfill skipped days ────────────────────────────────────────────────
     // If the app wasn't opened on intermediate days (e.g. weekends), those days
@@ -2515,7 +2619,8 @@ function createSnapshot(key,type,showToast=true){
     const newOnes=(state.sections[s.key]||[]).filter(st=>!ids.has(st.id)&&!st._deleted);
     state.archive[key].sections[s.key]=[...existing,...newOnes];
   });
-  saveAndPush();
+  saveLocal();
+  if(fireDb){ setSyncUI('syncing'); clearTimeout(window._saveAndPushDebounce); window._saveAndPushDebounce=setTimeout(()=>pushToCloud(),800); _queueArcWrite(key); }
   if(showToast) toast('📸 Snapshot saved ✓');
 }
 function snapshotToday(){
@@ -3303,6 +3408,14 @@ function deleteStory(sec,id,archKey){
   if(archKey) state.archive[archKey].sections[sec]=filtered; else state.sections[sec]=filtered;
   ui.openCards.delete(id); ui.complForms.delete(id);
   saveAndPush(); renderDateStrip(); render();
+}
+function deleteArchiveEntry(key) {
+  if (!confirm('Delete archive entry for ' + archiveLabel(key) + '?\nThis cannot be undone.')) return;
+  delete state.archive[key];
+  saveLocal();
+  if (fireDb) { _queueArcWrite(key); clearTimeout(window._saveAndPushDebounce); window._saveAndPushDebounce=setTimeout(()=>pushToCloud(),800); setSyncUI('syncing'); }
+  renderDateStrip(); setView('today', null);
+  toast('Archive entry deleted');
 }
 function doMoveSelect(fromSec, id, archKey, selectEl){
   const toSec=selectEl.value;
@@ -4844,10 +4957,15 @@ function repairStory(id){
       if(s.id===id) s.updated=Date.now();
     });
   });
-  // Write clean state directly to Firebase — bypasses merge
+  // Write clean live state to nd/live — bypasses merge
   saveLocal();
-  const raw=JSON.parse(localStorage.getItem('nd_v5'));
-  fireDb.collection('nd').doc('data').set(raw).then(function(){
+  const raw = JSON.parse(localStorage.getItem('nd_v5'));
+  const { archive: _rA, backupSnapshots: _rB, ...repairLive } = raw;
+  const repairMonthly = {};
+  Object.entries(_rA || {}).forEach(([k, v]) => { if (k.startsWith('month-')) repairMonthly[k] = v; });
+  repairLive.archiveMonthly = repairMonthly;
+  repairLive._docVersion = 2;
+  fireDb.collection('nd').doc(ND_LIVE_DOC).set(repairLive).then(function(){
     toast('Story repaired ✓ — mobile will show it on next sync');
     render();
   }).catch(function(e){ toast('Repair failed: '+e.message); });
@@ -5478,7 +5596,14 @@ function renderArchiveHTML(key){
   const isYest=key===yesterdayStr(), isTomm=key===tomorrowStr();
   if(!state.archive[key]){
     if(isTomm){ state.archive[key]={type:'day',label:archiveLabel(key),sections:{ibu:[],other:[],requests:[],upcoming:[]},notes:'',created:Date.now()}; saveLocal(); }
-    else return `<div class="view-header vh-archive"><div><div class="avh-label">Archive</div><div class="avh-title">${archiveLabel(key)}</div><div class="avh-meta">No data for this date.</div></div><div class="avh-actions"><button class="btn btn-ghost btn-sm" onclick="setView('today',null)">← Today</button></div></div>`;
+    else {
+      const _mId = _arcDocId(key) || '';
+      if (fireDb && !_arcFetchedMonths.has(_mId)) {
+        _fetchArcMonth(key).then(() => { if (state.archive[key]) render(); });
+        return `<div class="view-header vh-archive"><div><div class="avh-label">Archive</div><div class="avh-title">${archiveLabel(key)}</div><div class="avh-meta" style="color:var(--text3)">⏳ Loading from cloud…</div></div><div class="avh-actions"><button class="btn btn-ghost btn-sm" onclick="setView('today',null)">← Today</button></div></div>`;
+      }
+      return `<div class="view-header vh-archive"><div><div class="avh-label">Archive</div><div class="avh-title">${archiveLabel(key)}</div><div class="avh-meta">No data for this date.</div></div><div class="avh-actions"><button class="btn btn-ghost btn-sm" onclick="setView('today',null)">← Today</button></div></div>`;
+    }
   }
   const cnt=archiveStoryCount(key);
   const vhClass=isTomm?'vh-tomorrow':isYest?'vh-yesterday':'vh-archive';

@@ -1560,6 +1560,7 @@ let ui = {
   showPassedUpcoming: false,
 };
 let fireDb=null, firestoreUnsub=null, reminderTimers={};
+window._syncInitialized=false;
 function p2(n){ return String(n).padStart(2,'0'); }
 function dateStr(d){ return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate()); }
 function todayStr()    { return dateStr(new Date()); }
@@ -1911,6 +1912,7 @@ function startRealtimeSync(){
   if(!fireDb) return;
   if(firestoreUnsub) firestoreUnsub();
   firestoreUnsub=fireDb.collection('nd').doc('data').onSnapshot(snap=>{
+        if(!snap.exists){ window._syncInitialized=true; return; }
     if(snap.exists){
       const incoming=snap.data();
       // Force-version check: if another device did a force-push, accept wholesale
@@ -1926,9 +1928,10 @@ function startRealtimeSync(){
         Object.keys(state).forEach(k=>{ if(k!=='backupSnapshots') delete state[k]; });
         Object.assign(state,freshState);
         SECTIONS.forEach(s=>{if(!state.sections[s.key])state.sections[s.key]=[];});
+        window._syncInitialized = true;
         saveLocal(); render(); setSyncUI('live');
-        // Block merge-back push for 10 seconds so we don't overwrite Firebase
-        window._lastPushTs = Date.now() + 10000;
+        // Block merge-back push for 30 seconds so we don't overwrite Firebase
+        window._lastPushTs = Date.now() + 30000;
         toast('☁️ Updated from another device.');
         return;
       }
@@ -2027,6 +2030,7 @@ function startRealtimeSync(){
       const localTravelDismissed=[...(state.travelDismissed||[])];
       const localTravelRestored=[...(state.travelRestored||[])];
       Object.assign(state, incoming, mergedArrays, {sections:mergedSections});
+      window._syncInitialized=true;
       // travelDismissed is a per-device UI preference — keep local state only, don't merge with remote
       // This prevents one device's hide/show from affecting the other device
       state.travelDismissed=localTravelDismissed;
@@ -2076,6 +2080,9 @@ function startRealtimeSync(){
 }
 async function pushToCloud(){
   if(!fireDb) return;
+  // Don't push until we've received at least one snapshot from Firebase
+  // This prevents local stale data from overwriting Firebase on startup
+  if(!window._syncInitialized) return;
   try{
     window._lastPushTs=Date.now();
     setSyncUI('syncing');

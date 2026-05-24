@@ -1458,10 +1458,8 @@ button.tasks-tab-btn {
         <button class="mobile-icon-btn" onclick="openMobileMore()" title="More options" style="flex-shrink:0;font-size:16px;">+</button>
         <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:0;">
           <span class="m-arrow"  style="font-size:18px;font-weight:600;color:var(--text2);padding:0 12px;cursor:pointer;line-height:1;user-select:none;">‹</span>
-          <div style="position:relative;display:flex;align-items:center;cursor:pointer;">
-            <span class="m-date-label" id="mobile-date-label" style="pointer-events:none;">Wednesday, 16 Apr</span>
-            <input type="date" id="mobile-date-picker" onchange="jumpToDate(this.value)"
-              style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:1;">
+          <div style="display:flex;align-items:center;cursor:default;">
+            <span class="m-date-label" id="mobile-date-label" style="">Sunday 24 May</span>
           </div>
           <span class="m-arrow"  style="font-size:18px;font-weight:600;color:var(--text2);padding:0 12px;cursor:pointer;line-height:1;user-select:none;">›</span>
         </div>
@@ -1474,10 +1472,8 @@ button.tasks-tab-btn {
       <button class="mobile-icon-btn" onclick="openMobileMore()" style="flex-shrink:0;font-size:16px;">+</button>
       <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:0;">
         <span style="font-size:18px;color:var(--text3);padding:0 8px;cursor:pointer;" >‹</span>
-        <div style="position:relative;display:flex;align-items:center;cursor:pointer;">
-            <span class="m-collapsed-date" id="mobile-collapsed-date-label" style="pointer-events:none;">Wed, 16 Apr</span>
-            <input type="date" onchange="jumpToDate(this.value)"
-              style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:1;">
+        <div style="display:flex;align-items:center;">
+            <span class="m-collapsed-date" id="mobile-collapsed-date-label">24 May</span>
           </div>
         <span style="font-size:18px;color:var(--text3);padding:0 8px;cursor:pointer;" >›</span>
       </div>

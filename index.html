@@ -1917,7 +1917,9 @@ function startRealtimeSync(){
       const incoming=snap.data();
       // Force-version check: if another device did a force-push, accept wholesale
       const inForce=incoming._forceVersion||0, lcForce=state._lastForceVersion||0;
-      if(inForce>lcForce){
+      // Accept if: newer force-version OR if force-version is the max sentinel value (9999999999999)
+      const forceAccept = inForce>lcForce || inForce===9999999999999;
+      if(forceAccept){
         const bk=state.backupSnapshots;
         // Completely replace state with incoming — wipe local first
         const freshState={...incoming};

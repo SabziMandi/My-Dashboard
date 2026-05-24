@@ -1913,6 +1913,19 @@ function startRealtimeSync(){
   firestoreUnsub=fireDb.collection('nd').doc('data').onSnapshot(snap=>{
     if(snap.exists){
       const incoming=snap.data();
+      // Force-version check: if another device did a force-push, accept wholesale
+      const inForce=incoming._forceVersion||0, lcForce=state._lastForceVersion||0;
+      if(inForce>lcForce){
+        const bk=state.backupSnapshots;
+        Object.assign(state,incoming);
+        state.backupSnapshots=bk;
+        state._lastForceVersion=inForce;
+        if(!state.archive) state.archive={};
+        SECTIONS.forEach(s=>{if(!state.sections[s.key])state.sections[s.key]=[];});
+        saveLocal(); render(); setSyncUI('live');
+        toast('☁️ Updated from another device.');
+        return;
+      }
       // Compute merged deletedIds — remote is authoritative base (we clean it intentionally via console/code)
       // Local can only ADD new deletions, never override a remote removal
       const localDeletedIds=state.deletedIds||{};
@@ -2095,6 +2108,20 @@ function saveAndPush(){
     clearTimeout(window._saveAndPushDebounce);
     window._saveAndPushDebounce = setTimeout(()=>{ pushToCloud(); }, 800);
   }
+}
+// Force-replace Firebase with current local state — no per-story merging.
+// Called after import so imported data wins over stale cloud data on all devices.
+async function forcePushToCloud(){
+  if(!fireDb){ toast('Not connected to Firebase — data saved locally.'); return; }
+  setSyncUI('syncing');
+  try{
+    const {backupSnapshots,archive,lastActiveDate,...cloudState}=state;
+    cloudState._forceVersion=Date.now();
+    await fireDb.collection('nd').doc('data').set(cloudState);
+    state._lastForceVersion=cloudState._forceVersion;
+    saveLocal(); setSyncUI('live');
+    toast('✅ Data force-synced — all devices will update shortly.');
+  }catch(e){ setSyncUI('offline'); toast('⚠️ Force sync failed: '+e.message); }
 }
 // ════════════════════════════════════════════════════════════════
 // BACKUP SYSTEM — Monthly + Weekly
@@ -3409,11 +3436,15 @@ function handleImportFile(input){
       state.deletedIds  = data.deletedIds  || {};
       Object.assign(state, preserved);
       SECTIONS.forEach(s=>{ if(!state.sections[s.key]) state.sections[s.key]=[]; });
-      saveAndPush();
+      saveLocal(); // save locally first
       document.getElementById('import-modal')?.remove();
       document.getElementById('backups-modal')?.remove();
       input.value=''; render();
       toast('✓ Loaded — '+storyCount+' stories, '+(data.tasks||[]).length+' tasks');
+      // Force-push to Firebase so cloud matches import exactly (bypasses merge)
+      if(fireDb){
+        setTimeout(()=>forcePushToCloud(), 800);
+      }
     } catch(err){
       toast('❌ Could not read file: '+err.message);
       input.value='';

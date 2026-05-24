@@ -5209,6 +5209,7 @@ let ui_storiesDoneOpen={}; // done/not-done stories collapsed per section key
 let ui_storiesShelvedOpen={}; // shelved stories collapsed per section key
 let ui_meetPrevOpen=false; // previous/done meetings collapsed by default
 let ui_upcomingPage=1; // same for upcoming events
+let ui_upcomingGroupOpen={}; // collapsible upcoming event groups
 let ui_resolvedPages={done:1,'on-hold':1,'not-done':1,postponed:1,shelved:1};
 let ui_teBookingsOpen={};
 let ui_teExpensesOpen={};
@@ -6930,7 +6931,7 @@ function renderMeetingsSection(){
         <div class="fi-form-footer">
           <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doEmailMeetings()" title="Email">✉<span class="bim-text"> Email</span></button>
           <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doExportMeetingsTxt()" title="Export">↓<span class="bim-text"> Export</span></button>
-          <button class="btn btn-accent btn-sm btn-icon-mobile" onclick="ui_meetForm=!ui_meetForm;ui_editMeetId=null;render();setTimeout(()=>document.getElementById('mf-name')?.focus(),60)" title="Add meeting">+<span class="bim-text"> Add</span></button>
+          <button class="btn btn-accent btn-sm btn-icon-mobile" onclick="ui_meetingForm=!ui_meetingForm;ui_editMeetingId=null;render();setTimeout(()=>document.getElementById('mf-name')?.focus(),60)" title="Add meeting">+<span class="bim-text"> Add</span></button>
         </div>
         ${body}
       </div>

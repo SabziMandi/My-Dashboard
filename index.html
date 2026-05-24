@@ -1412,14 +1412,9 @@ button.tasks-tab-btn {
     <div class="hide-mobile" style="background:linear-gradient(135deg,#FDFAF6,#F8F3EC);border-top:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;justify-content:center;padding:7px 0 8px;">
       <div style="width:100%;max-width:1200px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;">
         <button class="btn btn-ghost btn-sm" onclick="openDesktopMore()" title="Actions" style="width:34px;height:34px;padding:0;font-size:19px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:8px;">+</button>
-        <div style="display:flex;align-items:center;gap:6px;">
-          <span style="font-size:26px;font-weight:700;color:var(--text2);padding:0 6px;cursor:pointer;line-height:1;user-select:none;" onclick="desktopNavDate(-1)">&#8249;</span>
-          <div style="position:relative;display:flex;align-items:baseline;gap:8px;cursor:pointer;" onclick="openDesktopDatePicker()">
-            <span id="hdr-context" style="font-family:var(--serif);font-size:18px;font-weight:500;color:var(--text);letter-spacing:-.2px;">Wednesday</span>
-            <span id="hdr-date" class="date-full sz-today" style="font-family:var(--serif);font-size:18px;font-weight:500;color:var(--text);letter-spacing:-.2px;white-space:nowrap;">17 April</span>
-            <input type="date" id="date-jump-picker" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;" title="Jump to any date" onchange="jumpToDate(this.value)">
-          </div>
-          <span style="font-size:26px;font-weight:700;color:var(--text2);padding:0 6px;cursor:pointer;line-height:1;user-select:none;" onclick="desktopNavDate(1)">&#8250;</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span id="hdr-context" style="font-family:var(--serif);font-size:18px;font-weight:500;color:var(--text);letter-spacing:-.2px;"></span>
+          <span id="hdr-date" class="date-full sz-today" style="font-family:var(--serif);font-size:18px;font-weight:500;color:var(--text);letter-spacing:-.2px;white-space:nowrap;"></span>
         </div>
         <button class="btn btn-ghost btn-sm" id="desktop-search-btn" onclick="toggleDesktopSearch()" title="Search" style="width:34px;height:34px;padding:0;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:8px;">🔍</button>
       </div>
@@ -1462,13 +1457,13 @@ button.tasks-tab-btn {
       <div class="mobile-date-nav" style="padding:6px 10px;display:flex;align-items:center;gap:0;">
         <button class="mobile-icon-btn" onclick="openMobileMore()" title="More options" style="flex-shrink:0;font-size:16px;">+</button>
         <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:0;">
-          <span class="m-arrow" onclick="mobileNavDate(-1)" style="font-size:18px;font-weight:600;color:var(--text2);padding:0 12px;cursor:pointer;line-height:1;user-select:none;">‹</span>
+          <span class="m-arrow"  style="font-size:18px;font-weight:600;color:var(--text2);padding:0 12px;cursor:pointer;line-height:1;user-select:none;">‹</span>
           <div style="position:relative;display:flex;align-items:center;cursor:pointer;">
             <span class="m-date-label" id="mobile-date-label" style="pointer-events:none;">Wednesday, 16 Apr</span>
             <input type="date" id="mobile-date-picker" onchange="jumpToDate(this.value)"
               style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:1;">
           </div>
-          <span class="m-arrow" onclick="mobileNavDate(1)" style="font-size:18px;font-weight:600;color:var(--text2);padding:0 12px;cursor:pointer;line-height:1;user-select:none;">›</span>
+          <span class="m-arrow"  style="font-size:18px;font-weight:600;color:var(--text2);padding:0 12px;cursor:pointer;line-height:1;user-select:none;">›</span>
         </div>
         <button class="mobile-icon-btn" id="mobile-search-btn" onclick="toggleMobileSearch()" title="Search" style="flex-shrink:0;font-size:15px;">🔍</button>
       </div>
@@ -1478,13 +1473,13 @@ button.tasks-tab-btn {
     <div class="mobile-collapsed-bar" id="mobile-collapsed-bar">
       <button class="mobile-icon-btn" onclick="openMobileMore()" style="flex-shrink:0;font-size:16px;">+</button>
       <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:0;">
-        <span style="font-size:18px;color:var(--text3);padding:0 8px;cursor:pointer;" onclick="mobileNavDate(-1)">‹</span>
+        <span style="font-size:18px;color:var(--text3);padding:0 8px;cursor:pointer;" >‹</span>
         <div style="position:relative;display:flex;align-items:center;cursor:pointer;">
             <span class="m-collapsed-date" id="mobile-collapsed-date-label" style="pointer-events:none;">Wed, 16 Apr</span>
             <input type="date" onchange="jumpToDate(this.value)"
               style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:1;">
           </div>
-        <span style="font-size:18px;color:var(--text3);padding:0 8px;cursor:pointer;" onclick="mobileNavDate(1)">›</span>
+        <span style="font-size:18px;color:var(--text3);padding:0 8px;cursor:pointer;" >›</span>
       </div>
       <button class="mobile-icon-btn" id="mobile-search-btn-collapsed" onclick="toggleMobileSearch()" style="flex-shrink:0;font-size:15px;">🔍</button>
     </div>
@@ -1504,8 +1499,6 @@ button.tasks-tab-btn {
       </div>
     </div>
   </div>
-  <!-- date-strip (desktop only, hidden visually, kept for renderDateStrip logic) -->
-  <div id="date-strip" style="display:none"></div>
   <!-- on-leave pill removed — info visible in collapsed accordions -->
   <div id="onleave-pill-wrap" style="display:none"></div>
 
@@ -1527,11 +1520,14 @@ const REMINDER_DELAYS = {
 let state = {
   sections:{ ibu:[], other:[], requests:[], upcoming:[] },
   remarks:'',
-  archive:{},
-  lastActiveDate:null,
-  carryForwardDismissed:null,
+  archive:{},  // kept as empty stub for backward compat — never populated
   eodSettings:{ enabled:true, hour:18, workDaysOnly:true },
   eodDismissed:null,
+  weeklyBackupSettings:{ enabled:true, hour:17, workDaysOnly:true },
+  weeklyBackupDismissed:null,
+  lastWeeklyBackup:null,
+  monthlyBackupSettings:{ enabled:true, hour:18, workDaysOnly:true },
+  monthlyBackupDismissed:null,
   sectionNames:{ ibu:'Stories', other:'Stories' },
   tasks:[],
   meetings:[],
@@ -1546,14 +1542,10 @@ let state = {
     shootEdit:[],
   },
   // backup tracking
-  lastWeeklyBackup:null,
   lastMonthlyBackup:null,
-  lastYearlyBackup:null,
-  backupSnapshots:{ weekly:[], monthly:[], yearly:[] },
-  autoBackup:{ weeklyEnabled:true, monthlyEnabled:true, yearlyEnabled:true },
 };
 let ui = {
-  view:'today', archiveKey:null,
+  view:'today',
   filter:'all', search:'',
   openSections: new Set([]),
   openCards: new Set(),
@@ -1568,23 +1560,10 @@ let ui = {
   upcomingDate: null,   // null = today; string = archive date for Upcoming tab
   // per-section Working/Watching sub-filter: 'all' | 'working' | 'watching'
   wwFilter: { ibu:'all', other:'all' },
-  // migrate
-  selectedStories: new Set(),
-  migrateTargetType:'day',
-  migrateAction:'move',
-  migrateOpenSecs: new Set(SECTIONS.map(s=>s.key)),
-  quickDayTarget: null,
-  migrateSourceKey: null, // null = today, string = archive date
-  showArchivedUpcoming: false, // toggle archived (past-due) upcoming events sub-section
-  showPassedUpcoming: false,   // toggle passed upcoming events sub-section
+  showArchivedUpcoming: false,
+  showPassedUpcoming: false,
 };
 let fireDb=null, firestoreUnsub=null, reminderTimers={};
-// ── Multi-doc sync ─────────────────────────────────────────────────────────
-const _arcFetchedMonths = new Set();
-const _arcPendingWrite  = new Set();
-let   _arcWriteTimer    = null;
-const ND_LIVE_DOC  = 'live';
-const ND_ARC_PFX   = 'arc-';
 function p2(n){ return String(n).padStart(2,'0'); }
 function dateStr(d){ return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate()); }
 function todayStr()    { return dateStr(new Date()); }
@@ -1649,24 +1628,62 @@ function shouldShowEOD(){
 }
 function dismissEOD(){ state.eodDismissed=todayStr(); saveAndPush(); render(); }
 function openSettingsModal(){
-  const s=state.eodSettings||{enabled:true,hour:18,workDaysOnly:true};
-  const m=document.createElement('div'); m.className='modal-bg'; m.id='settings-modal';
-  m.innerHTML=`<div class="modal" onclick="event.stopPropagation()" style="max-width:340px;padding:20px">
-    <h2 style="margin-bottom:16px">⚙️ Settings</h2>
-    <div class="fgroup" style="margin-bottom:14px">
-      <label class="flabel">End-of-day reminder time (IST)</label>
-      <select class="fselect" id="eod-hour-sel">${[15,16,17,18,19,20,21].map(h=>`<option value="${h}"${h===s.hour?' selected':''}>${h}:00 IST</option>`).join('')}</select>
+  const s  = state.eodSettings||{enabled:true,hour:18,workDaysOnly:true};
+  const wb = state.weeklyBackupSettings||{enabled:true,hour:17,workDaysOnly:true};
+  const mb = state.monthlyBackupSettings||{enabled:true,hour:18,workDaysOnly:true};
+  const m  = document.createElement('div'); m.className='modal-bg'; m.id='settings-modal';
+  const hrs = [15,16,17,18,19,20,21];
+  m.innerHTML=`<div class="modal" onclick="event.stopPropagation()" style="max-width:380px;padding:24px">
+    <h2 style="margin-bottom:20px">⚙️ Settings</h2>
+    <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.9px;margin-bottom:10px;">End-of-day Reminder</div>
+    <div class="fgroup" style="margin-bottom:12px">
+      <label class="flabel">Reminder time (IST)</label>
+      <select class="fselect" id="eod-hour-sel">${hrs.map(h=>`<option value="${h}"${h===s.hour?' selected':''}>${h}:00 IST</option>`).join('')}</select>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-      <input type="checkbox" id="eod-enabled" ${s.enabled?'checked':''} style="width:16px;height:16px;cursor:pointer">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <input type="checkbox" id="eod-enabled" ${s.enabled?'checked':''} style="width:15px;height:15px;cursor:pointer">
       <label for="eod-enabled" style="font-size:13px;color:var(--text);cursor:pointer">Enable end-of-day reminder</label>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
-      <input type="checkbox" id="eod-workdays" ${s.workDaysOnly?'checked':''} style="width:16px;height:16px;cursor:pointer">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px">
+      <input type="checkbox" id="eod-workdays" ${s.workDaysOnly?'checked':''} style="width:15px;height:15px;cursor:pointer">
       <label for="eod-workdays" style="font-size:13px;color:var(--text);cursor:pointer">Working days only (Mon–Fri)</label>
     </div>
+    <div style="height:1px;background:var(--border);margin-bottom:18px;"></div>
+    <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.9px;margin-bottom:8px;">Weekly Backup Reminder</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.55;">Reminds you to download a backup every Friday at your chosen time.</div>
+    <div class="fgroup" style="margin-bottom:12px">
+      <label class="flabel">Reminder time (IST)</label>
+      <select class="fselect" id="wb-hour-sel">${hrs.map(h=>`<option value="${h}"${h===wb.hour?' selected':''}>${h}:00 IST</option>`).join('')}</select>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <input type="checkbox" id="wb-enabled" ${wb.enabled?'checked':''} style="width:15px;height:15px;cursor:pointer">
+      <label for="wb-enabled" style="font-size:13px;color:var(--text);cursor:pointer">Enable weekly backup reminder</label>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+      <input type="checkbox" id="wb-workdays" ${wb.workDaysOnly?'checked':''} style="width:15px;height:15px;cursor:pointer">
+      <label for="wb-workdays" style="font-size:13px;color:var(--text);cursor:pointer">Working days only (Mon–Fri)</label>
+    </div>
+    <div style="height:1px;background:var(--border);margin-bottom:18px;"></div>
+    <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.9px;margin-bottom:8px;">Monthly Backup Reminder</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.55;">Reminds you to download a full JSON + TXT backup on the last working day of each month.</div>
+    <div class="fgroup" style="margin-bottom:12px">
+      <label class="flabel">Reminder time (IST)</label>
+      <select class="fselect" id="mb-hour-sel">${hrs.map(h=>`<option value="${h}"${h===mb.hour?' selected':''}>${h}:00 IST</option>`).join('')}</select>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <input type="checkbox" id="mb-enabled" ${mb.enabled?'checked':''} style="width:15px;height:15px;cursor:pointer">
+      <label for="mb-enabled" style="font-size:13px;color:var(--text);cursor:pointer">Enable monthly backup reminder</label>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px">
+      <input type="checkbox" id="mb-workdays" ${mb.workDaysOnly?'checked':''} style="width:15px;height:15px;cursor:pointer">
+      <label for="mb-workdays" style="font-size:13px;color:var(--text);cursor:pointer">Trigger on last working day (Mon–Fri)</label>
+    </div>
     <div class="modal-footer">
-      <button class="btn btn-accent btn-sm" onclick="state.eodSettings={enabled:document.getElementById('eod-enabled').checked,hour:parseInt(document.getElementById('eod-hour-sel').value),workDaysOnly:document.getElementById('eod-workdays').checked};saveAndPush();document.getElementById('settings-modal').remove();toast('Settings saved ✓');">Save</button>
+      <button class="btn btn-accent btn-sm" onclick="
+        state.eodSettings={enabled:document.getElementById('eod-enabled').checked,hour:parseInt(document.getElementById('eod-hour-sel').value),workDaysOnly:document.getElementById('eod-workdays').checked};
+        state.weeklyBackupSettings={enabled:document.getElementById('wb-enabled').checked,hour:parseInt(document.getElementById('wb-hour-sel').value),workDaysOnly:document.getElementById('wb-workdays').checked};
+        state.monthlyBackupSettings={enabled:document.getElementById('mb-enabled').checked,hour:parseInt(document.getElementById('mb-hour-sel').value),workDaysOnly:document.getElementById('mb-workdays').checked};
+        saveAndPush();document.getElementById('settings-modal').remove();toast('Settings saved ✓');">Save</button>
       <button class="btn btn-ghost btn-sm" onclick="document.getElementById('settings-modal').remove()">Cancel</button>
     </div>
   </div>`;
@@ -1719,74 +1736,57 @@ function weekMondayStr(ds){
   const off=d.getDay()===0?-6:1-d.getDay();
   d.setDate(d.getDate()+off); return dateStr(d);
 }
-function weekKey(ds){ return 'week-'+weekMondayStr(ds); }
-function monthKey(ym){ return 'month-'+ym; }
-function archiveLabel(key){
-  if(key.startsWith('week-')){
-    const mon=new Date(key.slice(5)+'T00:00:00');
-    const sun=new Date(mon); sun.setDate(sun.getDate()+6);
-    return 'Week '+mon.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+' – '+sun.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
-  }
-  if(key.startsWith('month-')){
-    const[y,mo]=key.slice(6).split('-');
-    return new Date(+y,+mo-1,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
-  }
-  const d=new Date(key+'T00:00:00');
-  return d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-}
-function archiveShortLabel(key){
-  if(key.startsWith('week-')){
-    const mon=new Date(key.slice(5)+'T00:00:00');
-    return 'Wk '+mon.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
-  }
-  if(key.startsWith('month-')){
-    const[y,mo]=key.slice(6).split('-');
-    return new Date(+y,+mo-1,1).toLocaleDateString('en-GB',{month:'short',year:'2-digit'});
-  }
-  const d=new Date(key+'T00:00:00');
-  return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
-}
-function archiveStoryCount(key){
-  const e=state.archive[key]; if(!e||!e.sections) return 0;
-  return SECTIONS.reduce((s,sec)=>s+(e.sections[sec.key]?.filter(x=>!x._deleted).length||0),0);
-}
-function sortedArchiveKeys(){
-  return Object.keys(state.archive).sort((a,b)=>{
-    const df=k=>k.startsWith('week-')?k.slice(5):k.startsWith('month-')?k.slice(6)+'-01':k;
-    return df(b).localeCompare(df(a));
-  });
-}
 function loadLocal(){
   try{
     const raw=localStorage.getItem('nd_v5');
     if(raw){ state={...state,...JSON.parse(raw)}; }
     else {
-      // Migrate from v4
       const old=localStorage.getItem('nd_v4');
       if(old){
-        const o=JSON.parse(old);
-        // Remap: watching→remove, next→upcoming
-        state.sections.ibu      = o.sections?.ibu      || [];
-        state.sections.other    = o.sections?.other    || [];
-        state.sections.requests = o.sections?.requests || [];
-        state.sections.upcoming = o.sections?.next     || [];
-        state.remarks  = o.remarks  || '';
-        state.archive  = o.archive  || {};
-        toast('Data migrated from previous version ✓');
+        try{
+          const o=JSON.parse(old);
+          state.sections.ibu      = o.sections?.ibu      || [];
+          state.sections.other    = o.sections?.other    || [];
+          state.sections.requests = o.sections?.requests || [];
+          state.sections.upcoming = o.sections?.next     || [];
+          state.remarks  = o.remarks || '';
+          toast('Data migrated from previous version ✓');
+        }catch(e){}
       }
     }
   } catch(e){}
+  // Ensure all sections exist
   SECTIONS.forEach(s=>{ if(!state.sections[s.key]) state.sections[s.key]=[]; });
-  if(!state.remarks)  state.remarks='';
-  if(!state.archive)  state.archive={};
-  if(!state.tasks) state.tasks=[];
-  if(!state.meetings) state.meetings=[];
-  if(!state.leaves) state.leaves=[];
-  if(!state.notes) state.notes=[];
-  if(!state.travelEntries) state.travelEntries=[];
+  // Scalar defaults
+  if(!state.remarks)         state.remarks='';
+  if(!state.tasks)           state.tasks=[];
+  if(!state.meetings)        state.meetings=[];
+  if(!state.leaves)          state.leaves=[];
+  if(!state.notes)           state.notes=[];
+  if(!state.travelEntries)   state.travelEntries=[];
   if(!state.travelDismissed) state.travelDismissed=[];
-  if(!state.travelRestored) state.travelRestored=[];
-  // Migrate old s.travel[] and generalTravel[] into travelEntries (one-time, silent)
+  if(!state.travelRestored)  state.travelRestored=[];
+  if(!state.deletedIds)      state.deletedIds={};
+  if(!state.staffNames)      state.staffNames={correspondents:[],producers:[],shootEdit:[]};
+  if(!state.staffNames.correspondents) state.staffNames.correspondents=[];
+  if(!state.staffNames.producers)      state.staffNames.producers=[];
+  if(!state.staffNames.shootEdit)      state.staffNames.shootEdit=[];
+  if(!state.employees||state.employees.length<5){
+    state.employees=state.employees||[];
+    while(state.employees.length<5) state.employees.push('Employee '+(state.employees.length+1));
+  }
+  if(!state.sectionNames)             state.sectionNames={ibu:'Stories',other:'Stories'};
+  if(!state.eodSettings)              state.eodSettings={enabled:true,hour:18,workDaysOnly:true};
+  if(!state.weeklyBackupSettings)     state.weeklyBackupSettings={enabled:true,hour:17,workDaysOnly:true};
+  if(!state.weeklyBackupDismissed)    state.weeklyBackupDismissed=null;
+  if(!state.lastWeeklyBackup)         state.lastWeeklyBackup=null;
+  if(!state.monthlyBackupSettings)    state.monthlyBackupSettings={enabled:true,hour:18,workDaysOnly:true};
+  if(!state.monthlyBackupDismissed)   state.monthlyBackupDismissed=null;
+  if(!state.lastMonthlyBackup)        state.lastMonthlyBackup=null;
+  if(!state.customPlatformLabels)     state.customPlatformLabels=[];
+  // Ensure archive is always an empty object (never undefined) — kept as stub
+  if(!state.archive) state.archive={};
+  // One-time travel migration from old per-story travel[] arrays
   if(!state._travelMigrated){
     const migrated=[];
     ['ibu','other','requests','upcoming'].forEach(sec=>{
@@ -1805,25 +1805,7 @@ function loadLocal(){
     state._travelMigrated=true;
     saveLocal();
   }
-  // One-time repair: restore non-completed upcoming events that were auto-migrated
-  // to archive by the old checkDateChange logic. They should stay on the live board
-  // in the "expired" section until the user explicitly resolves them.
-  if(!state._upcomingRepaired){
-    const seen=new Set((state.sections.upcoming||[]).map(s=>s.id));
-    Object.values(state.archive||{}).forEach(entry=>{
-      (entry.sections?.upcoming||[]).forEach(s=>{
-        if(s._deleted||s.status==='completed'||seen.has(s.id)) return;
-        if(!s.autoMigratedOn) return; // only restore auto-migrated ones, not manually archived
-        state.sections.upcoming.push({...s});
-        seen.add(s.id);
-        // Remove from archive so it doesn't show twice
-        entry.sections.upcoming=entry.sections.upcoming.filter(x=>x.id!==s.id);
-      });
-    });
-    state._upcomingRepaired=true;
-    saveLocal();
-  }
-  // One-time: ensure all stories have created/updated timestamps for sync comparison
+  // One-time: ensure all stories have timestamps for sync
   if(!state._timestampsFixed){
     const now=Date.now();
     ['ibu','other','requests','upcoming'].forEach(sec=>{
@@ -1832,87 +1814,11 @@ function loadLocal(){
         if(!s.updated) s.updated=s.created;
       });
     });
-    Object.values(state.archive||{}).forEach(entry=>{
-      ['ibu','other','requests','upcoming'].forEach(sec=>{
-        (entry.sections?.[sec]||[]).forEach(s=>{
-          if(!s.created) s.created=now;
-          if(!s.updated) s.updated=s.created;
-        });
-      });
-    });
     state._timestampsFixed=true;
     saveLocal();
   }
-  // InstaMaids (mp088s8hz9ada) was marked not-done but has no updated timestamp — keeps reappearing.
-  // Taxi Strike (mpecu7ad25urg) was moved to ibu but deletedIds.requests wasn't set on all devices.
-  if(!state._requestsRepaired){
-    const stuckInRequests=['mp088s8hz9ada','mpecu7ad25urg'];
-    if(!state.deletedIds) state.deletedIds={};
-    if(!state.deletedIds.requests) state.deletedIds.requests=[];
-    stuckInRequests.forEach(id=>{
-      if(!state.deletedIds.requests.includes(id)) state.deletedIds.requests.push(id);
-    });
-    // Remove from live requests if present
-    state.sections.requests=(state.sections.requests||[]).filter(s=>!stuckInRequests.includes(s.id));
-    // Add Taxi Strike to ibu archive as completed so it shows in Done group
-    const taxiStrike=(()=>{
-      // Find it in any archive section to get its data
-      for(const key of Object.keys(state.archive||{}).sort().reverse()){
-        const found=(state.archive[key]?.sections?.requests||[]).find(s=>s.id==='mpecu7ad25urg');
-        if(found) return found;
-      }
-      return null;
-    })();
-    if(taxiStrike){
-      const today2=todayStr();
-      if(!state.archive[today2]) state.archive[today2]={type:'day',label:archiveLabel(today2),sections:{ibu:[],other:[],requests:[],upcoming:[]},notes:'',created:Date.now()};
-      if(!state.archive[today2].sections.ibu) state.archive[today2].sections.ibu=[];
-      if(!state.archive[today2].sections.ibu.some(s=>s.id===taxiStrike.id)){
-        state.archive[today2].sections.ibu.push({...taxiStrike,status:'completed',completedOn:Date.now(),movedFrom:'requests',updated:Date.now()});
-      }
-    }
-    state._requestsRepaired=true;
-    saveLocal();
-  }
-  // not explicit user deletes. These were wrongly added by a previous buggy fix.
-  // A story ID belongs in deletedIds ONLY if the user explicitly deleted it.
-  // We identify archive-only IDs as those that exist in state.archive but were
-  // never explicitly deleted (no completion note, no user-initiated delete action).
-  if(!state._deletedIdsClean){
-    if(state.deletedIds?.ibu?.length){
-      // Keep only IDs that are NOT found in any archive section
-      // (those are genuine deletes with no archive copy)
-      const archiveIbuIds=new Set();
-      Object.values(state.archive||{}).forEach(entry=>{
-        (entry.sections?.ibu||[]).forEach(s=>{ if(s.id) archiveIbuIds.add(s.id); });
-      });
-      // An ID in deletedIds.ibu that also exists in archive = was archived not deleted
-      // Only remove from deletedIds if it's ONLY in archive (not also in a live section)
-      const liveIbuIds=new Set((state.sections?.ibu||[]).map(s=>s.id));
-      state.deletedIds.ibu=state.deletedIds.ibu.filter(id=>{
-        // Keep if NOT in archive (genuine delete) OR if in live ibu (explicitly kept)
-        return !archiveIbuIds.has(id)||liveIbuIds.has(id);
-      });
-    }
-    state._deletedIdsClean=true;
-    saveLocal();
-  }
-  if(!state.staffNames.correspondents) state.staffNames.correspondents=[];
-  if(!state.staffNames.producers) state.staffNames.producers=[];
-  if(!state.staffNames.shootEdit) state.staffNames.shootEdit=[];
-  if(!state.employees||state.employees.length<5){
-    state.employees=state.employees||[];
-    while(state.employees.length<5) state.employees.push('Employee '+(state.employees.length+1));
-  }
-  if(!state.sectionNames) state.sectionNames={ ibu:'Stories', other:'Stories' };
-  if(!state.lastActiveDate) state.lastActiveDate=todayStr();
-  // Load backups from separate key (kept local only, never pushed to Firestore)
-  try{
-    const bkp=localStorage.getItem('nd_backups');
-    if(bkp) state.backupSnapshots=JSON.parse(bkp);
-  }catch(e){}
-  if(!state.backupSnapshots) state.backupSnapshots={weekly:[],monthly:[],yearly:[]};
 }
+
 function saveLocal(){ try{ localStorage.setItem('nd_v5',JSON.stringify(state)); }catch(e){} }
 function getFireConfig(){ try{ const r=localStorage.getItem('nd_fbcfg'); return r?JSON.parse(r):null; }catch(e){ return null; } }
 function ensureSignedIn(cfg){
@@ -1991,7 +1897,6 @@ function initFirebase(cfg, silent){
         if(user){
           startRealtimeSync(); setSyncUI('syncing');
           const b=document.getElementById('auth-banner'); if(b) b.style.display='none';
-          setTimeout(() => migrateToMultiDoc(), 2000);
         } else {
           // Not signed in — show sign-in banner
           setSyncUI('offline');
@@ -2002,53 +1907,10 @@ function initFirebase(cfg, silent){
     return true;
   }catch(e){ toast('Firebase error: '+e.message); return false; }
 }
-async function migrateToMultiDoc() {
-  if (!fireDb) return;
-  const MIG_KEY = 'nd_multiDocMigrated_v2';
-  if (localStorage.getItem(MIG_KEY) === '1') return;
-  toast('☁️ Upgrading sync format… please keep the app open (takes ~30s).');
-  try {
-    const liveSnap = await fireDb.collection('nd').doc(ND_LIVE_DOC).get();
-    if (liveSnap.exists && (liveSnap.data() || {})._docVersion === 2) {
-      localStorage.setItem(MIG_KEY, '1'); toast('✅ Sync already upgraded.'); return;
-    }
-    const legacySnap = await fireDb.collection('nd').doc('data').get();
-    const srcArc = { ...state.archive };
-    if (legacySnap.exists) {
-      const legData = legacySnap.data() || {};
-      Object.entries(legData.archive || {}).forEach(([k, v]) => {
-        if (!srcArc[k]) { srcArc[k] = v; state.archive[k] = v; }
-      });
-      saveLocal();
-    }
-    const byMonth = {};
-    Object.entries(srcArc).forEach(([k, v]) => {
-      const docId = _arcDocId(k); if (!docId) return;
-      if (!byMonth[docId]) byMonth[docId] = {}; byMonth[docId][k] = v;
-    });
-    let written = 0, skipped = 0;
-    for (const docId of Object.keys(byMonth)) {
-      const entries = byMonth[docId];
-      const sz = new Blob([JSON.stringify(entries)]).size;
-      if (sz > 950000) { skipped++; console.warn('[BBC Dashboard] Migration: ' + docId + ' too large, skipped.'); continue; }
-      await fireDb.collection('nd').doc(docId).set({ entries, _updated: Date.now() });
-      written++;
-      if (written % 5 === 0) await new Promise(r => setTimeout(r, 600));
-    }
-    await pushToCloud();
-    localStorage.setItem(MIG_KEY, '1');
-    toast(skipped
-      ? '✅ Sync upgraded. ' + written + ' months synced, ' + skipped + ' too large (kept locally — data safe).'
-      : '✅ Sync upgraded. ' + written + ' monthly archive docs created.');
-  } catch(e) {
-    console.error('[BBC Dashboard] Migration error:', e);
-    toast('⚠️ Sync upgrade error: ' + e.message + '. Will retry. Local data safe.');
-  }
-}
 function startRealtimeSync(){
   if(!fireDb) return;
   if(firestoreUnsub) firestoreUnsub();
-  firestoreUnsub=fireDb.collection('nd').doc(ND_LIVE_DOC).onSnapshot(snap=>{
+  firestoreUnsub=fireDb.collection('nd').doc('data').onSnapshot(snap=>{
     if(snap.exists){
       const incoming=snap.data();
       // Compute merged deletedIds — remote is authoritative base (we clean it intentionally via console/code)
@@ -2103,71 +1965,6 @@ function startRealtimeSync(){
           return aliveInRemote;
         });
       });
-      // For archive: deep merge — keep all keys from both
-      const localArchive=state.archive||{};
-      const remoteArchive=incoming.archive||{};
-      const mergedArchive={...localArchive};
-      Object.keys(remoteArchive).forEach(dateKey=>{
-        if(!mergedArchive[dateKey]){
-          // Date only exists in remote — still need to filter out locally deleted entries
-          mergedArchive[dateKey]=remoteArchive[dateKey];
-          if(mergedArchive[dateKey].sections){
-            SECTIONS.forEach(sec=>{
-              const archDeletedKey=dateKey+'::'+sec.key;
-              const archDeletedIds=new Set((mergedDeletedIds[archDeletedKey]||[]));
-              if(archDeletedIds.size&&mergedArchive[dateKey].sections[sec.key]){
-                mergedArchive[dateKey].sections[sec.key]=
-                  mergedArchive[dateKey].sections[sec.key].filter(s=>!archDeletedIds.has(s.id));
-              }
-            });
-          }
-        } else {
-          // Merge notesLog and tasksLog arrays by ID
-          ['notesLog','tasksLog'].forEach(logKey=>{
-            const localLog=mergedArchive[dateKey][logKey]||[];
-            const remoteLog=remoteArchive[dateKey][logKey]||[];
-            const logMap=new Map();
-            localLog.forEach(item=>{if(item.id) logMap.set(item.id,item);});
-            remoteLog.forEach(item=>{
-              if(!item.id) return;
-              const existing=logMap.get(item.id);
-              // Local _deleted tombstone always wins — never let remote resurrect a deleted log entry
-              if(existing&&existing._deleted) return;
-              // Use timestamp comparison — local wins if newer
-              if(existing){
-                const remoteTs=item.updated||item.deletedOn||item.created||0;
-                const localTs=existing.updated||existing.deletedOn||existing.created||0;
-                if(remoteTs>localTs) logMap.set(item.id,item);
-              } else {
-                logMap.set(item.id,item);
-              }
-            });
-            mergedArchive[dateKey][logKey]=[...logMap.values()];
-          });
-          // Merge story sections
-          if(remoteArchive[dateKey].sections){
-            SECTIONS.forEach(sec=>{
-              const localSec=mergedArchive[dateKey].sections?.[sec.key]||[];
-              const remoteSec=remoteArchive[dateKey].sections?.[sec.key]||[];
-              // Build a set of IDs that are locally marked as deleted for this archive date
-              const archDeletedKey=dateKey+'::'+sec.key;
-              const archDeletedIds=new Set((mergedDeletedIds[archDeletedKey]||[]));
-              const secMap=new Map();
-              localSec.forEach(s=>{if(s.id) secMap.set(s.id,s);});
-              remoteSec.forEach(s=>{
-                if(!s.id) return;
-                if(archDeletedIds.has(s.id)) return; // never resurrect archive-deleted entries
-                const existing=secMap.get(s.id);
-                // If local copy is marked deleted, keep it (deletion wins over remote live copy)
-                if(existing&&existing._deleted) return;
-                secMap.set(s.id,s);
-              });
-              if(!mergedArchive[dateKey].sections) mergedArchive[dateKey].sections={};
-              mergedArchive[dateKey].sections[sec.key]=[...secMap.values()];
-            });
-          }
-        }
-      });
       // Smart merge state.sections by story ID — latest updated timestamp wins across all devices
       const mergedSections={};
       SECTIONS.forEach(sec=>{
@@ -2210,13 +2007,7 @@ function startRealtimeSync(){
       // but travelDismissed and travelRestored are plain arrays not in mergedArrays, so capture them now
       const localTravelDismissed=[...(state.travelDismissed||[])];
       const localTravelRestored=[...(state.travelRestored||[])];
-      Object.assign(state, incoming, mergedArrays, {archive:mergedArchive, sections:mergedSections});
-      const _inAM = incoming.archiveMonthly || {};
-      Object.entries(_inAM).forEach(([k, v]) => {
-        if (!state.archive[k]) state.archive[k] = v;
-        else { const rt = v.created||0, lt = state.archive[k].created||0; if (rt > lt) state.archive[k] = v; }
-      });
-      delete state.archiveMonthly;
+      Object.assign(state, incoming, mergedArrays, {sections:mergedSections});
       // travelDismissed is a per-device UI preference — keep local state only, don't merge with remote
       // This prevents one device's hide/show from affecting the other device
       state.travelDismissed=localTravelDismissed;
@@ -2238,8 +2029,7 @@ function startRealtimeSync(){
         state.lastMonthlyBackup=localMonthlyBackup;
       if(localYearlyBackup && (!state.lastYearlyBackup || localYearlyBackup > state.lastYearlyBackup))
         state.lastYearlyBackup=localYearlyBackup;
-      if(!state.archive) state.archive={};
-      saveLocal();
+          saveLocal();
       // Push merged state back to Firebase so all devices get the authoritative merged result.
       // Guard against infinite loop: Firestore echoes our own writes back as snapshots.
       // Only push if this snapshot came from another device (not our own recent push).
@@ -2261,9 +2051,9 @@ function startRealtimeSync(){
           // Form is open — don't re-render (would lose user's input focus and feel jarring)
           // Mark that a sync arrived so render fires when the form closes
           window._pendingSyncRender=true;
-          renderDateStrip(); setSyncUI('live');
+          setSyncUI('live');
         } else {
-          render(); renderDateStrip(); setSyncUI('live'); _teRefresh();
+          render(); setSyncUI('live'); _teRefresh();
           window._pendingSyncRender=false;
         }
       }
@@ -2271,72 +2061,23 @@ function startRealtimeSync(){
     else pushToCloud();
   }, ()=>setSyncUI('offline'));
 }
-// ── Archive helpers ────────────────────────────────────────────
-function _arcDocId(archKey) {
-  if (!archKey || archKey.startsWith('month-')) return null;
-  const ds = archKey.startsWith('week-') ? archKey.slice(5) : archKey;
-  return ND_ARC_PFX + ds.slice(0, 7);
-}
-async function _pushArcMonth(docId) {
-  if (!fireDb || !docId) return;
-  const entries = {};
-  Object.entries(state.archive || {}).forEach(([k, v]) => { if (_arcDocId(k) === docId) entries[k] = v; });
-  try {
-    const sz = new Blob([JSON.stringify(entries)]).size;
-    if (sz > 950000) { console.warn('[BBC Dashboard] ' + docId + ' too large (' + Math.round(sz/1024) + 'KB) — skipped. Local data intact.'); return; }
-    await fireDb.collection('nd').doc(docId).set({ entries, _updated: Date.now() });
-  } catch(e) { console.warn('[BBC Dashboard] _pushArcMonth failed:', e.message); }
-}
-function _queueArcWrite(archKey) {
-  if (!fireDb) return;
-  const docId = _arcDocId(archKey); if (!docId) return;
-  _arcPendingWrite.add(docId);
-  clearTimeout(_arcWriteTimer);
-  _arcWriteTimer = setTimeout(async () => {
-    const toWrite = [..._arcPendingWrite]; _arcPendingWrite.clear();
-    for (const id of toWrite) await _pushArcMonth(id);
-  }, 1200);
-}
-async function _fetchArcMonth(archKey) {
-  if (!fireDb) return;
-  const docId = _arcDocId(archKey); if (!docId) return;
-  if (_arcFetchedMonths.has(docId)) return;
-  _arcFetchedMonths.add(docId);
-  try {
-    const snap = await fireDb.collection('nd').doc(docId).get();
-    if (!snap.exists) return;
-    const { entries = {} } = snap.data() || {};
-    Object.entries(entries).forEach(([k, v]) => {
-      if (!state.archive[k]) { state.archive[k] = v; }
-      else {
-        if (v.sections) { SECTIONS.forEach(sec => { const ls=state.archive[k].sections?.[sec.key]||[],rs=v.sections?.[sec.key]||[],m=new Map(); ls.forEach(s=>{if(s.id)m.set(s.id,s);}); rs.forEach(s=>{if(!s.id)return; const ex=m.get(s.id); if(!ex)m.set(s.id,s); else{const rt=s.updated||s.created||0,lt=ex.updated||ex.created||0; if(rt>lt)m.set(s.id,s);}}); if(!state.archive[k].sections)state.archive[k].sections={}; state.archive[k].sections[sec.key]=[...m.values()]; }); }
-        ['notesLog','tasksLog'].forEach(lk => { const ll=state.archive[k][lk]||[],rl=v[lk]||[],lm=new Map(); ll.forEach(x=>{if(x.id)lm.set(x.id,x);}); rl.forEach(x=>{if(!x.id)return; const ex=lm.get(x.id); if(!ex)lm.set(x.id,x); else{const rt=x.updated||x.created||0,lt=ex.updated||ex.created||0; if(rt>lt)lm.set(x.id,x);}}); state.archive[k][lk]=[...lm.values()]; });
-      }
-    });
-    saveLocal();
-  } catch(e) { console.warn('[BBC Dashboard] _fetchArcMonth failed:', e.message); }
-}
-async function pushToCloud() {
-  if (!fireDb) return;
-  try {
-    window._lastPushTs = Date.now();
+async function pushToCloud(){
+  if(!fireDb) return;
+  try{
+    window._lastPushTs=Date.now();
     setSyncUI('syncing');
-    const { backupSnapshots, archive: fullArchive, ...liveRest } = state;
-    const archiveMonthly = {};
-    Object.entries(fullArchive || {}).forEach(([k, v]) => { if (k.startsWith('month-')) archiveMonthly[k] = v; });
-    const livePayload = { ...liveRest, archiveMonthly, _docVersion: 2 };
-    const sz = new Blob([JSON.stringify(livePayload)]).size;
-    if (sz > 950000) {
-      setSyncUI('offline');
-      toast('⚠️ Live data ' + Math.round(sz/1024) + 'KB — unexpectedly large. Archive docs are separate and safe.');
-      return;
-    }
-    await fireDb.collection('nd').doc(ND_LIVE_DOC).set(livePayload);
+    // Strip backupSnapshots — they're large and stored locally only
+    // Also strip any undefined/function values that Firestore can't handle
+    // Strip local-only fields
+    const {backupSnapshots, archive, lastActiveDate, ...cloudState} = state;
+    await fireDb.collection('nd').doc('data').set(cloudState);
     setSyncUI('live');
-  } catch(e) {
+  }catch(e){
     setSyncUI('offline');
-    console.error('[BBC Dashboard] pushToCloud:', e);
-    toast('⚠️ Sync failed (' + e.message + '). Local data is safe.');
+    // Show user-visible error if it looks like a size issue
+    if(e.message&&(e.message.includes('size')||e.message.includes('limit')||e.code==='invalid-argument')){
+      toast('⚠️ Sync failed. Check connection and try again.');
+    }
   }
 }
 function setSyncUI(s){
@@ -2361,370 +2102,208 @@ function saveAndPush(){
     window._saveAndPushDebounce = setTimeout(()=>{ pushToCloud(); }, 800);
   }
 }
-function saveAndPushWithArchive(archKey) {
-  saveLocal();
-  if (fireDb) {
-    setSyncUI('syncing');
-    clearTimeout(window._saveAndPushDebounce);
-    window._saveAndPushDebounce = setTimeout(()=>{ pushToCloud(); }, 800);
-    if (archKey) _queueArcWrite(archKey);
-  }
+// ════════════════════════════════════════════════════════════════
+// BACKUP SYSTEM — Monthly + Weekly
+// ════════════════════════════════════════════════════════════════
+
+function _lastDayOfMonth(ds){
+  const d=new Date(ds+'T00:00:00'); return new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
 }
-function checkDateChange(){
-  const today=todayStr();
-  if(state.lastActiveDate && state.lastActiveDate!==today){
-    // Always archive to yesterday regardless of how long the app was closed.
-    // Using stale lastActiveDate (e.g. May 5 when today is May 20) would put
-    // today's live board entries into a 2-week-old archive bucket.
-    const prev=addDays(today,-1);
-    // Auto-snapshot previous day
-    if(SECTIONS.some(s=>(state.sections[s.key]||[]).length>0)){
-      createSnapshot(prev,'day',false);
-      toast('📸 Auto-archived '+archiveLabel(prev));
-    }
-    // Carry forward notes unless done/pass
-    if(!state.notes) state.notes=[];
-    state.notes.forEach(note=>{
-      if(note.status==='done'||note.status==='pass') return;
-      note.carriedForward=true;
-      note.carriedFromDate=note.carriedFromDate||prev;
-      note.carriedDays=(note.carriedDays||0)+1;
-    });
-    state.tasks.forEach(task=>{
-      if(task.taskStatus==='done') return;
-      if(task.taskStatus==='not-done'){
-        // Archive the not-done task to the previous day and remove it from active list
-        if(!state.archive[prev]){
-          state.archive[prev]={type:'day',label:archiveLabel(prev),sections:{},notes:'',created:Date.now()};
-          SECTIONS.forEach(s=>{state.archive[prev].sections[s.key]=[];});
-        }
-        if(!state.archive[prev].tasksLog) state.archive[prev].tasksLog=[];
-        if(!state.archive[prev].tasksLog.some(t=>t.id===task.id)){
-          state.archive[prev].tasksLog.push({...task, archivedOn:today});
-        }
-        return; // not-done tasks do NOT carry forward
-      }
-      if(task.taskStatus==='postponed-to'&&task.postponeTo&&task.postponeTo>today) return;
-      task.carriedForward=true;
-      task.carriedFromDate=task.carriedFromDate||prev;
-      task.carriedDays=(task.carriedDays||0)+1;
-    });
-    // Remove not-done tasks from the active task list after archiving
-    state.tasks=state.tasks.filter(t=>t.taskStatus!=='not-done');
-
-    // Prune completed recurring task occurrences from previous days.
-    // Each completed occurrence is already logged in tasksLog — safe to remove from live list.
-    // Rule: keep a recurring task in state.tasks only if:
-    //   (a) it's not done, OR
-    //   (b) it was marked done TODAY (doneAt date === today)
-    state.tasks=state.tasks.filter(t=>{
-      if(!t.isRecurring) return true;                   // one-off tasks: untouched
-      if(t.taskStatus!=='done') return true;            // pending recurring: keep
-      const doneDate=t.doneAt?dateStr(new Date(t.doneAt)):null;
-      return doneDate===today;                          // done today: keep until midnight; done earlier: remove
-    });
-    let carried=0;
-    const toAutoArchive=[];
-
-    // ── IBU: ALL stories auto-archive on day change (one-day-only section) ──
-    // Exception 1: stories moved INTO ibu today should NOT be archived
-    // Exception 2: stories moved from another section (movedFrom field) carry forward like 'other' stories
-    (state.sections.ibu||[]).forEach(story=>{
-      const movedToday=story.movedAt&&dateStr(new Date(story.movedAt))>=today;
-      const createdToday=story.created&&dateStr(new Date(story.created))>=today;
-      if(movedToday||createdToday) return; // skip — story arrived today, keep it
-      // Stories promoted from another section (e.g. Requests → Stories) carry forward
-      if(story.movedFrom){
-        const terminal=['completed','not-done','shelved'];
-        if(terminal.includes(story.status)){
-          toAutoArchive.push({story,sec:'ibu'});
-        } else {
-          story.carriedForward=true;
-          story.carriedFromDate=story.carriedFromDate||prev;
-          story.carriedDays=(story.carriedDays||0)+1;
-          story.updated=Date.now(); // ensure timestamp is always set for sync comparison
-          carried++;
-        }
-        return;
-      }
-      toAutoArchive.push({story, sec:'ibu'});
-    });
-
-    // ── Other Stories: carry forward unless terminal status ──
-    (state.sections.other||[]).forEach(story=>{
-      const terminal=['completed','not-done','shelved'];
-      if(terminal.includes(story.status)){
-        toAutoArchive.push({story, sec:'other'});
-        return;
-      }
-      if(story.status==='on-hold') return; // stays, no carry
-      if(story.status==='postponed'&&(!story.postponeTo||story.postponeTo>today)) return; // indefinite or future date: stay
-      story.carriedForward=true;
-      story.carriedFromDate=story.carriedFromDate||prev;
-      story.carriedDays=(story.carriedDays||0)+1;
-      story.updated=Date.now();
-      carried++;
-    });
-
-    // ── All other sections (requests, etc): archive terminal, carry active ──
-    SECTIONS.filter(s=>!s.isUpcoming&&s.key!=='ibu'&&s.key!=='other').forEach(sec=>{
-      (state.sections[sec.key]||[]).forEach(story=>{
-        // Always archive terminal-status stories regardless of mode
-        const terminal=['completed','not-done','shelved'];
-        if(terminal.includes(story.status)){
-          toAutoArchive.push({story, sec:sec.key});
-          return;
-        }
-        // on-hold: stays, doesn't carry forward
-        if(story.status==='on-hold') return;
-        // postponed to a future date: stays
-        if(story.status==='postponed'&&(!story.postponeTo||story.postponeTo>today)) return; // indefinite or future date: stay
-        // Everything else: carry forward
-        story.carriedForward=true;
-        story.carriedFromDate=story.carriedFromDate||prev;
-        story.carriedDays=(story.carriedDays||0)+1;
-        story.updated=Date.now();
-        carried++;
-      });
-    });
-    toAutoArchive.forEach(({story,sec})=>{
-      if(!state.archive[prev]){
-        state.archive[prev]={type:'day',label:archiveLabel(prev),sections:{},notes:'',created:Date.now()};
-        SECTIONS.forEach(s=>{state.archive[prev].sections[s.key]=[];});
-      }
-      if(!state.archive[prev].sections[sec]) state.archive[prev].sections[sec]=[];
-      if(!state.archive[prev].sections[sec].some(s=>s.id===story.id)){
-        state.archive[prev].sections[sec].push({...story,autoArchivedOn:today});
-      }
-    });
-    // Remove all archived stories from working board
-    const archivedIBU=toAutoArchive.filter(x=>x.sec==='ibu').map(x=>x.story.id);
-    const archivedOther=toAutoArchive.filter(x=>x.sec==='other').map(x=>x.story.id);
-    // IBU: remove only stories that were auto-archived — preserve carried-forward moved stories
-    state.sections.ibu=(state.sections.ibu||[]).filter(s=>!archivedIBU.includes(s.id));
-    // Track recently archived IDs in a session-scoped set so the sync merge
-    // doesn't restore them to the live board during this session.
-    // This is NOT deletedIds — these stories remain in archive and sync normally.
-    if(!window._sessionArchivedIds) window._sessionArchivedIds=new Set();
-    archivedIBU.forEach(id=>window._sessionArchivedIds.add(id));
-    // Other/requests: remove terminal stories (completed, not-done, shelved) — they had their day
-    const TERM_MIDNIGHT=['completed','not-done','shelved'];
-    state.sections.other=(state.sections.other||[]).filter(s=>!TERM_MIDNIGHT.includes(s.status));
-    SECTIONS.filter(s=>!s.isUpcoming&&s.key!=='ibu'&&s.key!=='other').forEach(({key})=>{
-      state.sections[key]=(state.sections[key]||[]).filter(s=>!TERM_MIDNIGHT.includes(s.status));
-    });
-    // Also sweep any terminal stories that slipped through (missing timestamp fields)
-    // Safe to run every time: only removes terminal status stories from previous days
-    const _sweepDate=today;
-    state.sections.other=(state.sections.other||[]).filter(s=>{
-      if(!TERM_MIDNIGHT.includes(s.status)) return true;
-      const created=s.created?dateStr(new Date(s.created)):null;
-      return created&&created>=_sweepDate;
-    });
-    SECTIONS.filter(s=>!s.isUpcoming&&s.key!=='ibu'&&s.key!=='other').forEach(({key})=>{
-      state.sections[key]=(state.sections[key]||[]).filter(s=>{
-        if(!TERM_MIDNIGHT.includes(s.status)) return true;
-        const created=s.created?dateStr(new Date(s.created)):null;
-        return created&&created>=_sweepDate;
-      });
-    });
-    // Also remove any remaining toAutoArchive items not caught above
-    toAutoArchive.filter(x=>x.sec!=='ibu'&&x.sec!=='other').forEach(({story,sec})=>{
-      state.sections[sec]=(state.sections[sec]||[]).filter(s=>s.id!==story.id);
-    });
-    if(toAutoArchive.length){
-      const storiesCnt=toAutoArchive.filter(x=>x.sec==='ibu'||x.sec==='other').length;
-      const otherSecCnt=toAutoArchive.length-storiesCnt;
-      const parts=[];
-      if(storiesCnt) parts.push(storiesCnt+' stor'+(storiesCnt===1?'y':'ies'));
-      if(otherSecCnt) parts.push(otherSecCnt+' other');
-      toast(`📦 Auto-archived: ${parts.join(', ')}`);
-    }
-    // Auto-migrate Upcoming stories whose date has arrived — completed only.
-    // Expired but not-yet-actioned events stay on the board in the "expired" section
-    // so the user can still see and action them.
-    let upcomingMigrated=0;
-    const upcomingToRemove=[];
-    (state.sections.upcoming||[]).forEach(story=>{
-      if(story.status!=='completed') return; // only migrate completed events
-      if(!story.expected_date) return;
-      let targetDate=story.expected_date;
-      if(story.expected_type==='week') targetDate=weekMondayStr(story.expected_date);
-      else if(story.expected_type==='month') targetDate=story.expected_date+'-01';
-      if(targetDate < today){
-        const archKey=story.expected_type==='week'?weekKey(targetDate):story.expected_type==='month'?monthKey(story.expected_date):targetDate;
-        if(!state.archive[archKey]){
-          state.archive[archKey]={type:story.expected_type||'day',label:archiveLabel(archKey),sections:{ibu:[],other:[],requests:[],upcoming:[]},notes:'',created:Date.now()};
-        }
-        if(!state.archive[archKey].sections.upcoming) state.archive[archKey].sections.upcoming=[];
-        if(!state.archive[archKey].sections.upcoming.some(s=>s.id===story.id)){
-          state.archive[archKey].sections.upcoming.push({...story,autoMigratedOn:today});
-        }
-        upcomingToRemove.push(story.id);
-        upcomingMigrated++;
-      }
-    });
-    if(upcomingToRemove.length){
-      state.sections.upcoming=state.sections.upcoming.filter(s=>!upcomingToRemove.includes(s.id));
-    }
-    if(upcomingMigrated>0) toast(`🗓 ${upcomingMigrated} Upcoming stor${upcomingMigrated===1?'y':'ies'} auto-migrated to archive`);
-    if(carried>0) saveLocal();
-    if(fireDb && prev) _queueArcWrite(prev);
-
-    // ── Backfill skipped days ────────────────────────────────────────────────
-    // If the app wasn't opened on intermediate days (e.g. weekends), those days
-    // never get archive entries and disappear from the date strip.
-    // Create empty stub entries for every calendar day between prev and today
-    // so they always appear as navigable pills (count will be 0 but day is visible).
-    {
-      const msPerDay=86400000;
-      const prevMs=new Date(prev+'T00:00:00').getTime();
-      const todayMs=new Date(today+'T00:00:00').getTime();
-      let cursor=prevMs+msPerDay; // start the day after prev
-      while(cursor<todayMs){
-        const d=dateStr(new Date(cursor));
-        if(!state.archive[d]){
-          state.archive[d]={type:'day',label:archiveLabel(d),sections:{},notes:'',created:cursor};
-          SECTIONS.forEach(s=>{state.archive[d].sections[s.key]=[];});
-        }
-        cursor+=msPerDay;
-      }
-    }
-  }
-  state.lastActiveDate=today;
-  window._checkDateChangeRan=true; // flag for init() to delay Firebase sync
-  saveAndPush(); // push to Firebase immediately so deletedIds reach remote before next sync
+function _lastWorkingDayOfMonth(ds){
+  const d=new Date(ds+'T00:00:00');
+  const ld=new Date(d.getFullYear(),d.getMonth()+1,0);
+  while(ld.getDay()===0||ld.getDay()===6) ld.setDate(ld.getDate()-1);
+  return dateStr(ld);
 }
-function getCarriedStories(){
+function _lastWorkingDayOfWeek(ds){
+  // Returns the Friday of the same week as ds
+  const d=new Date(ds+'T00:00:00');
+  const day=d.getDay(); // 0=Sun
+  const diff=day===0?5:day===6?6:5-day; // days until Friday, or back if past
+  const fri=new Date(d); fri.setDate(d.getDate()+(5-day));
+  return dateStr(fri);
+}
+function _weekKey(ds){
+  // Returns YYYY-Www (ISO week) for deduplication
+  const d=new Date(ds+'T00:00:00');
+  const mon=new Date(d); mon.setDate(d.getDate()-(d.getDay()===0?6:d.getDay()-1));
+  return mon.toISOString().slice(0,10);
+}
+function shouldShowMonthlyBackup(){
+  const s=state.monthlyBackupSettings||{};
+  if(!s.enabled) return false;
+  const today=todayStr(), ym=today.slice(0,7);
+  if(state.monthlyBackupDismissed===ym) return false;
+  if(state.lastMonthlyBackup===ym) return false;
+  const triggerDay=s.workDaysOnly?_lastWorkingDayOfMonth(today):today.slice(0,8)+String(_lastDayOfMonth(today)).padStart(2,'0');
+  if(today<triggerDay) return false;
+  const now=new Date(), istMin=((now.getUTCHours()*60+now.getUTCMinutes())+IST_OFF)%1440;
+  return Math.floor(istMin/60)>=(s.hour||18);
+}
+function shouldShowWeeklyBackup(){
+  const s=state.weeklyBackupSettings||{};
+  if(!s.enabled) return false;
   const today=todayStr();
-  const r=[];
-  SECTIONS.filter(s=>!s.isUpcoming).forEach(sec=>{
-    (state.sections[sec.key]||[]).filter(s=>!s._deleted).forEach(s=>{
-      if(!s.carriedForward) return;
-      if(s.status==='completed'||s.status==='on-hold'||s.status==='not-done'||s.status==='shelved') return;
-      if(s.status==='postponed'&&(!s.postponeTo||s.postponeTo>today)) return; // indefinite or future: stay
-      r.push({...s,_sec:sec.key});
-    });
+  const wk=_weekKey(today);
+  if(state.weeklyBackupDismissed===wk) return false;
+  if(state.lastWeeklyBackup===wk) return false;
+  // Trigger on Friday (or last working day of week) at/after hour
+  const d=new Date(today+'T00:00:00');
+  const dayOfWeek=d.getDay(); // 5=Fri
+  if(dayOfWeek!==5&&!(s.workDaysOnly&&dayOfWeek===4)) {
+    // Show on Friday only
+    if(dayOfWeek!==5) return false;
+  }
+  const now=new Date(), istMin=((now.getUTCHours()*60+now.getUTCMinutes())+IST_OFF)%1440;
+  return Math.floor(istMin/60)>=(s.hour||18);
+}
+function dismissMonthlyBackup(){
+  state.monthlyBackupDismissed=todayStr().slice(0,7);
+  saveAndPush(); render();
+}
+function dismissWeeklyBackup(){
+  state.weeklyBackupDismissed=_weekKey(todayStr());
+  saveAndPush(); render();
+}
+function renderMonthlyBackupBanner(){
+  const container=document.getElementById('backup-banners');
+  if(!container) return;
+  let html='';
+  // Weekly banner
+  if(shouldShowWeeklyBackup()){
+    const d=new Date(todayStr()+'T00:00:00');
+    const weekLabel='w/e '+d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+    html+=`<div id="weekly-backup-banner" style="background:linear-gradient(135deg,rgba(13,148,136,.06),rgba(13,148,136,.02));border:1px solid rgba(13,148,136,.2);border-radius:10px;padding:11px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+        <span style="font-size:17px;flex-shrink:0;">📅</span>
+        <div style="min-width:0;">
+          <div style="font-size:13px;font-weight:600;color:#0f766e;margin-bottom:2px;">End of week ${weekLabel} — download your weekly backup</div>
+          <div style="font-size:11.5px;color:var(--text3);">Full JSON + TXT snapshot of all current data.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <button class="btn btn-sm" style="background:#0d9488;border-color:#0d9488;color:#fff;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;" onclick="doWeeklyBackupNow()">↓ Backup now</button>
+        <button class="btn btn-ghost btn-sm" onclick="dismissWeeklyBackup()">Later</button>
+      </div>
+    </div>`;
+  }
+  // Monthly banner
+  if(shouldShowMonthlyBackup()){
+    const ym=todayStr().slice(0,7);
+    const d=new Date(ym+'-01');
+    const monthName=d.toLocaleString('en-GB',{month:'long',year:'numeric'});
+    html+=`<div id="monthly-backup-banner" style="background:linear-gradient(135deg,rgba(79,70,229,.06),rgba(79,70,229,.03));border:1px solid rgba(79,70,229,.2);border-radius:10px;padding:11px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+        <span style="font-size:17px;flex-shrink:0;">💾</span>
+        <div style="min-width:0;">
+          <div style="font-size:13px;font-weight:600;color:#3730A3;margin-bottom:2px;">End of ${monthName} — download your monthly backup</div>
+          <div style="font-size:11.5px;color:var(--text3);">Full JSON + TXT snapshot of all current data.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <button class="btn btn-sm" style="background:#4F46E5;border-color:#4F46E5;color:#fff;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;" onclick="doMonthlyBackupNow()">↓ Backup now</button>
+        <button class="btn btn-ghost btn-sm" onclick="dismissMonthlyBackup()">Later</button>
+      </div>
+    </div>`;
+  }
+  container.innerHTML=html;
+}
+function _buildBackupTxt(label){
+  const lines=[];
+  lines.push('MY DASHBOARD — BACKUP: '+label);
+  lines.push('Generated: '+new Date().toLocaleString('en-GB'));
+  lines.push('='.repeat(60));
+  lines.push('');
+  SECTIONS.filter(function(s){return !s.hidden;}).forEach(function(sec){
+    const stories=(state.sections[sec.key]||[]).filter(function(s){return !s._deleted;});
+    if(!stories.length) return;
+    lines.push('-'.repeat(40));
+    lines.push(sec.icon+' '+sec.name.toUpperCase()+' ('+stories.length+')');
+    lines.push('-'.repeat(40));
+    stories.forEach(function(s){lines.push(storyToText(s)); lines.push('');});
   });
-  return r;
-}
-function createSnapshot(key,type,showToast=true){
-  if(!state.archive[key]){
-    state.archive[key]={ type, label:archiveLabel(key), sections:{}, notes:'', created:Date.now() };
-    SECTIONS.forEach(s=>{ state.archive[key].sections[s.key]=[]; });
+  if((state.tasks||[]).length){
+    lines.push(''); lines.push('-'.repeat(40)); lines.push('TASKS ('+state.tasks.length+')'); lines.push('-'.repeat(40));
+    state.tasks.forEach(function(t){lines.push(taskToText(t)); lines.push('');});
   }
-  SECTIONS.forEach(s=>{
-    const existing=state.archive[key].sections[s.key]||[];
-    const ids=new Set(existing.map(st=>st.id));
-    const newOnes=(state.sections[s.key]||[]).filter(st=>!ids.has(st.id)&&!st._deleted);
-    state.archive[key].sections[s.key]=[...existing,...newOnes];
-  });
-  saveLocal();
-  if(fireDb){ setSyncUI('syncing'); clearTimeout(window._saveAndPushDebounce); window._saveAndPushDebounce=setTimeout(()=>pushToCloud(),800); _queueArcWrite(key); }
-  if(showToast) toast('📸 Snapshot saved ✓');
+  if((state.meetings||[]).length){
+    lines.push(''); lines.push('-'.repeat(40)); lines.push('MEETINGS'); lines.push('-'.repeat(40));
+    state.meetings.forEach(function(m){lines.push(meetingToText(m)); lines.push('');});
+  }
+  if((state.notes||[]).filter(function(n){return !n._deleted;}).length){
+    lines.push(''); lines.push('-'.repeat(40)); lines.push('NOTES'); lines.push('-'.repeat(40));
+    state.notes.filter(function(n){return !n._deleted;}).forEach(function(n){
+      lines.push(n.headline||'(no headline)');
+      if(n.text) lines.push(n.text);
+      lines.push('Status: '+(n.status||'active')); lines.push('');
+    });
+  }
+  if(state.remarks){ lines.push(''); lines.push('-'.repeat(40)); lines.push('REMARKS'); lines.push('-'.repeat(40)); lines.push(state.remarks); }
+  return lines.join('\n');
 }
-function snapshotToday(){
-  if(!SECTIONS.some(s=>(state.sections[s.key]||[]).length>0)){ toast('No stories to snapshot'); return; }
-  createSnapshot(todayStr(),'day',true);
-  renderDateStrip();
-}
-function checkBackupsDue(){
-  if(!state.backupSnapshots) state.backupSnapshots={weekly:[],monthly:[],yearly:[]};
-  if(!state.autoBackup) state.autoBackup={weeklyEnabled:true,monthlyEnabled:true,yearlyEnabled:true};
-  const today=todayStr();
-  const thisWeekMon=weekMondayStr(today);
-  const thisMonth=today.slice(0,7);
-  const thisYear=today.slice(0,4);
-  const due=[];
-  if(!state.lastDailyBackup||state.lastDailyBackup<today)
-    due.push({type:'daily',label:'Daily backup due',period:today});
-  if(state.autoBackup.weeklyEnabled!==false && (!state.lastWeeklyBackup||state.lastWeeklyBackup<thisWeekMon))
-    due.push({type:'weekly',label:'Weekly backup due',period:thisWeekMon});
-  if(state.autoBackup.monthlyEnabled!==false && (!state.lastMonthlyBackup||state.lastMonthlyBackup<thisMonth))
-    due.push({type:'monthly',label:'Monthly backup due',period:thisMonth});
-  if(state.autoBackup.yearlyEnabled!==false && (!state.lastYearlyBackup||state.lastYearlyBackup<thisYear))
-    due.push({type:'yearly',label:'Yearly backup due',period:thisYear});
-  return due;
-}
-
-function makeBackupSnapshot(){
-  // Full state snapshot — JSON format, fully restorable
+function _makeBackupData(type, period){
   return {
-    _backupMeta: { type:'', period:'', appVersion:'nd_v5', created: Date.now(), date: todayStr() },
-    sections:    JSON.parse(JSON.stringify(state.sections)),
-    remarks:     state.remarks,
-    archive:     JSON.parse(JSON.stringify(state.archive)),
-    tasks:       JSON.parse(JSON.stringify(state.tasks||[])),
-    meetings:    JSON.parse(JSON.stringify(state.meetings||[])),
-    leaves:      JSON.parse(JSON.stringify(state.leaves||[])),
-    notes:       JSON.parse(JSON.stringify(state.notes||[])),
+    _version:'nd_v5', _backupType:type, _exported:new Date().toISOString(),
+    _period:period, _label:'My Dashboard — '+capitalize(type)+' Backup '+period,
+    sections:JSON.parse(JSON.stringify(state.sections)),
+    remarks:state.remarks,
+    tasks:JSON.parse(JSON.stringify(state.tasks||[])),
+    meetings:JSON.parse(JSON.stringify(state.meetings||[])),
+    notes:JSON.parse(JSON.stringify(state.notes||[])),
+    leaves:JSON.parse(JSON.stringify(state.leaves||[])),
+    travelEntries:JSON.parse(JSON.stringify(state.travelEntries||[])),
+    employees:JSON.parse(JSON.stringify(state.employees||[])),
+    staffNames:JSON.parse(JSON.stringify(state.staffNames||{})),
     sectionNames:JSON.parse(JSON.stringify(state.sectionNames||{})),
-    employees:   JSON.parse(JSON.stringify(state.employees||[])),
-    staffNames:  JSON.parse(JSON.stringify(state.staffNames||{})),
-    eodSettings: JSON.parse(JSON.stringify(state.eodSettings||{})),
-    travelEntries: JSON.parse(JSON.stringify(state.travelEntries||[])),
-    travelDismissed: JSON.parse(JSON.stringify(state.travelDismissed||[])),
+    customPlatformLabels:JSON.parse(JSON.stringify(state.customPlatformLabels||[])),
+    eodSettings:JSON.parse(JSON.stringify(state.eodSettings||{})),
+    weeklyBackupSettings:JSON.parse(JSON.stringify(state.weeklyBackupSettings||{})),
+    monthlyBackupSettings:JSON.parse(JSON.stringify(state.monthlyBackupSettings||{})),
+    deletedIds:JSON.parse(JSON.stringify(state.deletedIds||{})),
   };
 }
-
-function _triggerJsonDownload(snap, filename){
-  const json=JSON.stringify(snap, null, 2);
-  const blob=new Blob([json],{type:'application/json;charset=utf-8'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=filename;
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a); URL.revokeObjectURL(a.href);
+function _triggerDownloads(jsonData, txtContent, baseName){
+  const jb=new Blob([JSON.stringify(jsonData,null,2)],{type:'application/json'});
+  const ja=document.createElement('a'); ja.href=URL.createObjectURL(jb); ja.download=baseName+'.json';
+  document.body.appendChild(ja); ja.click(); document.body.removeChild(ja); URL.revokeObjectURL(ja.href);
+  setTimeout(function(){
+    const tb=new Blob([txtContent],{type:'text/plain'});
+    const ta=document.createElement('a'); ta.href=URL.createObjectURL(tb); ta.download=baseName+'.txt';
+    document.body.appendChild(ta); ta.click(); document.body.removeChild(ta); URL.revokeObjectURL(ta.href);
+  },400);
 }
-
-function runBackup(type, period, silent){
-  if(!state.backupSnapshots) state.backupSnapshots={daily:[],weekly:[],monthly:[],yearly:[]};
-  if(!state.backupSnapshots.daily) state.backupSnapshots.daily=[];
-  const snap=makeBackupSnapshot();
-  snap._backupMeta.type=type; snap._backupMeta.period=period;
-  const limits={daily:7,weekly:52,monthly:12,yearly:5};
-  state.backupSnapshots[type].unshift(snap);
-  state.backupSnapshots[type]=state.backupSnapshots[type].slice(0,limits[type]||52);
-  if(type==='daily')   state.lastDailyBackup=todayStr();
-  if(type==='weekly')  state.lastWeeklyBackup=weekMondayStr(todayStr());
-  if(type==='monthly') state.lastMonthlyBackup=todayStr().slice(0,7);
-  if(type==='yearly')  state.lastYearlyBackup=todayStr().slice(0,4);
-  try{ localStorage.setItem('nd_backups', JSON.stringify(state.backupSnapshots)); }catch(e){}
-  saveLocal();
-  const fname='newsroom-backup-'+type+'-'+period+'.json';
-  _triggerJsonDownload(snap, fname);
-  if(!silent) toast(capitalize(type)+' backup saved → Downloads/'+fname);
+function doWeeklyBackupNow(){
+  const wk=_weekKey(todayStr());
+  const d=new Date(todayStr()+'T00:00:00');
+  const weekLabel=d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).replace(/ /g,'-');
+  const jsonData=_makeBackupData('weekly',wk);
+  const txtContent=_buildBackupTxt('Week ending '+weekLabel);
+  _triggerDownloads(jsonData,txtContent,'dashboard-backup-week-'+wk);
+  state.lastWeeklyBackup=wk; state.weeklyBackupDismissed=wk;
+  saveAndPush();
+  document.getElementById('weekly-backup-banner')?.remove();
+  toast('Weekly backup downloaded — JSON + TXT');
 }
-
-function autoRunDueBackups(){
-  const due=checkBackupsDue();
-  due.forEach(d=>runBackup(d.type,d.period,true));
-  if(due.length) toast(due.map(d=>capitalize(d.type)).join(' & ')+' backup'+(due.length>1?'s':'')+' auto-saved to Downloads ✓');
+function doMonthlyBackupNow(){
+  const ym=todayStr().slice(0,7);
+  const d=new Date(ym+'-01');
+  const monthLabel=d.toLocaleString('en-GB',{month:'long',year:'numeric'});
+  const jsonData=_makeBackupData('monthly',ym);
+  const txtContent=_buildBackupTxt(monthLabel);
+  _triggerDownloads(jsonData,txtContent,'dashboard-backup-'+ym);
+  state.lastMonthlyBackup=ym; state.monthlyBackupDismissed=ym;
+  saveAndPush();
+  document.getElementById('monthly-backup-banner')?.remove();
+  toast('Monthly backup downloaded — JSON + TXT');
 }
-
-function downloadBackupTxt(snap, type, period){
-  // Legacy plain-text export — kept for the "human readable" download option in panel
-  const lines=[
-    'NEWSROOM DASHBOARD — '+capitalize(type).toUpperCase()+' BACKUP',
-    'Period: '+period,
-    'Created: '+new Date(snap._backupMeta?.created||snap.timestamp||Date.now()).toLocaleString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'}),
-    '═'.repeat(56),''
-  ];
-  SECTIONS.forEach(sec=>{
-    lines.push(sec.name.toUpperCase()); lines.push('─'.repeat(44));
-    const st=snap.sections[sec.key]||[];
-    if(!st.length) lines.push('(No stories)');
-    else st.forEach(s=>{ lines.push(storyToText(s)); lines.push(''); });
-    lines.push('');
-  });
-  const txt=lines.join('\n');
-  const blob=new Blob([txt],{type:'text/plain;charset=utf-8'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download='newsroom-backup-'+type+'-'+period+'.txt';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href);
+function doBackupNow(){
+  // On-demand backup from menu — downloads both weekly and monthly if needed, else just a snapshot
+  const today=todayStr(), ym=today.slice(0,7), wk=_weekKey(today);
+  const jsonData=_makeBackupData('snapshot',today);
+  const txtContent=_buildBackupTxt('Snapshot '+today);
+  _triggerDownloads(jsonData,txtContent,'dashboard-backup-'+today);
+  toast('Backup downloaded — JSON + TXT');
 }
-
-// restoreFromBackup() merged into openImportDialog() — both export and backup .json files accepted there
 
 function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
 
@@ -2777,10 +2356,7 @@ function downloadStoredBackup(type, idx){
   }
 }
 
-function renderBackupBanners(){
-  const container=document.getElementById('backup-banners');
-  if(container) container.innerHTML=''; // banners replaced by silent auto-backup
-}
+function renderBackupBanners(){ renderMonthlyBackupBanner(); }
 
 function dismissBackupBanner(type, period){
   // Mark as done for this period without downloading
@@ -2788,113 +2364,6 @@ function dismissBackupBanner(type, period){
   if(type==='monthly') state.lastMonthlyBackup=todayStr().slice(0,7);
   if(type==='yearly')  state.lastYearlyBackup=todayStr().slice(0,4);
   saveLocal(); renderBackupBanners();
-}
-
-function openBackupsPanel(){
-  if(document.getElementById('backups-modal')){ document.getElementById('backups-modal').remove(); return; }
-  if(!state.backupSnapshots) state.backupSnapshots={weekly:[],monthly:[],yearly:[]};
-  const types=['weekly','monthly','yearly'];
-  let html='';
-  types.forEach(type=>{
-    const snaps=state.backupSnapshots[type]||[];
-    html+=`<div style="margin-bottom:20px">
-      <div style="font-size:12px;font-weight:700;color:var(--text);font-family:var(--font);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)">
-        ${type==='weekly'?'📅':type==='monthly'?'🗓':'📆'} ${capitalize(type)} Backups
-        <span style="font-size:10px;color:var(--text3);font-weight:400;margin-left:6px">(last ${type==='weekly'?52:type==='monthly'?12:5} kept)</span>
-      </div>`;
-    if(!snaps.length){
-      html+=`<div style="font-size:12.5px;color:var(--text3);padding:10px 0">No ${type} backups yet. They'll appear here once saved.</div>`;
-    } else {
-      snaps.forEach((snap,i)=>{
-        const dt=new Date(snap.timestamp).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-        const storyCount=SECTIONS.reduce((s,sec)=>s+(snap.sections?.[sec.key]?.length||0),0);
-        const archCount=Object.keys(snap.archive||{}).length;
-        html+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;margin-bottom:5px">
-          <div style="flex:1;min-width:0">
-            <div style="font-size:12.5px;font-weight:600;color:var(--text)">${snap.period||snap.date}</div>
-            <div style="font-size:11px;font-family:var(--font);color:var(--text3);margin-top:2px">Saved ${dt} · ${storyCount} active stories · ${archCount} archive entries</div>
-          </div>
-          <button class="btn btn-ghost btn-sm" onclick="downloadStoredBackup('${type}',${i})">⬇ Download</button>
-        </div>`;
-      });
-    }
-    html+='</div>';
-  });
-  const due=checkBackupsDue();
-  const ab=state.autoBackup||{weeklyEnabled:true,monthlyEnabled:true,yearlyEnabled:true};
-  const today=todayStr();
-  const autoSettingsHtml=`
-    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:13px 15px;margin-bottom:20px">
-      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px">⚙️ Auto-backup settings</div>
-      <div style="font-size:12px;color:var(--text3);margin-bottom:10px;line-height:1.5">When enabled, backups download automatically the first time you open the app in a new week / month / year.</div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        ${['weekly','monthly','yearly'].map(t=>{
-          const enabled=ab[t+'Enabled']!==false;
-          const last=t==='weekly'?state.lastWeeklyBackup:t==='monthly'?state.lastMonthlyBackup:state.lastYearlyBackup;
-          const lastLabel=last?'Last: '+last:'Never backed up';
-          return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:7px">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;font-size:12.5px;color:var(--text)">
-              <input type="checkbox" ${enabled?'checked':''} onchange="toggleAutoBackup('${t}',this.checked)" style="width:14px;height:14px;cursor:pointer">
-              ${capitalize(t)} backup
-            </label>
-            <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">${lastLabel}</span>
-            <button class="btn btn-ghost btn-sm" onclick="runManualBackup('${t}')">⬇ Now</button>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
-  const m=document.createElement('div'); m.className='modal-bg'; m.id='backups-modal';
-  m.innerHTML=`<div class="modal" onclick="event.stopPropagation()" style="max-width:600px">
-    <h2>💾 Backups</h2>
-    <p class="modal-sub">Backups save as <strong>.json</strong> — fully restorable. Auto-backups go to Downloads silently; manual backups open a Save As dialog so you can choose the folder.</p>
-    ${autoSettingsHtml}
-    ${html}
-    <div class="modal-footer" style="justify-content:space-between">
-      <button class="btn btn-ghost btn-sm" style="border-color:rgba(220,38,38,.35);color:#B91C1C" onclick="openImportDialog()">📂 Restore from backup…</button>
-      <button class="btn btn-ghost" onclick="document.getElementById('backups-modal').remove()">Close</button>
-    </div>
-  </div>`;
-  m.addEventListener('click',e=>{ if(e.target===m) m.remove(); });
-  document.body.appendChild(m);
-}
-
-function toggleAutoBackup(type, enabled){
-  if(!state.autoBackup) state.autoBackup={weeklyEnabled:true,monthlyEnabled:true,yearlyEnabled:true};
-  state.autoBackup[type+'Enabled']=enabled;
-  saveLocal();
-  toast((enabled?'Auto ':'Manual-only ')+capitalize(type)+' backup '+(enabled?'on':'off'));
-}
-
-function runManualBackup(type){
-  const today=todayStr();
-  const period=type==='weekly'?weekMondayStr(today):type==='monthly'?today.slice(0,7):today.slice(0,4);
-  if(!state.backupSnapshots) state.backupSnapshots={weekly:[],monthly:[],yearly:[]};
-  const snap=makeBackupSnapshot();
-  snap._backupMeta.type=type; snap._backupMeta.period=period;
-  const limits={weekly:52,monthly:12,yearly:5};
-  state.backupSnapshots[type].unshift(snap);
-  state.backupSnapshots[type]=state.backupSnapshots[type].slice(0,limits[type]);
-  if(type==='weekly')  state.lastWeeklyBackup=weekMondayStr(todayStr());
-  if(type==='monthly') state.lastMonthlyBackup=todayStr().slice(0,7);
-  if(type==='yearly')  state.lastYearlyBackup=todayStr().slice(0,4);
-  try{ localStorage.setItem('nd_backups', JSON.stringify(state.backupSnapshots)); }catch(e){}
-  saveLocal();
-  const fname='newsroom-backup-'+type+'-'+period+'.json';
-  const json=JSON.stringify(snap,null,2);
-  const blob=new Blob([json],{type:'application/json;charset=utf-8'});
-  // Use File System Access API (Save As dialog) if available, else fall back to Downloads
-  if(window.showSaveFilePicker){
-    window.showSaveFilePicker({ suggestedName:fname, types:[{description:'JSON backup',accept:{'application/json':['.json']}}] })
-      .then(fh=>fh.createWritable())
-      .then(w=>{ w.write(blob); return w; })
-      .then(w=>w.close())
-      .then(()=>{ toast(capitalize(type)+' backup saved ✓'); setTimeout(()=>{ const m=document.getElementById('backups-modal'); if(m){m.remove();openBackupsPanel();} },300); })
-      .catch(err=>{ if(err.name!=='AbortError'){ _triggerJsonDownload(snap,fname); toast(capitalize(type)+' backup saved → Downloads'); } });
-  } else {
-    _triggerJsonDownload(snap,fname);
-    toast(capitalize(type)+' backup saved → Downloads/'+fname);
-    setTimeout(()=>{ const m=document.getElementById('backups-modal'); if(m){m.remove();openBackupsPanel();} },300);
-  }
 }
 
 /* ════════════════════════════════════════
@@ -3328,14 +2797,8 @@ function btSlotDataInit(existingSlots){
   });
 }
 function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
-function getArr(sec,archKey){
-  if(archKey){ if(!state.archive[archKey]) return null; if(!state.archive[archKey].sections[sec]) state.archive[archKey].sections[sec]=[]; return state.archive[archKey].sections[sec]; }
-  return state.sections[sec];
-}
-function setArr(sec,archKey,arr){
-  if(archKey){ if(state.archive[archKey]&&state.archive[archKey].sections) state.archive[archKey].sections[sec]=arr; }
-  else state.sections[sec]=arr;
-}
+function getArr(sec,archKey){ return state.sections[sec]||[]; }
+function setArr(sec,archKey,arr){ state.sections[sec]=arr; }
 function addStory(sec,data,archKey){
   const arr=getArr(sec,archKey); if(!arr) return;
   const s={...data,id:genId(),created:Date.now()};
@@ -3378,18 +2841,6 @@ function deleteStory(sec,id,archKey){
   const arr=getArr(sec,archKey); if(!arr) return;
   const story=arr.find(s=>s.id===id); if(!story) return;
 
-  // Archive to creation date before permanent deletion
-  const createdDate=story.carriedFromDate||(story.created?dateStr(new Date(typeof story.created==='number'?story.created:parseInt(story.created))):todayStr());
-  if(!state.archive[createdDate]){
-    state.archive[createdDate]={type:'day',label:archiveLabel(createdDate),sections:{},notes:'',created:Date.now()};
-    SECTIONS.forEach(s=>{state.archive[createdDate].sections[s.key]=[];});
-  }
-  if(!state.archive[createdDate].sections[sec]) state.archive[createdDate].sections[sec]=[];
-  // Only add if not already there
-  if(!state.archive[createdDate].sections[sec].some(s=>s.id===id)){
-    state.archive[createdDate].sections[sec].push({...story, deletedOn:Date.now(), _deleted:true});
-  }
-
   // Record deletion so Firestore onSnapshot merge cannot resurrect this entry
   if(!state.deletedIds) state.deletedIds={};
   if(!archKey){
@@ -3405,17 +2856,9 @@ function deleteStory(sec,id,archKey){
 
   // Now remove from working board
   const filtered=arr.filter(s=>s.id!==id);
-  if(archKey) state.archive[archKey].sections[sec]=filtered; else state.sections[sec]=filtered;
+  state.sections[sec]=filtered;
   ui.openCards.delete(id); ui.complForms.delete(id);
-  saveAndPush(); renderDateStrip(); render();
-}
-function deleteArchiveEntry(key) {
-  if (!confirm('Delete archive entry for ' + archiveLabel(key) + '?\nThis cannot be undone.')) return;
-  delete state.archive[key];
-  saveLocal();
-  if (fireDb) { _queueArcWrite(key); clearTimeout(window._saveAndPushDebounce); window._saveAndPushDebounce=setTimeout(()=>pushToCloud(),800); setSyncUI('syncing'); }
-  renderDateStrip(); setView('today', null);
-  toast('Archive entry deleted');
+  saveAndPush(); render();
 }
 function doMoveSelect(fromSec, id, archKey, selectEl){
   const toSec=selectEl.value;
@@ -3452,7 +2895,6 @@ function moveStoryToSection(fromSec, id, toSec, archKey, mode){
   const fromArr=getArr(fromSec,archKey); if(!fromArr) return;
   const story=fromArr.find(s=>s.id===id); if(!story) return;
   // Add to destination
-  if(archKey && !state.archive[archKey].sections[toSec]) state.archive[archKey].sections[toSec]=[];
   const dest=getArr(toSec,archKey);
   if(!dest){ toast('Destination not available'); return; }
   const movedAt=Date.now();
@@ -3463,8 +2905,7 @@ function moveStoryToSection(fromSec, id, toSec, archKey, mode){
   if(state.deletedIds[toSec]) state.deletedIds[toSec]=state.deletedIds[toSec].filter(id2=>id2!==id);
   // Only remove from source if Move (not Copy)
   if(mode!=='copy'){
-    if(archKey) state.archive[archKey].sections[fromSec]=fromArr.filter(s=>s.id!==id);
-    else state.sections[fromSec]=fromArr.filter(s=>s.id!==id);
+    state.sections[fromSec]=fromArr.filter(s=>s.id!==id);
     // Record source deletion so other devices remove it from the source section on sync
     if(!archKey){
       if(!state.deletedIds[fromSec]) state.deletedIds[fromSec]=[];
@@ -3492,36 +2933,13 @@ function markStoryNotDone(sec,id,archKey){
   const arr=getArr(sec,archKey); const prev=arr?.find(s=>s.id===id); if(!prev) return;
   const snapshot={status:prev.status,notDoneOn:prev.notDoneOn,carriedForward:prev.carriedForward};
   updateStory(sec,id,{status:'not-done',carriedForward:false,notDoneOn:Date.now()},archKey);
-  toast('⚫ Not done', ()=>{ updateStory(sec,id,snapshot,archKey); saveAndPush(); renderDateStrip(); render(); });
-  saveAndPush(); renderDateStrip(); render();
+  toast('⚫ Not done', ()=>{ updateStory(sec,id,snapshot,archKey); saveAndPush(); render(); });
+  saveAndPush(); render();
 }
 
 // Helper: archive a story to its original entry date and remove it from the working board.
 // Always uses the story's own creation/carry date — never "today" — so the entry
 // appears in the archive under the day it was actually created.
-function _archiveAndRemoveFromBoard(sec,id){
-  const arr=state.sections[sec]||[];
-  const story=arr.find(s=>s.id===id); if(!story) return;
-  // Determine the correct archive date: original creation date, not today
-  const archDate=story.carriedFromDate ||
-    (story.created
-      ? dateStr(new Date(typeof story.created==='number'?story.created:parseInt(story.created)))
-      : todayStr());
-  if(!state.archive[archDate]){
-    state.archive[archDate]={type:'day',label:archiveLabel(archDate),sections:{},notes:'',created:Date.now()};
-    SECTIONS.forEach(s=>{ state.archive[archDate].sections[s.key]=[]; });
-  }
-  if(!state.archive[archDate].sections[sec]) state.archive[archDate].sections[sec]=[];
-  if(!state.archive[archDate].sections[sec].some(s=>s.id===id)){
-    state.archive[archDate].sections[sec].push({...story, autoArchivedOn:todayStr()});
-  }
-  state.sections[sec]=arr.filter(s=>s.id!==id);
-  ui.openCards.delete(id);
-}
-
-// Startup cleanup: rescue any not-done entries in non-combined sections that were
-// stuck before this fix (e.g. marked not-done days ago and never archived).
-// Also called after Firebase sync so remote state can't resurrect stuck entries.
 function cleanupCompletedStories(){
   // No-op: stories stay on board until midnight.
   // checkDateChange() handles archiving + removal at day rollover.
@@ -3530,62 +2948,6 @@ function cleanupStuckNotDone(){
   // No-op: midnight checkDateChange() is the only removal mechanism.
   // Terminal stories stay visible on board until day rolls over.
   return 0;
-}
-function sweepStaleTerminalStories(){
-  // On every app open: remove terminal stories created on a previous day
-  // This catches cases where the app was closed at night and checkDateChange
-  // couldn't run the midnight sweep (missing timestamp fields on old entries)
-  const today=todayStr();
-  const TERM=['completed','not-done','shelved'];
-  let sweptCount=0;
-  if(!state.deletedIds) state.deletedIds={};
-
-  // Archive a story to the correct date entry before removing it from the board,
-  // so it always remains visible in the done/resolved list.
-  const archiveBeforeSweep=(s,sec)=>{
-    const resDate=s.completedOn?dateStr(new Date(s.completedOn)):
-      s.notDoneOn?dateStr(new Date(s.notDoneOn)):
-      s.shelvedAt?dateStr(new Date(s.shelvedAt)):
-      s.created?dateStr(new Date(s.created)):today;
-    const archDate=resDate<today?resDate:today;
-    if(!state.archive[archDate]){
-      state.archive[archDate]={type:'day',label:archiveLabel(archDate),sections:{},notes:'',created:Date.now()};
-      SECTIONS.forEach(ss=>{state.archive[archDate].sections[ss.key]=[];});
-    }
-    if(!state.archive[archDate].sections[sec]) state.archive[archDate].sections[sec]=[];
-    if(!state.archive[archDate].sections[sec].some(x=>x.id===s.id)){
-      state.archive[archDate].sections[sec].push({...s, autoArchivedOn:today});
-    }
-  };
-
-  const keepFn=(s,key)=>{
-    if(!TERM.includes(s.status)) return true;
-    // Keep if created today (user just marked it)
-    const created=s.created?dateStr(new Date(s.created)):null;
-    if(created&&created>=today) return true;
-    // Also keep if any resolution timestamp is today
-    const resDate=s.completedOn?dateStr(new Date(s.completedOn)):
-      s.notDoneOn?dateStr(new Date(s.notDoneOn)):
-      s.shelvedAt?dateStr(new Date(s.shelvedAt)):null;
-    if(resDate&&resDate>=today) return true;
-    // Archive before removing so it remains visible in the done list
-    archiveBeforeSweep(s,key);
-    // Add to deletedIds so Firebase sync doesn't restore this entry
-    if(!state.deletedIds[key]) state.deletedIds[key]=[];
-    if(!state.deletedIds[key].includes(s.id)) state.deletedIds[key].push(s.id);
-    sweptCount++; return false;
-  };
-  SECTIONS.filter(s=>!s.isUpcoming&&!s.isCombined&&s.key!=='ibu').forEach(({key})=>{
-    state.sections[key]=(state.sections[key]||[]).filter(s=>keepFn(s,key));
-  });
-  // Also sweep other (hidden combined section)
-  state.sections.other=(state.sections.other||[]).filter(s=>keepFn(s,'other'));
-  // IBU always clears if date changed (handled by checkDateChange)
-  if(sweptCount>0){
-    saveAndPush();
-    // Defer toast until after init() finishes and DOM is ready
-    setTimeout(()=>toast(`\uD83D\uDCC2 ${sweptCount} resolved stor${sweptCount===1?'y':'ies'} archived from previous day`),600);
-  }
 }
 function shelveStory(sec,id,archKey){
   const arr=getArr(sec,archKey); const prev=arr?.find(s=>s.id===id); if(!prev) return;
@@ -3780,7 +3142,7 @@ function scheduleAllReminders(){
 }
 function getStories(sec,archKey,includeShelved){
   const secObj=SECTIONS.find(s=>s.key===sec)||{};   // must be first — used in filter guard
-  const arr=(archKey?state.archive[archKey]?.sections[sec]:state.sections[sec])||[];
+  const arr=state.sections[sec]||[];
   let a=arr.slice();
   a=a.filter(s=>!s._deleted); // never render tombstone/deleted entries
   if(!includeShelved) a=a.filter(s=>s.status!=='shelved');
@@ -3845,116 +3207,6 @@ function getStoriesWW(sec,archKey){
   if(wwf==='watching') a=a.filter(s=>s.mode==='watching');
   return a;
 }
-function doMigrate(){
-  const selected=[...ui.selectedStories];
-  if(!selected.length){ toast('Select at least one story first'); return; }
-  let archiveKey=ui.quickDayTarget;
-  if(!archiveKey){
-    const tvEl=document.getElementById('migrate-target-value');
-    if(!tvEl||!tvEl.value){ toast('Pick a destination'); return; }
-    const tval=tvEl.value;
-    if(ui.migrateTargetType==='day')   archiveKey=tval;
-    else if(ui.migrateTargetType==='week') archiveKey=weekKey(tval);
-    else archiveKey=monthKey(tval);
-  }
-  if(!state.archive[archiveKey]){
-    const t=archiveKey.startsWith('week-')?'week':archiveKey.startsWith('month-')?'month':'day';
-    state.archive[archiveKey]={type:t,label:archiveLabel(archiveKey),sections:{ibu:[],other:[],requests:[],upcoming:[]},notes:'',created:Date.now()};
-  }
-  const srcKey=ui.migrateSourceKey; // null = today, string = archive date
-  const toRemove={};
-  selected.forEach(k=>{
-    const sep=k.indexOf('::'); const sec=k.slice(0,sep); const id=k.slice(sep+2);
-    // Find story in correct source
-    let story;
-    if(srcKey){
-      story=(state.archive[srcKey]?.sections?.[sec]||[]).find(s=>s.id===id);
-    } else {
-      story=(state.sections[sec]||[]).find(s=>s.id===id);
-    }
-    if(!story) return;
-    // Add to destination
-    if(!state.archive[archiveKey].sections[sec]) state.archive[archiveKey].sections[sec]=[];
-    if(!state.archive[archiveKey].sections[sec].some(s=>s.id===id))
-      state.archive[archiveKey].sections[sec].push({...story,migratedAt:Date.now()});
-    // Queue removal if moving
-    if(ui.migrateAction==='move'){
-      if(!toRemove[sec]) toRemove[sec]=new Set();
-      toRemove[sec].add(id);
-    }
-  });
-  // Remove from source
-  if(ui.migrateAction==='move'){
-    Object.entries(toRemove).forEach(([sec,ids])=>{
-      if(srcKey){
-        if(state.archive[srcKey]?.sections?.[sec])
-          state.archive[srcKey].sections[sec]=state.archive[srcKey].sections[sec].filter(s=>!ids.has(s.id));
-      } else {
-        state.sections[sec]=(state.sections[sec]||[]).filter(s=>!ids.has(s.id));
-      }
-    });
-  }
-  ui.selectedStories.clear(); ui.quickDayTarget=null;
-  saveAndPush();
-  toast(selected.length+' stor'+(selected.length===1?'y':'ies')+' '+(ui.migrateAction==='move'?'moved':'copied')+' to '+archiveLabel(archiveKey)+' ✓');
-  renderDateStrip(); setView('archive',archiveKey);
-}
-function toggleMigrateStory(k){
-  if(ui.selectedStories.has(k)) ui.selectedStories.delete(k); else ui.selectedStories.add(k);
-  const sk=k.replace(/[^a-z0-9]/gi,'-');
-  const row=document.getElementById('msr-'+sk);
-  if(row){
-    const sel=ui.selectedStories.has(k);
-    row.classList.toggle('msr-selected',sel);
-    const cb=row.querySelector('.migrate-cb-check'); if(cb) cb.style.display=sel?'block':'none';
-    const cbb=row.querySelector('.migrate-cb'); if(cbb) cbb.style.background=sel?'var(--week)':'transparent';
-  }
-  updateSelCounter();
-}
-function selectAllSec(sectionKey){
-  const srcSecs=getMigrateSourceSections();
-  let stories=[];
-  if(sectionKey==='ibu_combined'){
-    stories=[...(srcSecs['ibu']||[]).map(s=>({...s,_subsec:'ibu'})),...(srcSecs['other']||[]).map(s=>({...s,_subsec:'other'}))];
-  } else {
-    stories=srcSecs[sectionKey]||[];
-  }
-  const keys=stories.map(s=>(s._subsec||sectionKey)+'::'+s.id);
-  const allSel=keys.length>0&&keys.every(k=>ui.selectedStories.has(k));
-  if(allSel) keys.forEach(k=>ui.selectedStories.delete(k)); else keys.forEach(k=>ui.selectedStories.add(k));
-  renderMigrateSource(); updateSelCounter();
-}
-function updateSelCounter(){
-  const el=document.getElementById('sel-counter');
-  if(el){ const n=ui.selectedStories.size; el.textContent=n===0?'No stories selected':n+' stor'+(n===1?'y':'ies')+' selected'; }
-}
-function setMigrateTargetType(type){
-  ui.migrateTargetType=type; ui.quickDayTarget=null;
-  document.querySelectorAll('.ttype-btn').forEach(b=>b.classList.toggle('tt-active',b.dataset.type===type));
-  document.querySelectorAll('.qday-btn').forEach(b=>b.classList.remove('qd-active'));
-  const inp=document.getElementById('migrate-target-value');
-  if(inp){ inp.type=type==='month'?'month':'date'; inp.value=''; inp.style.display='block'; }
-}
-function setMigrateAction(a){
-  ui.migrateAction=a;
-  document.querySelectorAll('.action-btn').forEach(b=>b.classList.toggle('act-active',b.dataset.action===a));
-}
-function setQuickDay(ds,label,el){
-  ui.quickDayTarget=ds;
-  document.querySelectorAll('.qday-btn').forEach(b=>b.classList.remove('qd-active'));
-  if(el) el.classList.add('qd-active');
-  const inp=document.getElementById('migrate-target-value');
-  if(inp){ inp.value=ds; inp.style.display='none'; }
-  const lbl=document.getElementById('migrate-dest-label');
-  if(lbl) lbl.textContent='→ '+label;
-}
-function toggleMigrateSec(key){
-  if(ui.migrateOpenSecs.has(key)) ui.migrateOpenSecs.delete(key); else ui.migrateOpenSecs.add(key);
-  const b=document.getElementById('msec-body-'+key), c=document.getElementById('msec-chev-'+key);
-  if(b) b.style.display=ui.migrateOpenSecs.has(key)?'block':'none';
-  if(c) c.style.transform=ui.migrateOpenSecs.has(key)?'rotate(180deg)':'';
-}
-function renderMigrateSource(){ const w=document.getElementById('migrate-source-wrap'); if(w) w.innerHTML=buildMigrateSourceHTML(); }
 function storyToText(s){
   const ln=[];
   ln.push('['+((s.status||'–').toUpperCase())+'] '+(s.title||'Untitled'));
@@ -4123,7 +3375,6 @@ function doExportJSON(){
     _label: 'My Dashboard data export',
     sections:    state.sections,
     remarks:     state.remarks,
-    archive:     state.archive,
     tasks:       state.tasks||[],
     meetings:    state.meetings||[],
     notes:       state.notes||[],
@@ -4134,9 +3385,7 @@ function doExportJSON(){
     customPlatformLabels: state.customPlatformLabels||[],
     deletedIds:  state.deletedIds||{},
     backupSnapshots: {weekly:[],monthly:[],yearly:[]}, // snapshots are local-only, not exported
-    lastWeeklyBackup:  state.lastWeeklyBackup||null,
     lastMonthlyBackup: state.lastMonthlyBackup||null,
-    lastYearlyBackup:  state.lastYearlyBackup||null,
   };
   const blob=new Blob([JSON.stringify(exportData,null,2)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
@@ -4180,11 +3429,10 @@ function handleImportFile(input){
         input.value=''; return;
       }
       const storyCount=Object.values(data.sections||{}).reduce((s,a)=>s+(a?.length||0),0);
-      const archCount=Object.keys(data.archive||{}).length;
-      const sourceLabel=isBackup
-        ? capitalize(data._backupMeta.type||'manual')+' backup — period: '+(data._backupMeta.period||'—')
-        : 'Export — '+(data._exported?.slice(0,10)||'unknown date');
-      const msg=`Load this data?\n\nSource: ${sourceLabel}\n• ${storyCount} active stories\n• ${archCount} archive entries\n• ${(data.tasks||[]).length} tasks\n\n⚠ This will replace all current data.`;
+      const sourceLabel=data._backupType==='monthly'?'Monthly backup — '+(data._period||''):
+        (data._backupMeta?capitalize(data._backupMeta.type||'manual')+' backup':
+        'Export — '+(data._exported?.slice(0,10)||'unknown date'));
+      const msg=`Load this data?\n\nSource: ${sourceLabel}\n• ${storyCount} stories\n• ${(data.tasks||[]).length} tasks\n\n⚠ This will replace all current data.`;
       if(!confirm(msg)){ input.value=''; return; }
       const preserved={
         backupSnapshots:   state.backupSnapshots,
@@ -4195,7 +3443,6 @@ function handleImportFile(input){
       };
       state.sections    = data.sections    || state.sections;
       state.remarks     = data.remarks     ?? '';
-      state.archive     = data.archive     || {};
       state.tasks       = data.tasks       || [];
       state.meetings    = data.meetings    || [];
       state.notes       = data.notes       || [];
@@ -4205,15 +3452,13 @@ function handleImportFile(input){
       state.sectionNames= data.sectionNames|| {};
       state.customPlatformLabels = data.customPlatformLabels || [];
       state.deletedIds  = data.deletedIds  || {};
-      state.lastActiveDate = todayStr();
       Object.assign(state, preserved);
       SECTIONS.forEach(s=>{ if(!state.sections[s.key]) state.sections[s.key]=[]; });
       saveAndPush();
       document.getElementById('import-modal')?.remove();
       document.getElementById('backups-modal')?.remove();
-      input.value='';
-      render(); renderDateStrip();
-      toast('✓ Loaded — '+storyCount+' stories, '+archCount+' archive entries');
+      input.value=''; render();
+      toast('✓ Loaded — '+storyCount+' stories, '+(data.tasks||[]).length+' tasks');
     } catch(err){
       toast('❌ Could not read file: '+err.message);
       input.value='';
@@ -4441,7 +3686,7 @@ function doExportSectionTxt(sec,archKey){
   // For the combined stories accordion, merge ibu + other
   let stories;
   if(sec==='ibu'){
-    const ibu=(archKey?state.archive[archKey]?.sections?.ibu:state.sections.ibu)||[];
+    const ibu=state.sections.ibu||[];
     const other=(archKey?state.archive[archKey]?.sections?.other:state.sections.other)||[];
     stories=[...ibu,...other].filter(s=>!s._deleted);
   } else {
@@ -4489,11 +3734,11 @@ function openMobileMore(){
       <div style="font-size:9.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;padding:4px 0 3px;">Data</div>
       <button class="btn btn-ghost btn-sm" onclick="doExportJSON();document.getElementById('mobile-more-modal').remove()">↓ Export data</button>
       <button class="btn btn-ghost btn-sm" onclick="doExportTxt();document.getElementById('mobile-more-modal').remove()">↓ Export .txt</button>
-      <button class="btn btn-ghost btn-sm" onclick="openImportDialog();document.getElementById('mobile-more-modal').remove()">⬆ Import data</button>
+      <button class="btn btn-ghost btn-sm" onclick="openImportDialog();document.getElementById('mobile-more-modal').remove()">↑ Import data</button>
       <div style="font-size:9.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;padding:6px 0 3px;margin-top:4px;border-top:1px solid var(--border)">Stories</div>
       <button class="btn btn-ghost btn-sm" onclick="doEmailAll();document.getElementById('mobile-more-modal').remove()">✉ Email all</button>
       <div style="font-size:9.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;padding:6px 0 3px;margin-top:4px;border-top:1px solid var(--border)">System</div>
-      <button class="btn btn-ghost btn-sm" onclick="openBackupsPanel();document.getElementById('mobile-more-modal').remove()">💾 Backups</button>
+      <button class="btn btn-ghost btn-sm" onclick="doBackupNow();document.getElementById('mobile-more-modal').remove()">💾 Download backup</button>
       <button class="btn btn-ghost btn-sm" onclick="openStaffSettings();document.getElementById('mobile-more-modal').remove()">👥 Staff names</button>
       <button class="btn btn-ghost btn-sm" onclick="openSyncModal();document.getElementById('mobile-more-modal').remove()">${syncLabel}</button>
       <button class="btn btn-ghost" style="color:var(--accent);border-color:rgba(207,102,64,.3);background:rgba(207,102,64,.04)" onclick="openSettingsModal();document.getElementById('mobile-more-modal').remove()">⚙️ Settings</button>
@@ -4575,25 +3820,6 @@ function expandHeader(){
   document.getElementById('header-slim-bar')?.classList.remove('visible');
 }
 
-function jumpToDate(dateStr){
-  if(!dateStr) return;
-  const picker=document.getElementById('date-jump-picker');
-  if(picker) picker.value=''; // reset so it can be reused
-  if(dateStr===todayStr()){
-    setView('today',null);
-  } else {
-    // If date has no archive entry yet, create a blank one so it can accept entries
-    if(!state.archive[dateStr]){
-      state.archive[dateStr]={
-        type:'day', label:archiveLabel(dateStr),
-        sections:{}, notes:'', created:Date.now()
-      };
-      SECTIONS.forEach(s=>{ state.archive[dateStr].sections[s.key]=[]; });
-      saveLocal();
-    }
-    setView('archive',dateStr);
-  }
-}
 function goHome(){
   if(ui.openForms&&ui.openForms.size>0){
     if(!confirm('You have unsaved entries open. Discard and go to Today?')) return;
@@ -4602,7 +3828,7 @@ function goHome(){
   ui.search='';
   const el=document.getElementById('search-input');
   if(el) el.value='';
-  setView('today',null);
+  setView('today');
 }
 let _expandedRemarks=new Set();
 function toggleRemarksExpand(id){
@@ -4655,61 +3881,28 @@ function remarksHTML(text, id, sec, storyId, archKey){
   const collapsed=needsCollapse&&!_expandedRemarks.has(id);
   return`<div class="card-remarks" onclick="event.stopPropagation()">💬 <span id="cr-${id}" class="card-remarks-text${collapsed?' card-remarks-collapsed':''}">${esc(text)}</span>${needsCollapse?`<span id="cr-btn-${id}" class="card-remarks-expand" onclick="event.stopPropagation();toggleRemarksExpand('${id}')">${collapsed?'▼ expand':'▲ collapse'}</span>`:''}${hasCRUD?`<span style="display:inline-flex;gap:4px;margin-left:6px;vertical-align:middle"><button class="btn btn-ghost btn-xs" style="font-style:normal;padding:2px 6px" onclick="event.stopPropagation();_editingMainRemark.add('${storyId}');render()" title="Edit remarks">✏</button><button class="btn btn-ghost btn-xs btn-danger" style="font-style:normal;padding:2px 6px" onclick="event.stopPropagation();if(confirm('Clear remarks?'))updateStory('${sec}','${storyId}',{remarks:''},${archKeyJS})" title="Clear remarks">🗑</button></span>`:''}</div>`;
 }
-function setView(view,archiveKey){
-  // Clear search when navigating away from search
+function setView(view){
   if(ui.view==='search'&&view!=='search'){
     ui.search=''; const se=document.getElementById('search-input'); if(se) se.value='';
   }
-  ui.view=view; ui.archiveKey=archiveKey||null;
-  // Always keep tasks/leaves/remarks/upcoming open; preserve ibu open state
+  ui.view=view;
   ui.openSections=new Set([]);
   ui.openCards.clear(); ui.openForms.clear(); ui.editMap={}; ui.complForms.clear();
-  if(view==='migrate'){ ui.selectedStories.clear(); ui.migrateSourceKey=null; }
-  updateDateHeader(); renderDateStrip(); render();
-  updateMobileDateLabel();
-  if(view==='today'){ setTimeout(()=>{ autoRunDueBackups(); renderBackupBanners(); },300); }
+  updateDateHeader(); render();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 function updateDateHeader(){
-  const now=new Date();
-  const hdEl=document.getElementById('hdr-date');
-  const ctEl=document.getElementById('hdr-context'); // may be null in new layout — that's ok
-  if(!hdEl) return;
-  if(ui.view==='today'){
-    hdEl.textContent=now.toLocaleDateString('en-GB',{day:'numeric',month:'long'});
-    hdEl.className='date-full sz-today';
-    ctEl.textContent=now.toLocaleDateString('en-GB',{weekday:'long'});
-  } else if(ui.view==='archive'&&ui.archiveKey){
-    const key=ui.archiveKey;
-    const isYest=key===yesterdayStr(), isTomm=key===tomorrowStr();
-    const d3=new Date((key.startsWith('week-')?key.slice(5):key.startsWith('month-')?key.slice(6)+'-01':key)+'T00:00:00'); hdEl.textContent=d3.toLocaleDateString('en-GB',{day:'numeric',month:'long'});
-    hdEl.className='date-full sz-normal'+(isTomm?' mode-tomorrow':' mode-archive');
-    const cnt=archiveStoryCount(key);
-    const d2=new Date((key.startsWith('week-')?key.slice(5):key.startsWith('month-')?key.slice(6)+'-01':key)+'T00:00:00'); ctEl.textContent=d2.toLocaleDateString('en-GB',{weekday:'long'});
-  } else if(ui.view==='migrate'){
-    hdEl.textContent='Move or Copy to Archive';
-    hdEl.className='date-full sz-normal';
-    ctEl.textContent='Select stories → pick destination';
-  } else if(ui.view==='tasks'){
-    hdEl.textContent='Tasks';
-    hdEl.className='date-full sz-normal';
-    ctEl.textContent='Your task list';
-  } else if(ui.view==='leaves'){
-    hdEl.textContent='Leaves';
-    hdEl.className='date-full sz-normal';
-    ctEl.textContent='Staff leave tracker';
-  } else if(ui.view==='upcoming'){
-    hdEl.textContent='Upcoming Events';
-    hdEl.className='date-full sz-normal';
-    ctEl.textContent='Future stories & events';
-  } else if(ui.view==='notes'){
-    hdEl.textContent='Notes'; hdEl.className='date-full sz-normal';
-    ctEl.textContent='Carry-forward notes';
-  } else if(ui.view==='meetings'){
-    hdEl.textContent='Meetings'; hdEl.className='date-full sz-normal';
-    ctEl.textContent='Editorial & production meetings';
-  }
+  const d=new Date(todayStr()+'T00:00:00');
+  const weekday=d.toLocaleDateString('en-GB',{weekday:'long'});
+  const dateLabel=d.toLocaleDateString('en-GB',{day:'numeric',month:'long'});
+  const ctx=document.getElementById('hdr-context');
+  const hdr=document.getElementById('hdr-date');
+  if(ctx) ctx.textContent=weekday;
+  if(hdr) hdr.textContent=dateLabel;
+  const ml=document.getElementById('mobile-date-label');
+  if(ml) ml.textContent=weekday+' · '+dateLabel;
 }
+
 function toggleAccordion(key){
   const opening=!ui.openSections.has(key);
   if(opening) ui.openSections.add(key); else ui.openSections.delete(key);
@@ -4742,7 +3935,7 @@ function setWWFilter(sec,val){
   const body=document.getElementById('acc-body-'+sec);
   if(body&&ui.openSections.has(sec)){
     const secObj=SECTIONS.find(s=>s.key===sec);
-    const archKey=ui.view==='archive'?ui.archiveKey:null;
+    const archKey=null; // archive removed
     const stories=getStoriesWW(sec,archKey);
     const fKey=sec+(archKey?'::'+archKey:'');
     const isFormOpen=ui.openForms.has(fKey);
@@ -4927,7 +4120,7 @@ function updateLocationPlaceholder(sec,archKey){
 function showFieldRow(sec,archKey){ updateLocationPlaceholder(sec,archKey); }
 
 
-function updateArchiveNotes(key,val){ if(state.archive[key]) state.archive[key].notes=val; saveAndPush(); }
+function updateArchiveNotes(key,val){ /* archive removed */ }
 function updateRemarks(v){ state.remarks=v; saveAndPush(); }
 function reqNotif(){
   Notification.requestPermission().then(p=>{
@@ -4957,15 +4150,10 @@ function repairStory(id){
       if(s.id===id) s.updated=Date.now();
     });
   });
-  // Write clean live state to nd/live — bypasses merge
+  // Write clean state directly to Firebase — bypasses merge
   saveLocal();
-  const raw = JSON.parse(localStorage.getItem('nd_v5'));
-  const { archive: _rA, backupSnapshots: _rB, ...repairLive } = raw;
-  const repairMonthly = {};
-  Object.entries(_rA || {}).forEach(([k, v]) => { if (k.startsWith('month-')) repairMonthly[k] = v; });
-  repairLive.archiveMonthly = repairMonthly;
-  repairLive._docVersion = 2;
-  fireDb.collection('nd').doc(ND_LIVE_DOC).set(repairLive).then(function(){
+  const raw=JSON.parse(localStorage.getItem('nd_v5'));
+  fireDb.collection('nd').doc('data').set(raw).then(function(){
     toast('Story repaired ✓ — mobile will show it on next sync');
     render();
   }).catch(function(e){ toast('Repair failed: '+e.message); });
@@ -5088,51 +4276,6 @@ function upcomingDueBadge(s){
   const days=Math.ceil(diff/86400000);
   return `<span class="upcoming-due-badge">📅 in ${days}d</span>`;
 }
-function renderDateStrip(){
-  const strip=document.getElementById('date-strip'); if(!strip) return;
-  const today=todayStr();
-  const yest=yesterdayStr(), tomm=tomorrowStr();
-
-  // Build a complete set of day keys for the last 30 days so no day is missing.
-  // Archive entries that exist are used as-is; missing days get stub 0-count pills.
-  const allKeys=new Set(sortedArchiveKeys());
-  for(let i=2;i<=30;i++){
-    const d=addDays(today,-i);
-    if(d!==yest&&d!==tomm) allKeys.add(d);
-  }
-  // Keep week/month keys too but filter plain dates to recent ones only
-  const keys=[...allKeys].filter(k=>{
-    if(k.startsWith('week-')||k.startsWith('month-')) return true;
-    return k<today&&k!==yest&&k!==tomm; // plain dates older than yesterday
-  }).sort((a,b)=>{
-    const df=k=>k.startsWith('week-')?k.slice(5):k.startsWith('month-')?k.slice(6)+'-01':k;
-    return df(b).localeCompare(df(a));
-  });
-
-  const todayActive=ui.view==='today';
-  const yestActive=ui.view==='archive'&&ui.archiveKey===yest;
-  const tommActive=ui.view==='archive'&&ui.archiveKey===tomm;
-  const todayCount=SECTIONS.reduce((s,sec)=>s+(state.sections[sec.key]?.filter(x=>!x._deleted).length||0),0);
-  const yestCount=state.archive[yest]?archiveStoryCount(yest):0;
-  const tommCount=state.archive[tomm]?archiveStoryCount(tomm):0;
-  let html='';
-  html+=`<div class="dpill dp-yesterday${yestActive?' dp-active':''}" onclick="setView('archive','${yest}')" title="Yesterday">◀ Yesterday<span class="dpill-count">${yestCount}</span></div>`;
-  html+=`<div class="dpill dp-today${todayActive?' dp-active':''}" onclick="setView('today',null)">● Today<span class="dpill-count">${todayCount}</span></div>`;
-  html+=`<div class="dpill dp-tomorrow${tommActive?' dp-active':''}" onclick="setView('archive','${tomm}')" title="Tomorrow">Tomorrow ▶<span class="dpill-count">${tommCount}</span></div>`;
-  const older=keys.filter(k=>k!==yest&&k!==tomm&&k!==today);
-  if(older.length){
-    html+=`<div class="dpill-sep"></div>`;
-    older.forEach(key=>{
-      const cnt=state.archive[key]?archiveStoryCount(key):0;
-      const active=ui.view==='archive'&&ui.archiveKey===key;
-      const cls=key.startsWith('week-')?' dp-week':key.startsWith('month-')?' dp-month':' dp-date';
-      html+=`<div class="dpill${cls}${active?' dp-active':''}" onclick="setView('archive','${key}')" title="${archiveLabel(key)}">${archiveShortLabel(key)}<span class="dpill-count">${cnt}</span></div>`;
-    });
-  }
-  html+=`<div style="flex-shrink:0;width:18px"></div>`;
-  strip.innerHTML=html;
-  setTimeout(()=>{ const ac=strip.querySelector('.dp-active'); if(ac&&!todayActive) ac.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'}); },80);
-}
 function render(){
   // Preserve any open form's values across the re-render
   const savedForm=captureFormState();
@@ -5140,8 +4283,6 @@ function render(){
   let html='<div class="content">';
   if(typeof Notification!=='undefined'&&Notification.permission==='default') html+=`<div class="notif-banner">⚠ Enable notifications for deadline reminders. <button class="btn btn-ghost btn-sm" onclick="reqNotif()">Enable</button></div>`;
   if(ui.view==='today')        html+=renderTodayHTML();
-  else if(ui.view==='archive') html+=renderArchiveHTML(ui.archiveKey);
-  else if(ui.view==='migrate') html+=renderMigrateHTML();
   else if(ui.view==='search')  html+=renderSearchHTML();
   else if(ui.view==='tasks')    html+=renderTasksSection();
   else if(ui.view==='meetings') html+=renderMeetingsSection();
@@ -5282,38 +4423,7 @@ function renderSearchHTML(){
     }
   });
 
-  // ── Archive ──
-  Object.keys(state.archive).sort((a,b)=>b.localeCompare(a)).forEach(archKey=>{
-    const entry=state.archive[archKey]; if(!entry) return;
-    SECTIONS.forEach(sec=>{
-      const arr=(entry.sections?.[sec.key]||[]).filter(s=>!s._deleted);
-      arr.forEach(s=>{
-        if(secHit===sec.key||(secHit==='ibu'&&sec.key==='other')||storyMatchesSearch(s,q)){
-          results.push({dateKey:archKey,dateLabel:dlabel(archKey),sec:sec.key,secLabel:'Stories',story:s,type:'story',archKey});
-        }
-      });
-    });
-    // Archive upcoming events
-    const archUpcoming=(entry.sections?.upcoming||[]).filter(s=>!s._deleted);
-    archUpcoming.forEach(s=>{
-      if(storyMatchesSearch(s,q)){
-        results.push({dateKey:archKey,dateLabel:dlabel(archKey)+' (Upcoming)',sec:'upcoming',secLabel:'Upcoming',story:s,type:'story',archKey});
-      }
-    });
-  });
 
-  if(!results.length){
-    return`<div style="padding:24px 0">
-      <div class="view-header" style="border:none;padding:0;margin-bottom:20px">
-        <div>
-          <div style="font-size:11px;font-family:var(--font);color:var(--text3);letter-spacing:.8px">Search results</div>
-          <div style="font-size:20px;font-weight:700;font-family:var(--serif)">"${esc(q)}"</div>
-        </div>
-        <button class="btn btn-ghost btn-sm" onclick="clearSearch()">✕ Clear</button>
-      </div>
-      <div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-msg">No results found for "${esc(q)}"</div></div>
-    </div>`;
-  }
 
   // Group by date key, today first then archive newest→oldest
   const dateOrder=['today'];
@@ -5404,10 +4514,6 @@ function renderTodayHTML(){
   html+=`<div id="backup-banners"></div>`;
 
   // Carry-forward banner removed — stories show ↻ badge on cards
-  html+=`<div style="display:flex;justify-content:flex-end;gap:7px;margin-bottom:12px;flex-wrap:wrap">
-
-  </div>`;
-
   // EOD banner
   if(shouldShowEOD()){
     const eodH=state.eodSettings?.hour||18;
@@ -5591,233 +4697,6 @@ function renderNotesView(){
 }
 
 /* ─── ARCHIVE ─── */
-function renderArchiveHTML(key){
-  if(!key){ return `<div class="empty-state"><div class="empty-icon">📂</div><div class="empty-msg">Select a date above.</div></div>`; }
-  const isYest=key===yesterdayStr(), isTomm=key===tomorrowStr();
-  if(!state.archive[key]){
-    if(isTomm){ state.archive[key]={type:'day',label:archiveLabel(key),sections:{ibu:[],other:[],requests:[],upcoming:[]},notes:'',created:Date.now()}; saveLocal(); }
-    else {
-      const _mId = _arcDocId(key) || '';
-      if (fireDb && !_arcFetchedMonths.has(_mId)) {
-        _fetchArcMonth(key).then(() => { if (state.archive[key]) render(); });
-        return `<div class="view-header vh-archive"><div><div class="avh-label">Archive</div><div class="avh-title">${archiveLabel(key)}</div><div class="avh-meta" style="color:var(--text3)">⏳ Loading from cloud…</div></div><div class="avh-actions"><button class="btn btn-ghost btn-sm" onclick="setView('today',null)">← Today</button></div></div>`;
-      }
-      return `<div class="view-header vh-archive"><div><div class="avh-label">Archive</div><div class="avh-title">${archiveLabel(key)}</div><div class="avh-meta">No data for this date.</div></div><div class="avh-actions"><button class="btn btn-ghost btn-sm" onclick="setView('today',null)">← Today</button></div></div>`;
-    }
-  }
-  const cnt=archiveStoryCount(key);
-  const vhClass=isTomm?'vh-tomorrow':isYest?'vh-yesterday':'vh-archive';
-  const lbl=isTomm?'Tomorrow — Pre-planning':isYest?"Yesterday's Board":'Archive';
-  let html=`<div class="view-header ${vhClass}">
-    <div>
-      <div class="avh-label">${lbl}</div>
-      <div class="avh-title">${archiveLabel(key)}</div>
-      <div class="avh-meta">${cnt} stories${state.archive[key]?.created?' · Saved '+new Date(state.archive[key].created).toLocaleDateString('en-GB'):''}</div>
-    </div>
-    <div class="avh-actions">
-      <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doEmailAll()" title="Email">✉<span class="bim-text"> Email</span></button>
-      <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doExportTxt()" title="Export">↓<span class="bim-text"> Export</span></button>
-      ${!isTomm?`<button class="btn btn-ghost btn-sm btn-danger" onclick="deleteArchiveEntry('${key}')">🗑 Delete</button>`:''}
-    </div>
-  </div>`;
-  if(isTomm) html+=`<div style="background:rgba(13,148,136,.07);border:1px solid rgba(13,148,136,.2);border-radius:8px;padding:10px 16px;margin-bottom:14px;font-size:12.5px;color:var(--tomorrow)">📋 <strong>Pre-planning for tomorrow.</strong> Use <strong>⇄ Migrate</strong> to send today's stories here.</div>`;
-  SECTIONS.forEach(sec=>{ html+=renderAccordion(sec,key); });
-
-  // Show any notes that were logged on this date (resolved notes archived here)
-  const notesLog=state.archive[key]?.notesLog||[];
-  const tasksLog=state.archive[key]?.tasksLog||[];
-  if(notesLog.length||tasksLog.length){
-    const statusLabel=n=>n._deleted?'🗑 Deleted':n.status==='done'?'✅ Done':n.status==='pass'||n.status==='passed'?'↪ Passed':'📌 Active';
-    const cardCls=n=>n._deleted?'note-pass':n.status==='done'?'note-done':n.status==='pass'||n.status==='passed'?'note-pass':'';
-    html+=`<div class="accordion">
-      <div class="acc-header" onclick="this.nextElementSibling.classList.toggle('open');this.querySelector('.acc-chevron').classList.toggle('open')">
-        <span class="acc-icon">📝</span>
-        <span class="acc-name">Notes on this day</span>
-        <span style="font-size:10px;font-family:var(--font);color:var(--text3);margin-left:8px">${notesLog.length} note${notesLog.length===1?'':'s'}</span>
-        <span class="acc-chevron">▾</span>
-      </div>
-      <div class="acc-body" style="display:flex;flex-direction:column;gap:6px">
-        ${notesLog.map(n=>{
-          // Use live note from state.notes if it still exists, else use snapshot
-          const live=(state.notes||[]).find(x=>x.id===n.id);
-          const nd=live||n;
-          const isLive=!!live&&!nd._deleted;
-          const sLabel=statusLabel(nd);
-          const cCls=cardCls(nd);
-          const created=nd.created?new Date(nd.created).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+' · ':'';
-          return`<div class="note-card ${cCls}" style="margin-bottom:0">
-            <div class="note-text" style="text-decoration:${nd.status==='done'||nd._deleted?'line-through':''};white-space:pre-wrap">${esc(nd.text)}</div>
-            <div class="note-meta">
-              <span>${created}${sLabel}</span>
-              ${nd.deadline_date?`<span>📅 ${fmtDate(nd.deadline_date)}</span>`:''}
-            </div>
-            ${isLive?`<div class="note-btns" style="margin-top:6px">
-              ${nd.status!=='done'?`<button class="btn btn-done-active btn-sm" onclick="setNoteStatus('${nd.id}','done')">✅ Done</button>`:''}
-              ${nd.status==='active'?`<button class="btn btn-ghost btn-sm" style="color:var(--text3)" onclick="setNoteStatus('${nd.id}','pass')">↪ Pass</button>`:''}
-              ${nd.status!=='active'?`<button class="btn btn-ghost btn-sm" onclick="updateNote('${nd.id}',{status:'active',resolvedOn:null});render()">↩ Restore</button>`:''}
-              <button class="btn btn-ghost btn-sm" onclick="editNote('${nd.id}');render()">✏ Edit</button>
-              <button class="btn btn-ghost btn-sm btn-danger" onclick="if(confirm('Delete this note?'))deleteNote('${nd.id}')">🗑</button>
-            </div>`:''}
-          </div>`;
-        }).join('')}
-        ${tasksLog.map(t=>{
-          const live=(state.tasks||[]).find(x=>x.id===t.id);
-          const td=live||t;
-          const isLive=!!live&&!td._deleted;
-          const isOpen2=ui_openTasks.has(td.id);
-          const st2=td._deleted?'🗑 Deleted':td.taskStatus==='done'?'✅ Done':td.taskStatus==='not-done'?'⚫ Not done':td.taskStatus==='transferred'?'⇄ Transferred':'⏳ Pending';
-          const strike=td._deleted||td.taskStatus==='done'?'text-decoration:line-through;':'';
-          const op2=td._deleted?'opacity:.6;':'';
-          if(isLive){
-            return renderTaskCard(td,todayStr());
-          }
-          return`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:7px;${op2}">
-            <span style="font-size:12px">${td._deleted?'🗑':td.taskStatus==='done'?'✅':td.taskStatus==='not-done'?'⚫':'⏳'}</span>
-            <div style="flex:1">
-              <div style="font-size:12.5px;font-weight:600;color:var(--text);${strike}">${esc(td.title||'Untitled')}</div>
-              <div style="font-size:10.5px;color:var(--text3);font-family:var(--font)">Task · ${st2}${td.deadline_date?' · '+fmtDate(td.deadline_date):''}</div>
-            </div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
-  }
-
-  html+=`<div class="accordion"><div class="acc-header" onclick="this.nextElementSibling.classList.toggle('open');this.querySelector('.acc-chevron').classList.toggle('open')"><span class="acc-icon">📓</span><span class="acc-name">Free notes</span><span class="acc-chevron">▾</span></div><div class="acc-body"><textarea class="remarks-area" style="min-height:120px" placeholder="Notes for this entry…" oninput="updateArchiveNotes('${key}',this.value)">${esc(state.archive[key]?.notes||'')}</textarea></div></div>`;
-  return html;
-}
-
-/* ─── MIGRATE ─── */
-function renderMigrateHTML(){
-  const tomm=tomorrowStr(), yest=yesterdayStr();
-  const sourceLabel=ui.migrateSourceKey?archiveLabel(ui.migrateSourceKey):'Today';
-  return`<div>
-    <div class="migrate-header">
-      <div class="migrate-h1">⇄ Migrate Stories</div>
-      <div class="migrate-sub">Pick an origin date → select stories → pick destination → Move or Copy.</div>
-    </div>
-    <div class="migrate-layout">
-      <div>
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:10px 13px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <span style="font-size:11px;font-family:var(--font);color:var(--text3);flex-shrink:0">📋 Origin</span>
-          <button class="qday-btn${!ui.migrateSourceKey?' qd-active':''}" onclick="setMigrateSource(null)">Today</button>
-          <button class="qday-btn${ui.migrateSourceKey===yest?' qd-active':''}" onclick="setMigrateSource('${yest}')">Yesterday</button>
-          <button class="qday-btn${ui.migrateSourceKey===tomm?' qd-active':''}" onclick="setMigrateSource('${tomm}')">Tomorrow</button>
-          <input type="date" class="finput" id="migrate-source-picker" style="font-size:12px;padding:5px 8px;max-width:155px"
-            value="${ui.migrateSourceKey&&!['${yest}','${tomm}'].includes(ui.migrateSourceKey)?ui.migrateSourceKey:''}"
-            placeholder="Other date…"
-            onchange="setMigrateSource(this.value||null)">
-          ${ui.migrateSourceKey?`<span style="font-size:11px;font-family:var(--font);color:var(--upcoming)">📅 ${sourceLabel}</span>`:''}
-        </div>
-        <div id="migrate-source-wrap">${buildMigrateSourceHTML()}</div>
-      </div>
-      <div class="migrate-dest">
-        <div class="migrate-dest-title">📌 Destination</div>
-        <div style="font-size:11px;color:var(--text3);font-family:var(--font);margin-bottom:6px">Quick select</div>
-        <div class="quick-days">
-          <button class="qday-btn" onclick="setQuickDay('${yest}','Yesterday',this)">◀ Yesterday</button>
-          <button class="qday-btn" onclick="setQuickDay('${tomm}','Tomorrow',this)">Tomorrow ▶</button>
-          <button class="qday-btn" onclick="setQuickDay('${addDays(tomm,1)}','+2 Days',this)">+2 Days</button>
-          <button class="qday-btn" onclick="setQuickDay('${weekKey(tomm)}','Next Week',this)">Next Week</button>
-          <button class="qday-btn" onclick="setQuickDay('${weekKey(addDays(tomm,7))}','Week +2',this)">Week +2</button>
-        </div>
-        <div style="font-size:11px;color:var(--text3);font-family:var(--font);margin:8px 0 6px">Or pick manually</div>
-        <div class="target-type-row">
-          <button class="ttype-btn${ui.migrateTargetType==='day'?' tt-active':''}" data-type="day" onclick="setMigrateTargetType('day')">📅 Day</button>
-          <button class="ttype-btn${ui.migrateTargetType==='week'?' tt-active':''}" data-type="week" onclick="setMigrateTargetType('week')">🗓 Week</button>
-          <button class="ttype-btn${ui.migrateTargetType==='month'?' tt-active':''}" data-type="month" onclick="setMigrateTargetType('month')">📆 Month</button>
-        </div>
-        <div class="fgroup" style="margin-bottom:8px"><input class="finput" id="migrate-target-value" type="date"></div>
-        <div id="migrate-dest-label" style="font-size:11.5px;color:var(--week);font-family:var(--font);min-height:18px;margin-bottom:8px"></div>
-        <div style="font-size:11px;color:var(--text3);font-family:var(--font);margin-bottom:6px">Action</div>
-        <div class="migrate-action-row">
-          <button class="action-btn${ui.migrateAction==='move'?' act-active':''}" data-action="move" onclick="setMigrateAction('move')">🔀 Move<br><span style="font-size:10px;color:var(--text3)">removes original</span></button>
-          <button class="action-btn${ui.migrateAction==='copy'?' act-active':''}" data-action="copy" onclick="setMigrateAction('copy')">⎘ Copy<br><span style="font-size:10px;color:var(--text3)">keeps original</span></button>
-        </div>
-        <div class="sel-counter" id="sel-counter">No stories selected</div>
-        <button class="migrate-go" onclick="doMigrate()">Migrate Selected →</button>
-        <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:8px;text-align:center" onclick="setView('today',null)">← Back to Today</button>
-      </div>
-    </div>
-  </div>`;
-}
-function setMigrateSource(key){
-  ui.migrateSourceKey=key||null;
-  ui.selectedStories.clear();
-  ui.migrateOpenSecs=new Set(SECTIONS.map(s=>s.key));
-  render(); // full re-render to update origin buttons
-}
-function getMigrateSourceSections(){
-  // Returns {sectionKey: [stories]} for the current origin
-  const sk=ui.migrateSourceKey;
-  const result={};
-  SECTIONS.forEach(sec=>{
-    if(sk){
-      result[sec.key]=(state.archive[sk]?.sections?.[sec.key]||[]).filter(s=>!s._deleted);
-    } else {
-      result[sec.key]=(state.sections[sec.key]||[]).filter(s=>!s._deleted);
-    }
-  });
-  return result;
-}
-function buildMigrateSourceHTML(){
-  const srcSecs=getMigrateSourceSections();
-  const sk=ui.migrateSourceKey;
-  let html='';
-  SECTIONS.forEach(sec=>{
-    if(sec.hidden) return; // skip hidden (other is rendered inside ibu combined)
-    // For combined section, merge ibu+other
-    let stories=[];
-    if(sec.isCombined){
-      const ibuStories=(srcSecs['ibu']||[]).map(s=>({...s,_subsec:'ibu'}));
-      const otherStories=(srcSecs['other']||[]).map(s=>({...s,_subsec:'other'}));
-      stories=[...ibuStories,...otherStories];
-    } else {
-      stories=srcSecs[sec.key]||[];
-    }
-    const sectionKey=sec.isCombined?'ibu_combined':sec.key;
-    const selCnt=stories.filter(s=>ui.selectedStories.has((s._subsec||sec.key)+'::'+s.id)).length;
-    const isOpen=ui.migrateOpenSecs.has(sectionKey);
-    html+=`<div style="margin-bottom:10px">
-      <div class="migrate-section-header" onclick="toggleMigrateSec('${sectionKey}')">
-        <span class="migrate-sec-name">${sec.icon} ${sec.name} <span style="color:var(--text3);font-size:11px;font-family:var(--font)">(${stories.length})</span></span>
-        <div style="display:flex;gap:7px;align-items:center">
-          ${stories.length?`<button class="btn btn-xs btn-ghost" onclick="selectAllSec('${sectionKey}');event.stopPropagation()">${selCnt===stories.length&&stories.length?'Deselect all':'Select all'}</button>`:''}
-          <span id="msec-chev-${sectionKey}" style="color:var(--text3);font-size:13px;transition:transform .2s;${isOpen?'transform:rotate(180deg)':''}">▾</span>
-        </div>
-      </div>
-      <div id="msec-body-${sectionKey}" style="display:${isOpen?'block':'none'}">`;
-    if(!stories.length){
-      html+=`<div class="empty-state" style="padding:14px 13px"><div class="empty-msg">No stories</div></div>`;
-    } else {
-      stories.forEach(s=>{
-        const actualSec=s._subsec||sec.key;
-        const k=actualSec+'::'+s.id;
-        const sel=ui.selectedStories.has(k);
-        const sk2=k.replace(/[^a-z0-9]/gi,'-');
-        const sbL=s.status==='urgent'?'🔴':s.status==='in-progress'?'🟡':s.status==='completed'?'🟢':s.status==='on-hold'?'🟣':s.status==='not-done'?'⚫':s.status==='postponed'?'🔵':s.status==='shelved'?'🗄':'⚪';
-        const carry='';
-        html+=`<div class="migrate-story-row${sel?' msr-selected':''}" id="msr-${sk2}" onclick="toggleMigrateStory('${k}')">
-          <div class="migrate-cb"><span class="migrate-cb-check" style="display:${sel?'block':'none'}">✓</span></div>
-          <div class="migrate-story-info">
-            <div class="migrate-story-title">${esc(s.title||'Untitled')}${carry}</div>
-            <div class="migrate-story-meta">${sbL} ${s.status||'no status'}${s.correspondent?' · 👤 '+esc(s.correspondent):''}</div>
-          </div>
-        </div>`;
-      });
-    }
-    html+='</div></div>';
-  });
-  return html||'<div class="empty-state"><div class="empty-msg">No stories on this date</div></div>';
-}
-
-
-/* ─── ACCORDION ─── */
-
-/* ── Shared helper: render active upcoming entries grouped by date bucket ──
-   Used by both renderAccordion (today board) and renderUpcomingView (mobile tab).
-   Returns HTML string. archKey is null for live board, string for archive view.  */
-let ui_upcomingGroupOpen={}; // collapsible upcoming groups per key
 function _renderUpcomingActiveGrouped(activeUpcoming, sec, archKey, today){
   if(!activeUpcoming.length) return '';
   const todayMs=new Date(today+'T00:00:00').getTime();
@@ -6089,13 +4968,6 @@ function toggleShowShelved(secKey){
   render();
 }
 
-function openDesktopDatePicker(){
-  const p=document.getElementById('date-jump-picker');
-  if(!p) return;
-  const cur=ui.view==='today'?todayStr():(ui.archiveKey||todayStr());
-  p.value=cur;
-  try{ p.showPicker(); }catch(e){ p.style.opacity='0'; p.style.pointerEvents='auto'; p.style.position='fixed'; p.style.top='60px'; p.style.left='50%'; p.click(); setTimeout(()=>{p.style.position='absolute';p.style.pointerEvents='none';},500); }
-}
 function toggleDesktopSearch(){
   const bar=document.getElementById('desktop-search-bar');
   const btn=document.getElementById('desktop-search-btn');
@@ -6105,15 +4977,6 @@ function toggleDesktopSearch(){
   if(btn){ btn.style.background=opening?'var(--accent-bg)':''; btn.style.borderColor=opening?'var(--accent)':''; btn.style.color=opening?'var(--accent)':''; }
   if(opening) setTimeout(()=>document.getElementById('search-input')?.focus(),60);
   else { const si=document.getElementById('search-input'); if(si){si.value='';onSearch('');} }
-}
-function desktopNavDate(dir){
-  const cur=ui.view==='today'?todayStr():(ui.archiveKey||todayStr());
-  const nd=addDays(cur,dir);
-  if(nd===todayStr()){ setView('today',null); }
-  else {
-    if(!state.archive[nd]){ state.archive[nd]={type:'day',label:archiveLabel(nd),sections:{},notes:'',created:Date.now()}; SECTIONS.forEach(s=>{state.archive[nd].sections[s.key]=[];}); saveLocal(); }
-    setView('archive',nd);
-  }
 }
 function openDesktopMore(){
   if(document.getElementById('desktop-more-modal')) return;
@@ -6127,10 +4990,8 @@ function openDesktopMore(){
       <button class="btn btn-ghost btn-sm" onclick="openImportDialog();document.getElementById('desktop-more-modal').remove()">⬆ Import data</button>
       <div style="font-size:9.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;padding:6px 0 3px;margin-top:4px;border-top:1px solid var(--border)">Stories</div>
       <button class="btn btn-ghost btn-sm" onclick="doEmailAll();document.getElementById('desktop-more-modal').remove()">✉ Email all</button>
-      <button class="btn btn-ghost btn-sm" onclick="setView('migrate',null);document.getElementById('desktop-more-modal').remove()">⇄ Migrate stories</button>
       <div style="font-size:9.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;padding:6px 0 3px;margin-top:4px;border-top:1px solid var(--border)">System</div>
-      <button class="btn btn-ghost btn-sm" onclick="openBackupsPanel();document.getElementById('desktop-more-modal').remove()">💾 Backups</button>
-      <button class="btn btn-ghost btn-sm" onclick="snapshotToday();document.getElementById('desktop-more-modal').remove()">📸 Snapshot today</button>
+      <button class="btn btn-ghost btn-sm" onclick="doBackupNow();document.getElementById('desktop-more-modal').remove()">💾 Download backup</button>
       <button class="btn btn-ghost btn-sm" onclick="openStaffSettings();document.getElementById('desktop-more-modal').remove()">👥 Staff names</button>
       <button class="btn btn-ghost btn-sm" onclick="openSyncModal();document.getElementById('desktop-more-modal').remove()">☁️ Sync setup</button>
       <button class="btn btn-ghost" style="color:var(--accent);border-color:rgba(207,102,64,.3);background:rgba(207,102,64,.04)" onclick="openSettingsModal();document.getElementById('desktop-more-modal').remove()">⚙️ Settings</button>
@@ -6172,60 +5033,6 @@ function mobileSetFilter(f, el){
   // Update mobile pill states
   document.querySelectorAll('.mobile-filter-pills .fpill').forEach(p=>p.classList.remove('fa'));
   if(el) el.classList.add('fa');
-}
-function mobileNavDate(dir){
-  // dir: -1 = previous, +1 = next
-  const currentKey = ui.view==='today' ? todayStr() : (ui.archiveKey||todayStr());
-  const newDate = addDays(currentKey, dir);
-  const today = todayStr();
-  if(newDate === today){
-    setView('today', null);
-  } else {
-    if(!state.archive[newDate]){
-      state.archive[newDate]={type:'day',label:archiveLabel(newDate),sections:{},notes:'',created:Date.now()};
-      SECTIONS.forEach(s=>{ state.archive[newDate].sections[s.key]=[]; });
-      saveLocal();
-    }
-    setView('archive', newDate);
-  }
-  updateMobileDateLabel();
-}
-function openMobileDatePicker(){
-  const picker=document.getElementById('mobile-date-picker');
-  if(!picker) return;
-  const currentKey=ui.view==='today'?todayStr():(ui.archiveKey||todayStr());
-  picker.value=currentKey;
-  try{
-    picker.showPicker();
-  }catch(e){
-    // Fallback: briefly make picker interactive and visible at tap position
-    picker.style.opacity='0';
-    picker.style.pointerEvents='auto';
-    picker.style.position='fixed';
-    picker.style.top='80px';
-    picker.style.left='50%';
-    picker.style.transform='translateX(-50%)';
-    picker.style.width='140px';
-    picker.style.height='36px';
-    picker.click();
-    setTimeout(()=>{
-      picker.style.position='absolute';
-      picker.style.pointerEvents='none';
-      picker.style.width='0';
-      picker.style.height='0';
-      picker.style.transform='';
-    }, 600);
-  }
-}
-function updateMobileDateLabel(){
-  const currentKey=ui.view==='today'?todayStr():(ui.archiveKey||todayStr());
-  const d=new Date(currentKey+'T00:00:00');
-  const full=d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'});
-  const short=d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
-  const lbl=document.getElementById('mobile-date-label');
-  const slbl=document.getElementById('mobile-collapsed-date-label');
-  if(lbl) lbl.textContent=full;
-  if(slbl) slbl.textContent=short;
 }
 function renderMobileLeaveRow(){ /* leave names now shown on accordion info strip */ }
 /* Mobile scroll collapse — collapses to date bar only */
@@ -6378,13 +5185,13 @@ function jumpToTasks(){
   const isMobile=window.innerWidth<=720;
   if(isMobile){ bnbNav('tasks'); return; }
   // Desktop: switch to today then scroll
-  if(ui.view!=='today') setView('today',null);
+  if(ui.view!=='today') setView('today');
   setTimeout(()=>document.getElementById('tasks-section')?.scrollIntoView({behavior:'smooth',block:'start'}),ui.view!=='today'?250:50);
 }
 function jumpToLeaves(){
   const isMobile=window.innerWidth<=720;
   if(isMobile){ bnbNav('leaves'); return; }
-  if(ui.view!=='today') setView('today',null);
+  if(ui.view!=='today') setView('today');
   setTimeout(()=>document.getElementById('leaves-section')?.scrollIntoView({behavior:'smooth',block:'start'}),ui.view!=='today'?250:50);
 }
 let ui_taskForm=false; // is the add-task form open?
@@ -6450,7 +5257,7 @@ function deleteTask(id){
   if(!state.deletedIds.tasks) state.deletedIds.tasks=[];
   if(!state.deletedIds.tasks.includes(id)) state.deletedIds.tasks.push(id);
   ui_openTasks.delete(id);
-  saveAndPush(); renderDateStrip(); render();
+  saveAndPush(); render();
 }
 function nextRecurrenceDate(task){
   const base=task.deadline_date||todayStr();
@@ -7541,7 +6348,7 @@ function deleteNote(id){
   if(!state.deletedIds) state.deletedIds={};
   if(!state.deletedIds.notes) state.deletedIds.notes=[];
   if(!state.deletedIds.notes.includes(id)) state.deletedIds.notes.push(id);
-  saveAndPush(); renderDateStrip(); render();
+  saveAndPush(); render();
 }
 function setNoteStatus(id, status){
   if(!state.notes) return;
@@ -7573,7 +6380,7 @@ function setNoteStatus(id, status){
   }
 
   toast(status==='done'?'✅ Note marked Done — saved to '+archiveLabel(createdDate):'↪ Note passed — saved to '+archiveLabel(createdDate));
-  renderDateStrip();
+  
   render();
 }
 function toggleNotesResolved(){
@@ -10330,10 +9137,6 @@ function updateClock(){
 }
 function init(){
   loadLocal();
-  checkDateChange();
-  cleanupStuckNotDone();  // archive any not-done entries stuck in non-combined sections
-  cleanupCompletedStories(); // archive completed stories from active board
-  sweepStaleTerminalStories(); // sweep terminal stories from previous days on every open
 
   // ── Service Worker registration ──────────────────────────────
   if('serviceWorker' in navigator){
@@ -10377,12 +9180,11 @@ function init(){
     }
   }, 60000);
   window.addEventListener('offline', ()=>{ if(fireDb) setSyncUI('offline'); });
-  updateDateHeader(); renderDateStrip(); render();
+  updateDateHeader(); render();
   renderOnLeavePill();
-  updateMobileDateLabel();
     initMobileScrollCollapse();
   // Show backup banners after render (only on today view)
-  setTimeout(()=>renderBackupBanners(), 100);
+  setTimeout(()=>renderMonthlyBackupBanner(), 300);
   updateClock(); setInterval(updateClock, 30000);
   initScrollHeader();
   // Click outside search to close
@@ -10433,9 +9235,9 @@ function init(){
       // New day detected while app is open — run the full date-change logic
       checkDateChange();
       updateDateHeader();
-      renderDateStrip();
+      
       render();
-      setTimeout(()=>renderBackupBanners(), 100);
+      setTimeout(()=>renderMonthlyBackupBanner(), 300);
     }
     // Always refresh the date in the header in case it got stale
     updateDateHeader();

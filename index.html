@@ -1736,6 +1736,10 @@ function weekMondayStr(ds){
   const off=d.getDay()===0?-6:1-d.getDay();
   d.setDate(d.getDate()+off); return dateStr(d);
 }
+// ── Archive stubs (archive removed — these prevent ReferenceErrors) ──────────
+function archiveLabel(key){ return key||''; }
+function sortedArchiveKeys(){ return Object.keys(state.archive||{}).sort((a,b)=>b.localeCompare(a)); }
+
 function loadLocal(){
   try{
     const raw=localStorage.getItem('nd_v5');
@@ -2014,8 +2018,7 @@ function startRealtimeSync(){
       state.travelRestored=[]; // no longer needed — clear it
       state.backupSnapshots=localBackups; // restore local backups after merge
       state.deletedIds=mergedDeletedIds;  // merged so all devices honour all deletions
-      // Keep whichever lastActiveDate is more recent — prevents Firebase from re-triggering checkDateChange
-      if(localLAD && (!state.lastActiveDate || localLAD > state.lastActiveDate))
+          if(localLAD && (!state.lastActiveDate || localLAD > state.lastActiveDate))
         state.lastActiveDate=localLAD;
       // Keep whichever eodDismissed is more recent (today > older date > null)
       if(localEodDismissed && (!state.eodDismissed || localEodDismissed > state.eodDismissed))
@@ -2041,8 +2044,7 @@ function startRealtimeSync(){
       }
       // Clean up any stuck not-done entries that remote data may have restored,
       // then push the cleaned state back so all devices stay in sync.
-      const cleaned=cleanupStuckNotDone();
-      if(!cleaned) {
+          if(!cleaned) {
         const hasOpenForm=ui.openForms.size>0||_te.open;
         // Also block render if user is actively typing in a remark field
         const activeEl=document.activeElement;
@@ -2940,15 +2942,6 @@ function markStoryNotDone(sec,id,archKey){
 // Helper: archive a story to its original entry date and remove it from the working board.
 // Always uses the story's own creation/carry date — never "today" — so the entry
 // appears in the archive under the day it was actually created.
-function cleanupCompletedStories(){
-  // No-op: stories stay on board until midnight.
-  // checkDateChange() handles archiving + removal at day rollover.
-}
-function cleanupStuckNotDone(){
-  // No-op: midnight checkDateChange() is the only removal mechanism.
-  // Terminal stories stay visible on board until day rolls over.
-  return 0;
-}
 function shelveStory(sec,id,archKey){
   const arr=getArr(sec,archKey); const prev=arr?.find(s=>s.id===id); if(!prev) return;
   const snapshot={status:prev.status,shelvedAt:prev.shelvedAt,carriedForward:prev.carriedForward};
@@ -3326,36 +3319,6 @@ function buildFullText(){
     ln.push('');
   }
 
-  // Archive
-  const keys=sortedArchiveKeys();
-  if(keys.length){
-    ln.push('ARCHIVE'); ln.push(hr);
-    keys.forEach(k=>{
-      ln.push('\n'+archiveLabel(k).toUpperCase());
-      const e=state.archive[k]; if(!e) return;
-      SECTIONS.forEach(sec=>{
-        const st=(e.sections?.[sec.key]||[]).filter(s=>!s._deleted);
-        if(!st.length) return;
-        ln.push('  '+sec.name.toUpperCase());
-        st.forEach(s=>{ ln.push('  '+storyToText(s).replace(/\n/g,'\n  ')); ln.push(''); });
-      });
-      // Archive notes log
-      if(e.notesLog?.length){
-        ln.push('  NOTES ON THIS DAY');
-        e.notesLog.forEach(n=>{
-          const st=n._deleted?'[DELETED]':n.status==='done'?'[DONE]':n.status==='pass'||n.status==='passed'?'[PASSED]':'[ACTIVE]';
-          ln.push('  '+st+' '+n.text);
-          if(n.deadline_date) ln.push('  Deadline: '+n.deadline_date);
-        });
-        ln.push('');
-      }
-      if(e.notes?.trim()){
-        ln.push('  FREE NOTES');
-        ln.push('  '+e.notes.trim().replace(/\n/g,'\n  '));
-        ln.push('');
-      }
-    });
-  }
 
   return ln.join('\n');
 }
@@ -4105,7 +4068,7 @@ function submitComplForm(sec,id,archKey){
   const note=(document.getElementById('compl-note-'+id)||{}).value||'';
   const lnks=(document.getElementById('compl-links-'+id)||{}).value||'';
   updateStory(sec,id,{completion_note:note.trim(),completion_links:lnks.trim(),status:'completed',carriedForward:false,completedOn:Date.now()},archKey);
-  ui.complForms.delete(id); cleanupCompletedStories(); toast('Marked done ✓'); render();
+  ui.complForms.delete(id); toast('Marked done ✓'); render();
 }
 function updateLocationPlaceholder(sec,archKey){
   const sfx='-'+sec+(archKey?'-arch':'');
@@ -4356,7 +4319,7 @@ function renderSearchHTML(){
     if(!key||key==='today') return 'Today';
     if(key===yesterdayStr()) return 'Yesterday';
     if(key===tomorrowStr()) return 'Tomorrow';
-    return archiveLabel(key);
+    return key||'';
   };
 
   // Check if query matches a section name — show all stories from that section across all dates
@@ -6380,7 +6343,7 @@ function setNoteStatus(id, status){
     if(li>=0) state.archive[createdDate].notesLog[li]={...state.archive[createdDate].notesLog[li], status, resolvedOn:Date.now()};
   }
 
-  toast(status==='done'?'✅ Note marked Done — saved to '+archiveLabel(createdDate):'↪ Note passed — saved to '+archiveLabel(createdDate));
+  toast(status==='done'?'✅ Note marked Done':'↪ Note passed');
   
   render();
 }
@@ -9155,7 +9118,7 @@ function init(){
   // Delay Firebase sync slightly if checkDateChange ran today — gives saveAndPush
   // time to write the updated deletedIds to Firebase before onSnapshot fires and
   // potentially restores stale data from the old Firebase state.
-  const syncDelay=window._checkDateChangeRan?2000:0;
+  const syncDelay=0;
   setTimeout(()=>{
     if(cfg) initFirebase(cfg, true);
     else if(!window._firebaseAuthLoadFailed && typeof firebase !== 'undefined'){
@@ -9231,17 +9194,9 @@ function init(){
     }
   }, true); // capture phase so it fires before any inline handlers
   setInterval(()=>{
-    const today=todayStr();
-    if(state.lastActiveDate && state.lastActiveDate !== today){
-      // New day detected while app is open — run the full date-change logic
-      checkDateChange();
-      updateDateHeader();
-      
-      render();
-      setTimeout(()=>renderMonthlyBackupBanner(), 300);
-    }
-    // Always refresh the date in the header in case it got stale
+    // Refresh the date header and backup banners periodically
     updateDateHeader();
+    renderMonthlyBackupBanner();
   }, 5 * 60 * 1000);
 }
 document.addEventListener('DOMContentLoaded', init);

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BBC Dashboard nd_v5 | built 2026-05-20 -->
+<!-- BBC Dashboard nd_v5 | built 2026-05-24 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1917,12 +1917,18 @@ function startRealtimeSync(){
       const inForce=incoming._forceVersion||0, lcForce=state._lastForceVersion||0;
       if(inForce>lcForce){
         const bk=state.backupSnapshots;
-        Object.assign(state,incoming);
-        state.backupSnapshots=bk;
-        state._lastForceVersion=inForce;
-        if(!state.archive) state.archive={};
+        // Completely replace state with incoming — wipe local first
+        const freshState={...incoming};
+        freshState.backupSnapshots=bk;
+        freshState._lastForceVersion=inForce;
+        if(!freshState.archive) freshState.archive={};
+        // Replace state object fields entirely
+        Object.keys(state).forEach(k=>{ if(k!=='backupSnapshots') delete state[k]; });
+        Object.assign(state,freshState);
         SECTIONS.forEach(s=>{if(!state.sections[s.key])state.sections[s.key]=[];});
         saveLocal(); render(); setSyncUI('live');
+        // Block merge-back push for 10 seconds so we don't overwrite Firebase
+        window._lastPushTs = Date.now() + 10000;
         toast('☁️ Updated from another device.');
         return;
       }

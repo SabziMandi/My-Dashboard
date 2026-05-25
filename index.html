@@ -538,21 +538,19 @@ body {
 .card.c-urgent      { border-left-color: var(--urgent); }
 .card.c-in-progress { border-left-color: var(--progress); }
 .card.c-completed   { border-left-color: var(--done); }
-.card.c-on-hold     { border: 1.5px dashed rgba(124,58,237,.35); border-left: 3px dashed var(--onhold); background: rgba(124,58,237,.04); }
+.card.c-on-hold     { border-left-color: var(--onhold); }
 .card.c-carried     { border-left-color: var(--carry); }
-.card.c-working     { border-left-color: var(--working); background: rgba(13,148,136,.04); }
-.card.c-watching    { border-left-color: var(--watching); background: rgba(180,83,9,.035); }
-/* Request age tints */
-.card.c-req-aging   { border-left-color: var(--watching); background: rgba(180,83,9,.035); }
-.card.c-req-stale   { border-left-color: var(--urgent);   background: rgba(220,38,38,.04); }
-/* Task overdue tint */
-.task-card.ts-overdue { background: rgba(220,38,38,.05); }
-/* Note deadline-soon tint */
-.note-card.note-soon  { background: rgba(180,83,9,.04); border-left-color: var(--watching); }
-/* Upcoming near-term tint */
-.uc-row.ucr-near      { background: rgba(13,148,136,.04); border-color: rgba(13,148,136,.3); }
-/* Meeting recurring tint */
-.meeting-card.mc-recurring { background: rgba(124,58,237,.03); border-left-color: var(--onhold); }
+.card.c-working     { border-left-color: var(--working); }
+.card.c-watching    { border-left-color: var(--watching); }
+/* Request age borders */
+.card.c-req-aging   { border-left-color: var(--watching); }
+.card.c-req-stale   { border-left-color: var(--urgent); }
+/* Note deadline-soon — border only */
+.note-card.note-soon  { border-left-color: var(--watching); }
+/* Upcoming near-term — border only, no tint */
+.uc-row.ucr-near      { border-left-color: var(--upcoming); }
+/* Meeting recurring — border only */
+.meeting-card.mc-recurring { border-left-color: var(--onhold); }
 /* Nearest upcoming meeting amber tint */
 .meeting-card.mc-nearest { background: rgba(217,119,6,.04); border-left-color: var(--progress); border-color: rgba(217,119,6,.25); }
 .meeting-card.mc-nearest .meeting-time-block { background: rgba(217,119,6,.1); border-color: rgba(217,119,6,.3); }
@@ -585,9 +583,9 @@ body {
 .badge-dot { width:6px;height:6px;border-radius:50%;flex-shrink:0;display:inline-block; }
 .countdown-chip { display:inline-flex;align-items:center;font-size:11px;font-weight:500;font-family:var(--font);padding:3px 9px;border-radius:20px;white-space:nowrap; }
 
-.card.c-not-done  { border-left-color: #64748b; }
+.card.c-not-done  { border-left-color: var(--text3); }
 .card.c-postponed { border-left-color: #0EA5E9; }
-.card.c-shelved   { border-left-color: #94a3b8; }
+.card.c-shelved   { border-left-color: var(--border2); }
 
 /* Drag reorder */
 .card[draggable="true"] { cursor: grab; }
@@ -905,12 +903,12 @@ body {
 @keyframes toastin { from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)} }
 /* ── Compact upcoming row ── */
 .uc-row {
-  background: var(--surface); border: 1px solid rgba(13,148,136,.2);
+  background: var(--surface); border: 1px solid var(--border);
   border-radius: 8px; margin-bottom: 6px;
   transition: border-color .15s, box-shadow .12s;
-  border-left: 3px solid var(--upcoming);
+  border-left: 3px solid var(--border);
 }
-.uc-row:hover { border-color: rgba(13,148,136,.35); box-shadow: var(--shadow); }
+.uc-row:hover { border-color: var(--border2); box-shadow: var(--shadow); }
 .uc-row.ucr-overdue  { border-left-color: var(--urgent); }
 .uc-row.ucr-completed{ border-left-color: var(--done); }
 .uc-row.ucr-on-hold  { border-left-color: var(--onhold); }
@@ -971,8 +969,8 @@ body {
 .note-card.note-carried { border-left-color: var(--carry); }
 .note-text { font-size: 13px; color: var(--text); line-height: 1.6; white-space: pre-wrap; margin-bottom: 7px; }
 .note-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 10.5px; font-family: var(--mono); color: var(--text3); }
-.note-deadline-chip { color: var(--urgent); font-weight: 600; }
-.note-deadline-chip.ok { color: #0D9488; font-weight: 500; }
+.note-deadline-chip { color: var(--urgent); font-weight: 600; font-size: 10.5px; }
+.note-deadline-chip.ok { color: #0D9488; font-weight: 500; font-size: 10.5px; }
 .note-btns { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
 .note-add-form { background: var(--surface); border: 1px solid var(--accent); border-radius: 8px; padding: 13px; margin-bottom: 10px; animation: slideIn .15s ease; }
 /* Broadcast slot row card */
@@ -1049,11 +1047,11 @@ body {
 }
 .task-card:hover { border-color: var(--border2); box-shadow: var(--shadow); }
 .task-card.ts-done       { border-left-color: var(--done); opacity: .7; }
-.task-card.ts-today      { border-left-color: var(--urgent); }
+.task-card.ts-today      { border-left-color: var(--progress); }
 .task-card.ts-tomorrow   { border-left-color: var(--progress); }
 .task-card.ts-overdue    { border-left-color: var(--urgent); }
 .task-card.ts-postponed  { border-left-color: var(--onhold); }
-.task-card.ts-pending    { border-left-color: var(--upcoming); }
+.task-card.ts-pending    { border-left-color: var(--border); }
 .task-card.ts-carried    { border-left-color: var(--carry); }
 .task-section-divider {
   font-size: 11px; font-family: var(--font); font-weight: 600; letter-spacing: .1px;
@@ -1163,7 +1161,7 @@ button.tasks-tab-btn {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: 8px; margin-bottom: 6px;
   transition: border-color .15s, box-shadow .12s;
-  border-left: 3px solid rgba(14,165,233,.5);
+  border-left: 3px solid var(--border);
 }
 .leave-card:hover { border-color: var(--border2); box-shadow: var(--shadow); }
 .leave-card.lc-approved { border-left-color: var(--done); }
@@ -1356,12 +1354,12 @@ button.tasks-tab-btn {
 .travel-add-bar{display:flex;gap:6px;flex-wrap:wrap;padding:4px 0 6px;}
 .travel-wrap{display:none;border-top:1px solid var(--border);margin-top:10px;padding-top:10px;}
 /* ── Meetings ── */
-.meeting-card { background:var(--surface); border:1px solid var(--border); border-left:3px solid #6366f1; border-radius:10px; margin-bottom:8px; overflow:hidden; }
+.meeting-card { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--border); border-radius:10px; margin-bottom:8px; overflow:hidden; }
 .meeting-card.mc-done { border-left-color:var(--done); opacity:.8; }
-.meeting-card.mc-cancelled { border-left-color:#94a3b8; opacity:.6; }
+.meeting-card.mc-cancelled { border-left-color:var(--border2); opacity:.6; }
 .meeting-top { display:flex; align-items:center; gap:10px; padding:11px 14px; cursor:pointer; }
-.meeting-time-block { display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(99,102,241,.08); border-radius:7px; padding:5px 10px; flex-shrink:0; min-width:62px; height:44px; border:0.5px solid rgba(99,102,241,.2); }
-.meeting-time-hr { font-size:15px; font-weight:700; color:#6366f1; font-family:var(--mono); line-height:1; }
+.meeting-time-block { display:flex; flex-direction:column; align-items:center; justify-content:center; background:var(--surface2); border-radius:7px; padding:5px 10px; flex-shrink:0; min-width:62px; height:44px; border:0.5px solid var(--border); }
+.meeting-time-hr { font-size:15px; font-weight:700; color:var(--text2); font-family:var(--mono); line-height:1; }
 .meeting-time-date { font-size:9px; color:var(--text3); font-family:var(--mono); margin-top:2px; }
 .meeting-title-wrap { flex:1; min-width:0; }
 .meeting-name { font-size:13.5px; font-weight:600; color:var(--text); font-family:var(--font); }
@@ -7061,7 +7059,7 @@ function renderRemarksAccordion(){
         let dlChip='';
         if(n.deadline_date){
           const diff=Math.round((new Date(n.deadline_date+'T00:00:00').getTime()-todayMs)/86400000);
-          if(diff<0)        dlChip=n.carriedForward?`<span class="carry-badge">↻ Overdue by ${Math.abs(diff)}d</span>`:`<span class="note-deadline-chip">⚠ Overdue by ${Math.abs(diff)}d</span>`;
+          if(diff<0)        dlChip=`<span class="note-deadline-chip">↻ Overdue by ${Math.abs(diff)}d</span>`;
           else if(diff===0) dlChip=`<span class="note-deadline-chip">⚠ Due today</span>`;
           else if(diff===1) dlChip=`<span class="note-deadline-chip ok">🔜 Due tomorrow</span>`;
           else              dlChip=`<span class="note-deadline-chip ok">📅 Due in ${diff}d (${fmtDate(n.deadline_date)})</span>`;

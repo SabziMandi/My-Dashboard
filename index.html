@@ -4369,51 +4369,71 @@ function renderSearchHTML(){
   // ── Today ──
   SECTIONS.forEach(sec=>{
     if(sec.isUpcoming) return;
-    // 'other' is hidden from normal rendering but must appear in search results
     const arr=(state.sections[sec.key]||[]).filter(s=>!s._deleted);
+    // Sort by updated desc — most recently edited first
+    arr.sort((a,b)=>(b.updated||b.created||0)-(a.updated||a.created||0));
     arr.forEach(s=>{
-      // secHit==='ibu' covers both ibu and other (they're the same Stories section now)
       if(secHit===sec.key||(secHit==='ibu'&&sec.key==='other')||storyMatchesSearch(s,q)){
         results.push({dateKey:'today',dateLabel:'Today',sec:sec.key,secLabel:'Stories',story:s,type:'story'});
       }
     });
   });
-  // Upcoming (today)
-  (state.sections.upcoming||[]).filter(s=>!s._deleted).forEach(s=>{
+  // Upcoming (today) — soonest expected_date first
+  const _upcomingArr=(state.sections.upcoming||[]).filter(s=>!s._deleted)
+    .sort((a,b)=>(a.expected_date||'').localeCompare(b.expected_date||''));
+  _upcomingArr.forEach(s=>{
     if(secHit==='upcoming'||storyMatchesSearch(s,q)){
       results.push({dateKey:'_upcoming',dateLabel:'Upcoming Events',sec:'upcoming',secLabel:'Upcoming',story:s,type:'story'});
     }
   });
-  // Notes
+  // Notes — updated desc
   if(secHit==='notes'||(state.notes||[]).some(n=>((n.headline||'')+(n.text||'')).toLowerCase().includes(q))){
-    (state.notes||[]).filter(n=>!n._deleted&&(secHit==='notes'||((n.headline||'')+(n.text||'')).toLowerCase().includes(q))).forEach(n=>{
-      results.push({dateKey:'_notes',dateLabel:'Notes',sec:'notes',secLabel:'Note',note:n,type:'note'});
-    });
+    (state.notes||[])
+      .filter(n=>!n._deleted&&(secHit==='notes'||((n.headline||'')+(n.text||'')).toLowerCase().includes(q)))
+      .sort((a,b)=>(b.updated||b.created||0)-(a.updated||a.created||0))
+      .forEach(n=>{
+        results.push({dateKey:'_notes',dateLabel:'Notes',sec:'notes',secLabel:'Note',note:n,type:'note'});
+      });
   }
-  // Tasks
+  // Tasks — deadline_date asc, nulls last
   if(secHit==='tasks'||(state.tasks||[]).some(t=>!t._deleted&&((t.title||'').toLowerCase().includes(q)||(t.notes||'').toLowerCase().includes(q)))){
-    (state.tasks||[]).filter(t=>!t._deleted&&(secHit==='tasks'||(t.title||'').toLowerCase().includes(q)||(t.notes||'').toLowerCase().includes(q))).forEach(t=>{
-      results.push({dateKey:'_tasks',dateLabel:'Tasks',sec:'tasks',secLabel:'Tasks',task:t,type:'task'});
-    });
+    (state.tasks||[])
+      .filter(t=>!t._deleted&&(secHit==='tasks'||(t.title||'').toLowerCase().includes(q)||(t.notes||'').toLowerCase().includes(q)))
+      .sort((a,b)=>{
+        if(!a.deadline_date&&!b.deadline_date) return 0;
+        if(!a.deadline_date) return 1;
+        if(!b.deadline_date) return -1;
+        return a.deadline_date.localeCompare(b.deadline_date);
+      })
+      .forEach(t=>{
+        results.push({dateKey:'_tasks',dateLabel:'Tasks',sec:'tasks',secLabel:'Tasks',task:t,type:'task'});
+      });
   }
-  // Leaves
+  // Leaves — dateFrom asc
   if(secHit==='leaves'||(state.leaves||[]).some(l=>!l._deleted&&((l.employeeName||'').toLowerCase().includes(q)||(l.reason||'').toLowerCase().includes(q)))){
-    (state.leaves||[]).filter(l=>!l._deleted&&(secHit==='leaves'||(l.employeeName||'').toLowerCase().includes(q)||(l.reason||'').toLowerCase().includes(q))).forEach(l=>{
-      results.push({dateKey:'_leaves',dateLabel:'Leaves',sec:'leaves',secLabel:'Leave Tracker',leave:l,type:'leave'});
-    });
+    (state.leaves||[])
+      .filter(l=>!l._deleted&&(secHit==='leaves'||(l.employeeName||'').toLowerCase().includes(q)||(l.reason||'').toLowerCase().includes(q)))
+      .sort((a,b)=>(a.dateFrom||'').localeCompare(b.dateFrom||''))
+      .forEach(l=>{
+        results.push({dateKey:'_leaves',dateLabel:'Leaves',sec:'leaves',secLabel:'Leave Tracker',leave:l,type:'leave'});
+      });
   }
-
-  // Meetings
+  // Meetings — date asc, soonest first
   const _mStr=m=>[m.name,m.agenda,typeof m.remarks==='string'?m.remarks:Array.isArray(m.remarks)?m.remarks.map(r=>r.text||'').join(' '):''].join(' ').toLowerCase();
   if(secHit==='meetings'||(state.meetings||[]).some(m=>!m._deleted&&_mStr(m).includes(q))){
-    (state.meetings||[]).filter(m=>!m._deleted&&(secHit==='meetings'||_mStr(m).includes(q))).forEach(m=>{
-      results.push({dateKey:'_meetings',dateLabel:'Meetings',sec:'meetings',secLabel:'Meeting',meeting:m,type:'meeting'});
-    });
+    (state.meetings||[])
+      .filter(m=>!m._deleted&&(secHit==='meetings'||_mStr(m).includes(q)))
+      .sort((a,b)=>(a.date||'').localeCompare(b.date||''))
+      .forEach(m=>{
+        results.push({dateKey:'_meetings',dateLabel:'Meetings',sec:'meetings',secLabel:'Meeting',meeting:m,type:'meeting'});
+      });
   }
-  // Shelved stories (today's sections)
+  // Shelved — most recently shelved first
   SECTIONS.forEach(sec=>{
     if(sec.isUpcoming) return;
-    const arr=(state.sections[sec.key]||[]).filter(s=>!s._deleted&&s.status==='shelved');
+    const arr=(state.sections[sec.key]||[])
+      .filter(s=>!s._deleted&&s.status==='shelved')
+      .sort((a,b)=>(b.shelvedAt||b.updated||0)-(a.shelvedAt||a.updated||0));
     arr.forEach(s=>{
       if(storyMatchesSearch(s,q)){
         results.push({dateKey:'_shelved',dateLabel:'Shelved Stories',sec:sec.key,secLabel:secName(sec.key)+' — shelved',story:s,type:'story',shelved:true});

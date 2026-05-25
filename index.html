@@ -4374,7 +4374,7 @@ function renderSearchHTML(){
     arr.sort((a,b)=>(b.updated||b.created||0)-(a.updated||a.created||0));
     arr.forEach(s=>{
       if(secHit===sec.key||(secHit==='ibu'&&sec.key==='other')||storyMatchesSearch(s,q)){
-        results.push({dateKey:'today',dateLabel:'Today',sec:sec.key,secLabel:'Stories',story:s,type:'story'});
+        results.push({dateKey:'today',dateLabel:'Stories',sec:sec.key,secLabel:'Stories',story:s,type:'story'});
       }
     });
   });
@@ -4469,9 +4469,12 @@ function renderSearchHTML(){
         const s=r.story;
         const dot2=col=>`<span class="badge-dot" style="background:${col}"></span>`; const sbL=s.status==='urgent'?dot2('#B91C1C')+'Urgent':s.status==='in-progress'?dot2('#B45309')+'In progress':s.status==='completed'?dot2('#15803D')+'Done':s.status==='not-done'?dot2('#475569')+'Not done':s.status==='on-hold'?dot2('#7C3AED')+'On hold':'';
         const secBadge=r.sec==='ibu'||r.sec==='other'?'Stories':r.secLabel;
-        const shelvedExtra=r.shelved?`ui_storiesShelvedOpen['${r.sec==='other'?'ibu':r.sec}']=true;`:'';
+        const shelvedExtra=r.shelved||s.status==='shelved'?`ui_storiesShelvedOpen['${r.sec==='other'?'ibu':r.sec}']=true;`:'';
+        const doneExtra=['completed','not-done'].includes(s.status)?`ui_storiesDoneOpen['today-${r.sec==='other'?'ibu':r.sec}']=true;`:'';
+        // For ibu/other combined accordion: resolved groups are keyed by status
+        const resolvedGroupExtra=['completed','not-done','on-hold','postponed','shelved'].includes(s.status)?`if(!ui._resolvedGroupOpen)ui._resolvedGroupOpen={};ui._resolvedGroupOpen['${s.status}']=true;`:'';
         html+=`<div style="display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;"
-          onclick="ui.search='';['search-input','search-input-mobile'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});ui.filter='all';ui.view='today';ui.openSections=new Set(['${r.sec==='other'?'ibu':r.sec}']);ui.openCards.clear();${shelvedExtra}ui.openCards.add('${s.id}');render();updateBnbActive();window.scrollTo({top:0});setTimeout(()=>document.querySelector('[data-id=\\'${s.id}\\']')?.scrollIntoView({behavior:'smooth',block:'center'}),80)">
+          onclick="ui.search='';['search-input','search-input-mobile'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});ui.filter='all';ui.view='today';ui.openSections=new Set(['${r.sec==='other'?'ibu':r.sec}']);ui.openCards.clear();${shelvedExtra}${doneExtra}${resolvedGroupExtra}ui.openCards.add('${s.id}');render();updateBnbActive();window.scrollTo({top:0});setTimeout(()=>document.querySelector('[data-id=\\'${s.id}\\']')?.scrollIntoView({behavior:'smooth',block:'center'}),80)">
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.title||'Untitled')}</div>
             <div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--font)">${secBadge}${s.correspondent?' · '+esc(s.correspondent):''}${sbL?' · '+sbL:''}</div>

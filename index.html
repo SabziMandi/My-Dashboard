@@ -4366,12 +4366,23 @@ function renderSearchHTML(){
   // Check if query matches a section name — show all stories from that section across all dates
   const secHit=sectionMatchesSearch('',q);
 
-  // ── Today ──
+  // ── Stories ──
   SECTIONS.forEach(sec=>{
     if(sec.isUpcoming) return;
     const arr=(state.sections[sec.key]||[]).filter(s=>!s._deleted);
-    // Sort by updated desc — most recently edited first
-    arr.sort((a,b)=>(b.updated||b.created||0)-(a.updated||a.created||0));
+    // Sort: active first (by deadline asc, no-deadline last), then resolved (by updated desc)
+    const statusPriority=s=>['urgent','in-progress'].includes(s.status)?0:s.status==='completed'||s.status==='not-done'?2:1;
+    arr.sort((a,b)=>{
+      const pa=statusPriority(a), pb=statusPriority(b);
+      if(pa!==pb) return pa-pb;
+      if(pa===0){ // active — by deadline asc
+        if(!a.deadline_date&&!b.deadline_date) return 0;
+        if(!a.deadline_date) return 1;
+        if(!b.deadline_date) return -1;
+        return a.deadline_date.localeCompare(b.deadline_date);
+      }
+      return (b.updated||b.created||0)-(a.updated||a.created||0);
+    });
     arr.forEach(s=>{
       if(secHit===sec.key||(secHit==='ibu'&&sec.key==='other')||storyMatchesSearch(s,q)){
         results.push({dateKey:'today',dateLabel:'Stories',sec:sec.key,secLabel:'Stories',story:s,type:'story'});
@@ -4543,6 +4554,8 @@ function goToStory(id, sec, rgKey, isShelved){
   if(rgKey){
     if(!ui._resolvedGroupOpen) ui._resolvedGroupOpen={};
     ui._resolvedGroupOpen[rgKey]=true;
+    // Expand pagination so the target story is guaranteed to be in the DOM
+    ui_resolvedPages[rgKey]=9999;
   }
   // Open shelved toggle if story is shelved
   if(isShelved) ui_storiesShelvedOpen[sec]=true;

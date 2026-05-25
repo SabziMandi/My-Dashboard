@@ -4802,7 +4802,7 @@ function renderAccordion(sec,archKey){
       const s=eligible[0];
       const ageDays=s.created?Math.round((Date.now()-(typeof s.created==='number'?s.created:parseInt(s.created)))/86400000):0;
       const dotCol=ageDays>=30?'#DC2626':ageDays>=14?'#D97706':'#94a3b8';
-      const ageLabel=ageDays===0?'Today':ageDays===1?'1 day old':ageDays+'d old';
+      const ageLabel=ageDays===0?'Today':ageDays+'d old';
       return `<div class="acc-info-strip"><span style="width:5px;height:5px;border-radius:50%;background:${dotCol};flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:var(--text2);font-style:italic;font-family:var(--font);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:5px">${esc(s.title||'')}</span><span style="font-size:10px;font-weight:400;color:#888;font-family:var(--font);flex-shrink:0;margin-left:4px">${ageLabel}</span></div>`;
     }
 
@@ -4816,7 +4816,7 @@ function renderAccordion(sec,archKey){
       const countdown=diff===0?'today':diff===1?'tomorrow':'in '+diff+'d';
       const shortDate=new Date(s.expected_date+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
       const dotCol=diff<=7?'#0D9488':'#2563EB';
-      const stripMeta=diff===0?'today':diff===1?'tomorrow':diff===-1?'yesterday':shortDate;
+      const stripMeta=diff===0?'Today':diff===1?'Tomorrow':diff===-1?'Yesterday':shortDate;
       return `<div class="acc-info-strip"><span style="width:5px;height:5px;border-radius:50%;background:${dotCol};flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:var(--text2);font-style:italic;font-family:var(--font);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:5px">${esc(s.title||'')}</span><span style="font-size:10px;font-weight:400;color:#888;font-family:var(--font);flex-shrink:0;margin-left:4px">${stripMeta}</span></div>`;
     }
 
@@ -4843,9 +4843,8 @@ function renderAccordion(sec,archKey){
 })()}</span>
       <div class="acc-meta">
         ${(() => {
-          const today2=todayStr();
-          const nonExpiredPending=activeStories.filter(s=>s.status!=='completed'&&(!s.expected_date||s.expected_date>=today2)).length;
-          return nonExpiredPending?`<span class="sbadge sb-in-progress">${nonExpiredPending} pending</span>`:'';
+          const activeCount=activeStories.filter(s=>s.status!=='completed'&&s.status!=='not-done'&&s.status!=='on-hold'&&s.status!=='shelved'&&s.status!=='postponed').length;
+          return activeCount?`<span class="sbadge sb-in-progress">${activeCount} pending</span>`:'';
         })()}
       </div>
       <span class="acc-chevron${isOpen?' open':''}" id="acc-chev-${sec.key}">▾</span>
@@ -8288,7 +8287,7 @@ function renderLeavesSection(){
         if(!ul.length) return '';
         const nx=ul[0];
         const diff=Math.round((new Date(nx.dateFrom+'T00:00:00').getTime()-new Date(today+'T00:00:00').getTime())/86400000);
-        const when=diff===0?'today':diff===1?'tomorrow':'from '+new Date(nx.dateFrom+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+        const when=diff===0?'Today':diff===1?'Tomorrow':'From '+new Date(nx.dateFrom+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
         return esc(nx.employeeName||'')+' · '+when;
       })()}</span>
       <div class="acc-meta">
@@ -8305,12 +8304,12 @@ function renderLeavesSection(){
       if(_ol.length){
         _name=_ol.slice(0,3).map(l=>(l.employeeName||'?').split(' ')[0]).filter(Boolean).join(' · ');
         const _soonest=_ol.slice().sort((a,b)=>a.dateTo.localeCompare(b.dateTo))[0];
-        _meta='until '+new Date(_soonest.dateTo+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+        _meta='Until '+new Date(_soonest.dateTo+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'});
       } else {
         const _nx=_ul[0];
         _name=esc(_nx.employeeName||'');
         const _diff=Math.round((new Date(_nx.dateFrom+'T00:00:00').getTime()-new Date(todayStr()+'T00:00:00').getTime())/86400000);
-        _meta=_diff===0?'today':_diff===1?'tomorrow':'from '+new Date(_nx.dateFrom+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+        _meta=_diff===0?'Today':_diff===1?'Tomorrow':'From '+new Date(_nx.dateFrom+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
       }
       const _dotCol=_ol.length?'#DC2626':'#0D9488';
       return `<div class="acc-info-strip"><span style="width:5px;height:5px;border-radius:50%;background:${_dotCol};flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:var(--text2);font-style:italic;font-family:var(--font);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:5px">${_name}</span><span style="font-size:10px;font-weight:400;color:#888;font-family:var(--font);flex-shrink:0;margin-left:4px">${_meta}</span></div>`;
@@ -8532,10 +8531,10 @@ function renderUpcomingRow(sec,s,archKey){
       ? new Date(s.expected_date+'T00:00:00').toLocaleDateString('en-GB',{month:'long'})
       : new Date(s.expected_date+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
     let cntLabel='', isOverdueBox=false;
-    if(isExpired)     { cntLabel='past'; isOverdueBox=true; }
-    else if(diff===0) { cntLabel='today'; }
-    else if(diff===1) { cntLabel='tomorrow'; }
-    else if(diff>0)   { cntLabel='in '+diff+'d'; }
+    if(isExpired)     { cntLabel='Past'; isOverdueBox=true; }
+    else if(diff===0) { cntLabel='Today'; }
+    else if(diff===1) { cntLabel='Tomorrow'; }
+    else if(diff>0)   { cntLabel='In '+diff+'d'; }
     dateBoxHtml=`<div class="uc-date-box${isOverdueBox?' uc-date-box-overdue':''}">
       <div class="uc-date-box-day${isOverdueBox?' overdue':''}">${shortDate}</div>
       ${cntLabel?`<div class="uc-date-box-cnt">${cntLabel}</div>`:''}

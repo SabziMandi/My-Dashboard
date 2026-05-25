@@ -4467,13 +4467,11 @@ function renderSearchHTML(){
     dateResults.forEach(r=>{
       if(r.type==='story'&&r.story){
         const s=r.story;
-        const archKeyJS=r.archKey?`'${r.archKey}'`:'null';
         const dot2=col=>`<span class="badge-dot" style="background:${col}"></span>`; const sbL=s.status==='urgent'?dot2('#B91C1C')+'Urgent':s.status==='in-progress'?dot2('#B45309')+'In progress':s.status==='completed'?dot2('#15803D')+'Done':s.status==='not-done'?dot2('#475569')+'Not done':s.status==='on-hold'?dot2('#7C3AED')+'On hold':'';
         const secBadge=r.sec==='ibu'||r.sec==='other'?'Stories':r.secLabel;
-        // For shelved stories: also open the shelved toggle for that section
         const shelvedExtra=r.shelved?`ui_storiesShelvedOpen['${r.sec==='other'?'ibu':r.sec}']=true;`:'';
         html+=`<div style="display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;"
-          onclick="clearTimeout(_searchTimer);ui.filter='all';setView(${r.archKey?`'archive','${r.archKey}'`:"'today',null"});setTimeout(()=>{ ${shelvedExtra}ui.openCards.add('${s.id}');ui.openSections.add('${r.sec==='other'?'ibu':r.sec}');render();setTimeout(()=>document.querySelector('[data-id=\\'${s.id}\\']')?.scrollIntoView({behavior:'smooth',block:'center'}),100); },150)">
+          onclick="ui.search='';['search-input','search-input-mobile'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});ui.filter='all';ui.view='today';ui.openSections=new Set(['${r.sec==='other'?'ibu':r.sec}']);ui.openCards.clear();${shelvedExtra}ui.openCards.add('${s.id}');render();updateBnbActive();window.scrollTo({top:0});setTimeout(()=>document.querySelector('[data-id=\\'${s.id}\\']')?.scrollIntoView({behavior:'smooth',block:'center'}),80)">
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.title||'Untitled')}</div>
             <div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--font)">${secBadge}${s.correspondent?' · '+esc(s.correspondent):''}${sbL?' · '+sbL:''}</div>
@@ -4483,7 +4481,7 @@ function renderSearchHTML(){
       } else if(r.type==='note'&&r.note){
         const n=r.note;
         html+=`<div style="display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;border-left:3px solid var(--accent);cursor:pointer;-webkit-tap-highlight-color:transparent;"
-          onclick="setView('notes',null);setTimeout(()=>{ ui_openNotes.add('${n.id}');render();setTimeout(()=>document.querySelector('[data-id=\\'${n.id}\\']')?.scrollIntoView({behavior:'smooth',block:'center'}),100); },150)">
+          onclick="ui.search='';['search-input','search-input-mobile'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});ui.view='notes';ui.openCards.clear();ui_openNotes.add('${n.id}');render();updateBnbActive();window.scrollTo({top:0});setTimeout(()=>document.querySelector('[data-id=\\'${n.id}\\']')?.scrollIntoView({behavior:'smooth',block:'center'}),80)">
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(n.headline||n.text||'Untitled note')}</div>
             <div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--font)">Note${n.status!=='active'?' · '+(n.status==='done'?'✅ Done':'↪ Passed'):''}</div>
@@ -4494,7 +4492,7 @@ function renderSearchHTML(){
         const t=r.task;
         const st=t.taskStatus==='done'?'✅':t.taskStatus==='not-done'?'⚫':'⏳';
         html+=`<div style="display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;"
-          onclick="setView('tasks',null);setTimeout(()=>{ ui_openTasks.add('${t.id}');render();setTimeout(()=>document.querySelector('[data-id=\\'${t.id}\\']')?.scrollIntoView({behavior:'smooth',block:'center'}),100); },150)">
+          onclick="ui.search='';['search-input','search-input-mobile'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});ui.view='tasks';ui.openCards.clear();ui_openTasks.add('${t.id}');render();updateBnbActive();window.scrollTo({top:0});setTimeout(()=>document.querySelector('[data-id=\\'${t.id}\\']')?.scrollIntoView({behavior:'smooth',block:'center'}),80)">
           <span style="font-size:15px">${st}</span>
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.title||'Untitled')}</div>
@@ -4505,7 +4503,7 @@ function renderSearchHTML(){
       } else if(r.type==='leave'&&r.leave){
         const l=r.leave;
         html+=`<div style="display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;border-left:3px solid ${l.status==='approved'?'var(--done)':'var(--progress)'};cursor:pointer;-webkit-tap-highlight-color:transparent;"
-          onclick="setView('leaves',null);setTimeout(()=>{ ui_openLeaves.add('${l.id}');render();setTimeout(()=>document.querySelector('[data-id=\\'${l.id}\\']')?.scrollIntoView({behavior:'smooth',block:'center'}),100); },150)">
+          onclick="ui.search='';['search-input','search-input-mobile'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});ui.view='leaves';ui.openCards.clear();ui_openLeaves.add('${l.id}');render();updateBnbActive();window.scrollTo({top:0});setTimeout(()=>document.querySelector('[data-id=\\'${l.id}\\']')?.scrollIntoView({behavior:'smooth',block:'center'}),80)">
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:600;color:var(--text)">${esc(l.employeeName||'Unknown')}</div>
             <div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--font)">${fmtDate(l.dateFrom)} → ${fmtDate(l.dateTo)} · ${l.status==='approved'?`<span class="badge-dot" style="background:#15803D"></span>Approved`:`<span class="badge-dot" style="background:#B45309"></span>Pending`}</div>
@@ -4517,7 +4515,7 @@ function renderSearchHTML(){
         const mDate=m.date?fmtDate(m.date):'';
         const mTime=m.time_uk?m.time_uk+' '+ukLabel():'';
         html+=`<div style="display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;border-left:3px solid var(--border);cursor:pointer;-webkit-tap-highlight-color:transparent;"
-          onclick="setView('meetings',null);setTimeout(()=>{ ui_openMeetings.add('${m.id}');render();setTimeout(()=>document.querySelector('[data-id=\\'${m.id}\\']')?.scrollIntoView({behavior:'smooth',block:'center'}),100); },150)">
+          onclick="ui.search='';['search-input','search-input-mobile'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});ui.view='meetings';ui.openCards.clear();ui_openMeetings.add('${m.id}');render();updateBnbActive();window.scrollTo({top:0});setTimeout(()=>document.querySelector('[data-id=\\'${m.id}\\']')?.scrollIntoView({behavior:'smooth',block:'center'}),80)">
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.name||'Untitled meeting')}</div>
             <div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--font)">Meeting${mDate?' · '+mDate:''}${mTime?' · '+mTime:''}</div>

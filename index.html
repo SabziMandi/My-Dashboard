@@ -4329,8 +4329,9 @@ function storyMatchesSearch(s, q){
     s.req_team, s.detail, s.links,
     (s.remarksList||[]).map(r=>r.text).join(' '),
     s.completion_note,
-  ];
-  return fields.some(f=>(f||'').toLowerCase().includes(q));
+  ].map(f=>(f||'').toLowerCase()).join(' ');
+  // Support multi-keyword: all words must match somewhere in combined fields
+  return q.trim().split(/\s+/).filter(Boolean).every(word=>fields.includes(word));
 }
 function sectionMatchesSearch(sec, q){
   // Allow searching by section name — e.g. "stories", "requests", "note"
@@ -4363,8 +4364,11 @@ function renderSearchHTML(){
     return key||'';
   };
 
-  // Check if query matches a section name — show all stories from that section across all dates
-  const secHit=sectionMatchesSearch('',q);
+  // Multi-keyword: split query into words upfront
+  const words=q.trim().split(/\s+/).filter(Boolean);
+
+  // Check if query matches a section name — only for single-word queries
+  const secHit=words.length===1?sectionMatchesSearch('',q):null;
 
   // ── Stories ──
   SECTIONS.forEach(sec=>{
@@ -4391,19 +4395,22 @@ function renderSearchHTML(){
       results.push({dateKey:'_upcoming',dateLabel:'Upcoming Events',sec:'upcoming',secLabel:'Upcoming',story:s,type:'story'});
     }
   });
+  // Multi-keyword match helper — all words must appear somewhere in combined text
+  const allMatch=(text)=>words.every(w=>text.toLowerCase().includes(w));
+
   // Notes — updated desc
-  if(secHit==='notes'||(state.notes||[]).some(n=>((n.headline||'')+(n.text||'')).toLowerCase().includes(q))){
+  if(secHit==='notes'||(state.notes||[]).some(n=>allMatch((n.headline||'')+(n.text||'')))){
     (state.notes||[])
-      .filter(n=>!n._deleted&&(secHit==='notes'||((n.headline||'')+(n.text||'')).toLowerCase().includes(q)))
+      .filter(n=>!n._deleted&&(secHit==='notes'||allMatch((n.headline||'')+(n.text||''))))
       .sort((a,b)=>(b.updated||b.created||0)-(a.updated||a.created||0))
       .forEach(n=>{
         results.push({dateKey:'_notes',dateLabel:'Notes',sec:'notes',secLabel:'Note',note:n,type:'note'});
       });
   }
   // Tasks — deadline_date asc, nulls last
-  if(secHit==='tasks'||(state.tasks||[]).some(t=>!t._deleted&&((t.title||'').toLowerCase().includes(q)||(t.notes||'').toLowerCase().includes(q)))){
+  if(secHit==='tasks'||(state.tasks||[]).some(t=>!t._deleted&&allMatch((t.title||'')+' '+(t.notes||'')))){
     (state.tasks||[])
-      .filter(t=>!t._deleted&&(secHit==='tasks'||(t.title||'').toLowerCase().includes(q)||(t.notes||'').toLowerCase().includes(q)))
+      .filter(t=>!t._deleted&&(secHit==='tasks'||allMatch((t.title||'')+' '+(t.notes||''))))
       .sort((a,b)=>{
         if(!a.deadline_date&&!b.deadline_date) return 0;
         if(!a.deadline_date) return 1;
@@ -4415,19 +4422,19 @@ function renderSearchHTML(){
       });
   }
   // Leaves — dateFrom asc
-  if(secHit==='leaves'||(state.leaves||[]).some(l=>!l._deleted&&((l.employeeName||'').toLowerCase().includes(q)||(l.reason||'').toLowerCase().includes(q)))){
+  if(secHit==='leaves'||(state.leaves||[]).some(l=>!l._deleted&&allMatch((l.employeeName||'')+' '+(l.reason||'')))){
     (state.leaves||[])
-      .filter(l=>!l._deleted&&(secHit==='leaves'||(l.employeeName||'').toLowerCase().includes(q)||(l.reason||'').toLowerCase().includes(q)))
+      .filter(l=>!l._deleted&&(secHit==='leaves'||allMatch((l.employeeName||'')+' '+(l.reason||''))))
       .sort((a,b)=>(a.dateFrom||'').localeCompare(b.dateFrom||''))
       .forEach(l=>{
         results.push({dateKey:'_leaves',dateLabel:'Leaves',sec:'leaves',secLabel:'Leave Tracker',leave:l,type:'leave'});
       });
   }
   // Meetings — date asc, soonest first
-  const _mStr=m=>[m.name,m.agenda,typeof m.remarks==='string'?m.remarks:Array.isArray(m.remarks)?m.remarks.map(r=>r.text||'').join(' '):''].join(' ').toLowerCase();
-  if(secHit==='meetings'||(state.meetings||[]).some(m=>!m._deleted&&_mStr(m).includes(q))){
+  const _mStr=m=>[m.name,m.agenda,typeof m.remarks==='string'?m.remarks:Array.isArray(m.remarks)?m.remarks.map(r=>r.text||'').join(' '):''].join(' ');
+  if(secHit==='meetings'||(state.meetings||[]).some(m=>!m._deleted&&allMatch(_mStr(m)))){
     (state.meetings||[])
-      .filter(m=>!m._deleted&&(secHit==='meetings'||_mStr(m).includes(q)))
+      .filter(m=>!m._deleted&&(secHit==='meetings'||allMatch(_mStr(m))))
       .sort((a,b)=>(a.date||'').localeCompare(b.date||''))
       .forEach(m=>{
         results.push({dateKey:'_meetings',dateLabel:'Meetings',sec:'meetings',secLabel:'Meeting',meeting:m,type:'meeting'});
@@ -4548,26 +4555,59 @@ function _searchNav(view, id, extraSetup){
   // 2. Set view
   ui.view=view;
   ui.openCards.clear();
-  // 3. Any caller-supplied state (e.g. openCards.add, openTasks.add)
+  // 3. Pre-expand ALL pagination so every item is in the DOM
+  // Tasks
+  ui_doneTaskOpen=true; ui_doneTaskPage=9999;
+  if(!ui_taskGroupOpen) ui_taskGroupOpen={}; if(!ui_taskGroupPage) ui_taskGroupPage={};
+  ['today','overdue','tomorrow','upcoming','nodeadline'].forEach(k=>{
+    ui_taskGroupOpen[k]=true; ui_taskGroupPage[k]=9999;
+  });
+  // Notes
+  ui.notesResolvedOpen=true;
+  if(!ui_noteGroupOpen) ui_noteGroupOpen={}; if(!ui_noteGroupPage) ui_noteGroupPage={};
+  ['today','overdue','tomorrow','upcoming','nodeadline'].forEach(k=>{
+    ui_noteGroupOpen[k]=true; ui_noteGroupPage[k]=9999;
+  });
+  // Stories resolved groups
+  if(!ui._resolvedGroupOpen) ui._resolvedGroupOpen={};
+  ['done','not-done','on-hold','postponed','shelved'].forEach(k=>{
+    ui._resolvedGroupOpen[k]=true; ui_resolvedPages[k]=9999;
+  });
+  ui_storiesDoneOpen['today-ibu']=true;
+  ui_storiesDoneOpen['today-requests']=true;
+  ui_storiesShelvedOpen['ibu']=true;
+  ui_storiesShelvedOpen['requests']=true;
+  // Meetings past section
+  ui_meetPrevOpen=true;
+  // Leaves past section
+  ui_showPastLeaves=true; ui_leavesTab='status';
+  // Upcoming groups
+  if(!ui_upcomingGroupOpen) ui_upcomingGroupOpen={};
+  const _upPrefix='live-upcoming-';
+  ['today','overdue','tomorrow','upcoming','nodeadline'].forEach(k=>{
+    ui_upcomingGroupOpen[_upPrefix+k]=true;
+  });
+  if(!ui_expiredUpcomingOpen) ui_expiredUpcomingOpen={};
+  ui_expiredUpcomingOpen['today']=true;
+  ui_expiredUpcomingOpen['today-upcoming']=true;
+  ui_expiredUpcomingOpen['today-upcoming-comp']=true;
+  // 4. Any caller-supplied state (e.g. openTasks.add, openMeetings.add)
   if(extraSetup) extraSetup();
-  // 4. Render
+  // 5. Render — everything is now expanded so all items are in DOM
   render();
   updateBnbActive();
   window.scrollTo({top:0});
-  // 5. After paint: find element, force-show all hidden ancestors, scroll+flash
+  // 6. After paint: find element, force-show any remaining hidden ancestors, scroll+flash
   setTimeout(()=>requestAnimationFrame(()=>{
     const target=document.querySelector('[data-id="'+id+'"]');
     if(!target) return;
     // Walk up DOM, show every hidden ancestor
     let node=target.parentElement;
     while(node&&node!==document.body){
-      const cs=window.getComputedStyle(node);
-      if(cs.display==='none'||node.style.display==='none'){
-        node.style.display='block';
-      }
+      if(node.style.display==='none') node.style.display='block';
       node=node.parentElement;
     }
-    // Also open the card body itself if it exists
+    // Open card body if exists
     const cb=document.getElementById('cb-'+id);
     if(cb) cb.classList.add('open');
     const ch=document.getElementById('ch-'+id);
@@ -7194,8 +7234,8 @@ function renderRemarksAccordion(){
     body+=`<div id="notes-res-body" style="display:${isResOpen?'block':'none'}">`;
     resolvedSorted.forEach(n=>{
       const created=new Date(n.created).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-      body+=`<div class="note-card ${n.status==='done'?'note-done':'note-pass'}">
-        ${n.headline?`<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px;font-family:var(--font)">${esc(n.headline)}</div>`:''}
+      body+=`<div class="note-card ${n.status==='done'?'note-done':'note-pass'}" data-id="${n.id}">
+        ${n.headline?`<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px;font-family:var(--font);text-decoration:${n.status==='done'?'line-through':''}">${esc(n.headline)}</div>`:''}
         ${n.text?`<div class="note-text" style="text-decoration:${n.status==='done'?'line-through':''}">${esc(n.text)}</div>`:''}
         <div class="note-meta">
           <span>🗓 ${created}</span>

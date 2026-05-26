@@ -568,13 +568,14 @@ body {
 .card-tags { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
 /* Desktop-only staff grid in card header */
 .card-staff-grid {
-  display: grid;
+  display: none;
   grid-template-columns: 1fr 1fr;
   gap: 5px 24px;
   margin: 7px 0 2px;
   padding-top: 7px;
   border-top: 1px solid var(--border);
 }
+.card-staff-grid.open { display: grid; }
 .card-staff-grid > div { display: flex; flex-direction: column; gap: 4px; }
 .csg-cell { display: flex; flex-direction: column; gap: 1px; }
 .csg-label { font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text3); font-family: var(--mono); }
@@ -4254,9 +4255,11 @@ function toggleCard(id){
   if(ui.openCards.has(id)) ui.openCards.delete(id); else ui.openCards.add(id);
   const b=document.getElementById('cb-'+id);
   const c=document.getElementById('ch-'+id);
+  const g=document.getElementById('csg-'+id);
   const nowOpen=ui.openCards.has(id);
   if(b) b.classList.toggle('open',nowOpen);
   if(c) c.classList.toggle('open',nowOpen);
+  if(g) g.classList.toggle('open',nowOpen);
   // Also toggle expand icon
   const icon=document.querySelector(`[data-id="${id}"] .uc-expand-icon`);
   if(icon) icon.classList.toggle('open',nowOpen);
@@ -5961,7 +5964,7 @@ function renderTasksSection(){
             }
           }
           const mr=mostRecentRecurOccurrence({...t,deadline_date:base},_today);
-          if(mr===_today) return _today;
+          if(mr>=_today) return mr;
           const nx=nextRecurrenceDate({...t,deadline_date:mr});
           return nx>=_today?nx:nextRecurrenceDate({...t,deadline_date:nx});
         }
@@ -6178,7 +6181,7 @@ function renderTasksSection(){
           }
         }
         const mostRecent=mostRecentRecurOccurrence({...t,deadline_date:base},today);
-        if(mostRecent===today) return today;
+        if(mostRecent>=today) return mostRecent; // due today or future occurrence
         const nxt=nextRecurrenceDate({...t,deadline_date:mostRecent});
         return nxt>=today?nxt:nextRecurrenceDate({...t,deadline_date:nxt});
       }
@@ -6298,7 +6301,7 @@ function renderTaskCard(t, today){
   const _recurNextDue=(()=>{
     if(!t.isRecurring||!_anchoredBase) return null;
     const mostRecent=_recurDue||_anchoredBase;
-    if(mostRecent===today) return today;
+    if(mostRecent>=today) return mostRecent;
     const nxt=nextRecurrenceDate({...t,deadline_date:mostRecent});
     return nxt>=today?nxt:nextRecurrenceDate({...t,deadline_date:nxt});
   })();
@@ -9157,7 +9160,7 @@ function renderStoryCard(sec,s,archKey){
             <span class="chevron${isOpen?' open':''}" id="ch-${s.id}">▾</span>
           </div>
           ${extraTags?`<div class="card-tags">${extraTags}</div>`:''}
-          ${isOpen?`<div class="card-staff-grid"><div>${leftCells}</div><div>${rightCells}</div></div>`:''}
+          <div class="card-staff-grid${isOpen?' open':''}" id="csg-${s.id}"><div>${leftCells}</div><div>${rightCells}</div></div>
         </div>`;
       } else {
         // ── LAYOUT A sparse ──

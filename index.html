@@ -533,26 +533,27 @@ body {
   border-radius: 9px; margin-bottom: 8px; overflow: visible;
   transition: border-color .15s, box-shadow .15s, transform .1s;
   border-left: 3px solid var(--border);
+  --card-accent: rgba(164,149,133,.12); /* default: neutral */
 }
 .card:hover { border-color: var(--border2); transform: translateY(-1px); box-shadow: var(--shadow); }
-.card.c-urgent      { border-left-color: var(--urgent); }
-.card.c-in-progress { border-left-color: var(--progress); }
-.card.c-completed   { border-left-color: var(--done); }
-.card.c-on-hold     { border-left-color: var(--onhold); }
-.card.c-carried     { border-left-color: var(--carry); }
-.card.c-working     { border-left-color: var(--working); }
-.card.c-watching    { border-left-color: var(--watching); }
+.card.c-urgent      { border-left-color: var(--urgent);   --card-accent: rgba(220,38,38,.09); }
+.card.c-in-progress { border-left-color: var(--progress); --card-accent: rgba(217,119,6,.09); }
+.card.c-completed   { border-left-color: var(--done);     --card-accent: rgba(22,163,74,.08); }
+.card.c-on-hold     { border-left-color: var(--onhold);   --card-accent: rgba(124,58,237,.08); }
+.card.c-carried     { border-left-color: var(--carry);    --card-accent: rgba(234,88,12,.09); }
+.card.c-working     { border-left-color: var(--working);  --card-accent: rgba(13,148,136,.09); }
+.card.c-watching    { border-left-color: var(--watching); --card-accent: rgba(180,83,9,.09); }
 /* Request age borders */
-.card.c-req-aging   { border-left-color: var(--watching); }
-.card.c-req-stale   { border-left-color: var(--urgent); }
+.card.c-req-aging   { border-left-color: var(--watching); --card-accent: rgba(180,83,9,.09); }
+.card.c-req-stale   { border-left-color: var(--urgent);   --card-accent: rgba(220,38,38,.09); }
 /* Note deadline-soon — border only */
-.note-card.note-soon  { border-left-color: var(--watching); }
+.note-card.note-soon  { border-left-color: var(--watching); --card-accent: rgba(180,83,9,.09); }
 /* Upcoming near-term — border only, no tint */
-.uc-row.ucr-near      { border-left-color: var(--upcoming); }
+.uc-row.ucr-near      { border-left-color: var(--upcoming); --card-accent: rgba(13,148,136,.09); }
 /* Meeting recurring — border only */
-.meeting-card.mc-recurring { border-left-color: var(--onhold); }
+.meeting-card.mc-recurring { border-left-color: var(--onhold); --card-accent: rgba(124,58,237,.08); }
 /* Nearest upcoming meeting amber tint */
-.meeting-card.mc-nearest { background: rgba(217,119,6,.04); border-left-color: var(--progress); border-color: rgba(217,119,6,.25); }
+.meeting-card.mc-nearest { background: rgba(217,119,6,.04); border-left-color: var(--progress); border-color: rgba(217,119,6,.25); --card-accent: rgba(217,119,6,.09); }
 .meeting-card.mc-nearest .meeting-time-block { background: rgba(217,119,6,.1); border-color: rgba(217,119,6,.3); }
 .meeting-card.mc-nearest .meeting-time-hr { color: var(--progress); }
 .meeting-card.mc-nearest .meeting-body { background: rgba(217,119,6,.03); border-top-color: rgba(217,119,6,.15); }
@@ -664,9 +665,86 @@ body {
 .link-pill:hover { border-color: rgba(207,102,64,.4); }
 .card-btns { display: flex; gap: 7px; margin-top: 11px; flex-wrap: wrap; }
 .card-delete-row { display: inline-flex; }
+/* ── Tinted action footer — colour derives from card's own border accent ── */
+.card-action-footer,
+.task-btns-footer,
+.leave-btns-footer,
+.meeting-action-footer {
+  display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+  background: var(--card-accent, rgba(164,149,133,.10));
+  border-top: 1px solid var(--border2);
+  border-radius: 0 0 8px 8px;
+}
+.card-action-footer  { margin: 10px -14px -14px; padding: 9px 14px 10px; }
+.task-btns-footer    { margin: 8px -13px -12px;  padding: 9px 13px 10px; }
+.leave-btns-footer   { margin: 8px -13px -12px;  padding: 9px 13px 10px; }
+.meeting-action-footer { margin: 10px -1px -1px; padding: 9px 14px 10px; }
+.caf-spacer { flex: 1; }
+/* All buttons inside any action footer — uniform translucent base */
+.card-action-footer .btn,
+.task-btns-footer .btn,
+.leave-btns-footer .btn,
+.meeting-action-footer .btn {
+  background: rgba(255,255,255,0.72) !important;
+  border-color: var(--border2) !important;
+  color: var(--text2) !important;
+}
+.card-action-footer .btn:hover,
+.task-btns-footer .btn:hover,
+.leave-btns-footer .btn:hover,
+.meeting-action-footer .btn:hover {
+  background: rgba(255,255,255,0.95) !important;
+  border-color: var(--border2) !important;
+}
+/* Semantic colour overrides — text/border only, bg stays uniform */
+.card-action-footer .btn-done-active,
+.task-btns-footer .btn-done-active,
+.leave-btns-footer .btn-done-active,
+.meeting-action-footer .btn-done-active { color: var(--done) !important; border-color: rgba(22,163,74,.4) !important; }
+.card-action-footer .btn-not-done,
+.task-btns-footer .btn-not-done,
+.leave-btns-footer .btn-not-done,
+.meeting-action-footer .btn-not-done { color: var(--urgent) !important; border-color: rgba(220,38,38,.3) !important; }
+.card-action-footer .btn-danger,
+.task-btns-footer .btn-danger,
+.leave-btns-footer .btn-danger,
+.meeting-action-footer .btn-danger { color: var(--urgent) !important; border-color: rgba(220,38,38,.3) !important; }
+.card-action-footer .btn-postpone,
+.task-btns-footer .btn-postpone { color: #0369A1 !important; border-color: rgba(14,165,233,.4) !important; }
+/* Compact story remarks */
+.story-remarks-list { margin: 8px 0 4px; }
+.sremark-compact { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--border); }
+.sremark-compact:last-of-type { border-bottom: none; }
+.sremark-compact-text { font-size: 12.5px; color: var(--text2); line-height: 1.45; flex: 1; white-space: pre-wrap; }
+.sremark-compact-meta { font-size: 10px; font-family: var(--mono); color: var(--text3); margin-top: 2px; }
+.sremark-add-row { display: flex; align-items: flex-end; gap: 8px; padding-top: 7px; }
+.sremark-add-row textarea { flex: 1; font-size: 12.5px; min-height: 34px; max-height: 80px; resize: none; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface2); font-family: var(--font); color: var(--text); outline: none; line-height: 1.4; }
+.sremark-add-row textarea::placeholder { color: var(--text3); }
+/* Leave remarks CRUD */
+.leave-remarks-section { margin: 8px 0 4px; padding-top: 8px; border-top: 1px solid var(--border); }
+.leave-remark-entry { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px dashed var(--border); }
+.leave-remark-entry:last-of-type { border-bottom: none; }
+.leave-remark-text { font-size: 12.5px; color: var(--text2); line-height: 1.45; flex: 1; white-space: pre-wrap; }
+.leave-remark-meta { font-size: 10px; font-family: var(--mono); color: var(--text3); margin-top: 2px; }
 @media(max-width:720px){
   .card-delete-row { width: 100%; border-top: 1px dashed var(--border); padding-top: 7px; margin-top: 3px; }
   .card-delete-row button { width: 100%; text-align: left; }
+}
+@media(max-width:720px){
+  /* Story card footer on mobile: 3 rows */
+  .card-action-footer  { margin: 8px -13px -11px; padding: 8px 13px 10px; gap: 6px; }
+  .task-btns-footer    { margin: 7px -13px -12px; padding: 8px 13px 9px;  gap: 6px; }
+  .leave-btns-footer   { margin: 7px -13px -12px; padding: 8px 13px 9px;  gap: 6px; }
+  .meeting-action-footer { margin: 8px -14px -14px; padding: 8px 14px 10px; gap: 6px; }
+  /* On mobile spacer collapses — Delete flows inline */
+  .caf-spacer { display: none; }
+  /* Note card inline footer — smaller margins to match note-card padding */
+  .note-card .card-action-footer { margin: 7px -13px -11px; padding: 7px 13px 9px; }
+  /* Delete button: hide text label on mobile for non-story footers (icon only saves space) */
+  .task-btns-footer .btn-danger .del-label,
+  .leave-btns-footer .btn-danger .del-label,
+  .meeting-action-footer .btn-danger .del-label,
+  .note-card .card-action-footer .btn-danger .del-label { display: none; }
 }
 .completion-box { background: var(--done-bg); border: 1px solid rgba(22,163,74,.2); border-radius: 7px; padding: 11px 13px; margin-top: 11px; }
 .completion-label { font-size: 10.5px; color: var(--done); font-family: var(--font); font-weight: 500; margin-bottom: 7px; }
@@ -909,9 +987,9 @@ body {
   border-left: 3px solid var(--border);
 }
 .uc-row:hover { border-color: var(--border2); box-shadow: var(--shadow); }
-.uc-row.ucr-overdue  { border-left-color: var(--urgent); }
-.uc-row.ucr-completed{ border-left-color: var(--done); }
-.uc-row.ucr-on-hold  { border-left-color: var(--onhold); }
+.uc-row.ucr-overdue  { border-left-color: var(--urgent);  --card-accent: rgba(220,38,38,.09); }
+.uc-row.ucr-completed{ border-left-color: var(--done);    --card-accent: rgba(22,163,74,.08); }
+.uc-row.ucr-on-hold  { border-left-color: var(--onhold);  --card-accent: rgba(124,58,237,.08); }
 .uc-row.ucr-past     { border-left-color: var(--text3); opacity: .6; }
 .uc-row.ucr-past:hover { border-color: var(--border); box-shadow: none; }
 /* Prevent scroll-anchor adjustment when accordions or cards expand */
@@ -963,10 +1041,11 @@ body {
   background: var(--surface); border: 1px solid var(--border);
   border-radius: 8px; padding: 11px 13px; margin-bottom: 8px;
   border-left: 3px solid var(--accent);
+  --card-accent: rgba(207,102,64,.09);
 }
-.note-card.note-done { border-left-color: var(--done); opacity: .6; }
-.note-card.note-pass { border-left-color: var(--text3); opacity: .5; }
-.note-card.note-carried { border-left-color: var(--carry); }
+.note-card.note-done    { border-left-color: var(--done);     opacity: .6; --card-accent: rgba(22,163,74,.08); }
+.note-card.note-pass    { border-left-color: var(--text3);    opacity: .5; --card-accent: rgba(154,140,126,.09); }
+.note-card.note-carried { border-left-color: var(--carry);                 --card-accent: rgba(234,88,12,.09); }
 .note-text { font-size: 13px; color: var(--text); line-height: 1.6; white-space: pre-wrap; margin-bottom: 7px; }
 .note-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 10.5px; font-family: var(--mono); color: var(--text3); }
 .note-deadline-chip { color: var(--urgent); font-weight: 600; font-size: 10.5px; }
@@ -1044,15 +1123,16 @@ body {
   border-radius: 8px; margin-bottom: 6px;
   transition: border-color .15s, box-shadow .12s;
   border-left: 3px solid var(--border);
+  --card-accent: rgba(164,149,133,.12);
 }
 .task-card:hover { border-color: var(--border2); box-shadow: var(--shadow); }
-.task-card.ts-done       { border-left-color: var(--done); opacity: .7; }
-.task-card.ts-today      { border-left-color: var(--progress); }
-.task-card.ts-tomorrow   { border-left-color: var(--progress); }
-.task-card.ts-overdue    { border-left-color: var(--urgent); }
-.task-card.ts-postponed  { border-left-color: var(--onhold); }
+.task-card.ts-done       { border-left-color: var(--done);     opacity: .7; --card-accent: rgba(22,163,74,.08); }
+.task-card.ts-today      { border-left-color: var(--progress);             --card-accent: rgba(217,119,6,.09); }
+.task-card.ts-tomorrow   { border-left-color: var(--progress);             --card-accent: rgba(217,119,6,.09); }
+.task-card.ts-overdue    { border-left-color: var(--urgent);               --card-accent: rgba(220,38,38,.09); }
+.task-card.ts-postponed  { border-left-color: var(--onhold);               --card-accent: rgba(124,58,237,.08); }
 .task-card.ts-pending    { border-left-color: var(--border); }
-.task-card.ts-carried    { border-left-color: var(--carry); }
+.task-card.ts-carried    { border-left-color: var(--carry);                --card-accent: rgba(234,88,12,.09); }
 .task-section-divider {
   font-size: 11px; font-family: var(--font); font-weight: 600; letter-spacing: .1px;
   color: var(--text2);
@@ -1162,10 +1242,11 @@ button.tasks-tab-btn {
   border-radius: 8px; margin-bottom: 6px;
   transition: border-color .15s, box-shadow .12s;
   border-left: 3px solid var(--border);
+  --card-accent: rgba(164,149,133,.12);
 }
 .leave-card:hover { border-color: var(--border2); box-shadow: var(--shadow); }
-.leave-card.lc-approved { border-left-color: var(--done); }
-.leave-card.lc-pending  { border-left-color: var(--progress); }
+.leave-card.lc-approved { border-left-color: var(--done);     --card-accent: rgba(22,163,74,.08); }
+.leave-card.lc-pending  { border-left-color: var(--progress); --card-accent: rgba(217,119,6,.09); }
 .leave-card.lc-past     { border-left-color: var(--border); opacity: .65; }
 .leave-top {
   display: flex; align-items: center; gap: 9px;
@@ -1354,8 +1435,8 @@ button.tasks-tab-btn {
 .travel-add-bar{display:flex;gap:6px;flex-wrap:wrap;padding:4px 0 6px;}
 .travel-wrap{display:none;border-top:1px solid var(--border);margin-top:10px;padding-top:10px;}
 /* ── Meetings ── */
-.meeting-card { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--border); border-radius:10px; margin-bottom:8px; overflow:hidden; }
-.meeting-card.mc-done { border-left-color:var(--done); opacity:.8; }
+.meeting-card { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--border); border-radius:10px; margin-bottom:8px; overflow:hidden; --card-accent: rgba(164,149,133,.12); }
+.meeting-card.mc-done { border-left-color:var(--done); opacity:.8; --card-accent: rgba(22,163,74,.08); }
 .meeting-card.mc-cancelled { border-left-color:var(--border2); opacity:.6; }
 .meeting-top { display:flex; align-items:center; gap:10px; padding:11px 14px; cursor:pointer; }
 .meeting-time-block { display:flex; flex-direction:column; align-items:center; justify-content:center; background:var(--surface2); border-radius:7px; padding:5px 10px; flex-shrink:0; min-width:62px; height:44px; border:0.5px solid var(--border); }
@@ -4816,12 +4897,13 @@ function renderNotesView(){
             <span>${created}${statusLabel}</span>
             ${nd.deadline_date?`<span>📅 ${fmtDate(nd.deadline_date)}</span>`:''}
           </div>
-          ${isLive?`<div class="note-btns" style="margin-top:6px">
+          ${isLive?`<div class="card-action-footer" style="margin:8px -12px -12px;border-radius:0 0 6px 6px">
             ${nd.status!=='done'?`<button class="btn btn-done-active btn-sm" onclick="setNoteStatus('${nd.id}','done')">✅ Done</button>`:''}
             ${nd.status==='active'?`<button class="btn btn-ghost btn-sm" style="color:var(--text3)" onclick="setNoteStatus('${nd.id}','pass')">↪ Pass</button>`:''}
             ${nd.status!=='active'?`<button class="btn btn-ghost btn-sm" onclick="updateNote('${nd.id}',{status:'active',resolvedOn:null});render()">↩ Restore</button>`:''}
             <button class="btn btn-ghost btn-sm" onclick="editNote('${nd.id}')">✏ Edit</button>
-            <button class="btn btn-ghost btn-sm btn-danger" onclick="if(confirm('Delete this note?'))deleteNote('${nd.id}')">🗑</button>
+            <span class="caf-spacer"></span>
+            <button class="btn btn-ghost btn-sm btn-danger" onclick="if(confirm('Delete this note?'))deleteNote('${nd.id}')">🗑 <span class="del-label">Delete</span></button>
           </div>`:''}
         </div>`;
       });
@@ -5258,20 +5340,20 @@ function buildStoryRemarksHTML(sec, s, archKey){
         </div>
       </div>`;
     } else {
-      html+=`<div class="sremark" onclick="event.stopPropagation()">
-        <div class="sremark-body">
-          <div class="sremark-text">${esc(r.text)}</div>
-          <div class="sremark-meta">${dt}${r.edited?' · edited '+new Date(r.edited).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):''}</div>
+      html+=`<div class="sremark-compact" onclick="event.stopPropagation()">
+        <div>
+          <div class="sremark-compact-text">${esc(r.text)}</div>
+          <div class="sremark-compact-meta">${dt}${r.edited?' · edited '+new Date(r.edited).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):''}</div>
         </div>
-        <div style="display:flex;gap:3px;flex-shrink:0">
+        <div style="display:flex;gap:3px;flex-shrink:0;padding-top:1px">
           <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();_storyRemarkEditId['${s.id}']='${r.id}';render()" title="Edit">✏</button>
           <button class="btn btn-ghost btn-xs btn-danger" onclick="event.stopPropagation();if(confirm('Delete this remark?'))deleteStoryRemark('${sec}','${s.id}','${r.id}',${archKeyJS})" title="Delete">🗑</button>
         </div>
       </div>`;
     }
   });
-  html+=`<div class="sremark-add" onclick="event.stopPropagation()">
-    <textarea class="ftextarea" id="sr-input-${s.id}" placeholder="Add a remark… (Enter for new line)" style="flex:1;font-size:12px;min-height:44px;resize:vertical;white-space:pre-wrap"></textarea>
+  html+=`<div class="sremark-add-row" onclick="event.stopPropagation()">
+    <textarea id="sr-input-${s.id}" placeholder="Add a remark… (Enter for new line)" rows="1"></textarea>
     <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();submitStoryRemark('${sec}','${s.id}',${archKeyJS})">+ Add</button>
   </div>`;
   html+='</div>';
@@ -5756,9 +5838,10 @@ function renderTasksSection(){
       const _pending=(state.tasks||[]).filter(t=>t.taskStatus!=='done'&&t.taskStatus!=='not-done'&&t.taskStatus!=='transferred');
       if(!_pending.length) return '';
       const _effDate=t=>{
-        if(!t.deadline_date) return null;
+        if(!t.deadline_date && !t.isRecurring) return null;
         if(t.isRecurring){
-          const mr=mostRecentRecurOccurrence(t,_today);
+          const base=t.deadline_date||_today;
+          const mr=mostRecentRecurOccurrence({...t,deadline_date:base},_today);
           if(mr===_today) return _today;
           const nx=nextRecurrenceDate({...t,deadline_date:mr});
           return nx>=_today?nx:nextRecurrenceDate({...t,deadline_date:nx});
@@ -5956,10 +6039,11 @@ function renderTasksSection(){
   } else {
     const todayMs=new Date(today+'T00:00:00').getTime();
     const effectiveDate=t=>{
-      if(!t.deadline_date) return null;
+      if(!t.deadline_date && !t.isRecurring) return null;
       if(t.isRecurring){
-        const mostRecent=mostRecentRecurOccurrence(t,today);
-        if(mostRecent===today) return today; // due today — don't advance to next interval
+        const base=t.deadline_date||today;
+        const mostRecent=mostRecentRecurOccurrence({...t,deadline_date:base},today);
+        if(mostRecent===today) return today;
         const nxt=nextRecurrenceDate({...t,deadline_date:mostRecent});
         return nxt>=today?nxt:nextRecurrenceDate({...t,deadline_date:nxt});
       }
@@ -6182,7 +6266,7 @@ function renderTaskCard(t, today){
   <div class="task-body${isOpen?' open':''}" id="task-body-${t.id}">
     <div style="font-size:10.5px;color:var(--text3);font-family:var(--font);margin-bottom:8px;">🗓 Added ${createdDate}${t.deadline_date?' · 📅 '+fmtDate(t.deadline_date):''}</div>
     ${t.notes?`<div style="font-size:12.5px;color:var(--text2);line-height:1.6;margin-bottom:10px;white-space:pre-wrap">${esc(t.notes)}</div>`:''}
-    <div class="task-btns">
+    <div class="task-btns-footer">
       ${t.taskStatus==='done'
         ? `<button class="btn btn-not-done btn-sm" onclick="setTaskStatus('${t.id}','pending');event.stopPropagation()">↩ Reopen</button>`
         : t.taskStatus==='not-done'
@@ -6200,7 +6284,8 @@ function renderTaskCard(t, today){
         : ''
       }
       <button class="btn btn-ghost btn-sm" onclick="editTask('${t.id}');event.stopPropagation()">✏ Edit</button>
-      <button class="btn btn-ghost btn-sm btn-danger" onclick="event.stopPropagation();if(confirm('Delete this task?'))deleteTask('${t.id}')">🗑</button>
+      <span class="caf-spacer"></span>
+      <button class="btn btn-ghost btn-sm btn-danger" onclick="event.stopPropagation();if(confirm('Delete this task?'))deleteTask('${t.id}')">🗑 <span class="del-label">Delete</span></button>
     </div>
   </div>
 </div>`;
@@ -6642,7 +6727,7 @@ function submitMeetingRemark(meetingId){
   const text=(ta?.value||'').trim();
   if(!text){ toast('Enter remark text'); return; }
   addMeetingRemark(meetingId, text);
-  ui_meetingRemarkForms[meetingId]=false;
+  if(ta) ta.value='';
 }
 function submitMeetingRemarkEdit(meetingId, remarkId){
   const ta=document.getElementById('mref-text-'+meetingId+'-'+remarkId);
@@ -6986,28 +7071,29 @@ function renderMeetingCard(m, isPastOneOff=false, isNearest=false){
           </div>`;
         }
         const dt=new Date(r.created).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-        return`<div class="mremark">
-          <div class="mremark-text">${esc(r.text)}</div>
-          <div class="mremark-meta">${dt}${r.edited?' · edited':''}
-            <button class="btn btn-ghost btn-xs" style="margin-left:8px" onclick="ui_editMeetingRemarkId['${m.id}']='${r.id}';render()">✏</button>
-            <button class="btn btn-ghost btn-xs btn-danger" style="margin-left:4px" onclick="if(confirm('Delete this remark?'))deleteMeetingRemark('${m.id}','${r.id}')">🗑</button>
+        return`<div class="sremark-compact">
+          <div>
+            <div class="sremark-compact-text">${esc(r.text)}</div>
+            <div class="sremark-compact-meta">${dt}${r.edited?' · edited':''}</div>
+          </div>
+          <div style="display:flex;gap:3px;flex-shrink:0;padding-top:1px">
+            <button class="btn btn-ghost btn-xs" onclick="ui_editMeetingRemarkId['${m.id}']='${r.id}';render()">✏</button>
+            <button class="btn btn-ghost btn-xs btn-danger" onclick="if(confirm('Delete this remark?'))deleteMeetingRemark('${m.id}','${r.id}')">🗑</button>
           </div>
         </div>`;
       }).join('')}
-      ${showRemarkForm?`<div style="margin-top:8px">
-        <textarea class="ftextarea" id="mrf-text-${m.id}" placeholder="Add a remark…" style="min-height:52px;white-space:pre-wrap"></textarea>
-        <div style="display:flex;gap:6px;margin-top:5px">
-          <button class="btn btn-accent btn-sm" onclick="submitMeetingRemark('${m.id}')">Save Remark</button>
-          <button class="btn btn-ghost btn-sm" onclick="ui_meetingRemarkForms['${m.id}']=false;render()">Cancel</button>
-        </div>
-      </div>`:`<button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="ui_meetingRemarkForms['${m.id}']=true;render()">+ Add Remark</button>`}
+      <div class="sremark-add-row" style="margin-top:${(m.remarks||[]).length?'6':'10'}px" onclick="event.stopPropagation()">
+        <textarea id="mrf-text-${m.id}" placeholder="Add a remark…" rows="1" onclick="event.stopPropagation()"></textarea>
+        <button class="btn btn-ghost btn-sm" onclick="submitMeetingRemark('${m.id}')">+ Add</button>
+      </div>
     </div>
-    <div style="display:flex;gap:7px;margin-top:12px;flex-wrap:wrap;align-items:center">
+    <div class="meeting-action-footer">
       <button class="btn btn-ghost btn-sm" onclick="editMeeting('${m.id}')">✏ Edit</button>
       ${m.status!=='done'?`<button class="btn btn-done-active btn-sm" onclick="updateMeeting('${m.id}',{status:'done'});render()">✅ Mark Done</button>`:''}
       ${m.status==='done'?`<button class="btn btn-ghost btn-sm" onclick="updateMeeting('${m.id}',{status:'scheduled'});render()">↩ Reopen</button>`:''}
       ${m.status!=='cancelled'?`<button class="btn btn-ghost btn-sm" onclick="updateMeeting('${m.id}',{status:'cancelled'});render()">🚫 Cancel</button>`:`<button class="btn btn-ghost btn-sm" onclick="updateMeeting('${m.id}',{status:'scheduled'});render()">↩ Reschedule</button>`}
-      <button class="btn btn-ghost btn-sm btn-danger" style="margin-left:auto" onclick="if(confirm('Delete this meeting?'))deleteMeeting('${m.id}')">🗑 Delete</button>
+      <span class="caf-spacer"></span>
+      <button class="btn btn-ghost btn-sm btn-danger" onclick="if(confirm('Delete this meeting?'))deleteMeeting('${m.id}')">🗑 <span class="del-label">Delete</span></button>
     </div>
   </div>
 </div>`;
@@ -7212,11 +7298,12 @@ function renderRemarksAccordion(){
             ${dlChip}
             ${carriedChip}
           </div>
-          <div class="note-btns">
+          <div class="card-action-footer" style="margin:8px -12px -12px;border-radius:0 0 6px 6px" onclick="event.stopPropagation()">
             <button class="btn btn-done-active btn-sm" onclick="setNoteStatus('${n.id}','done');event.stopPropagation()">✅ Done</button>
             <button class="btn btn-ghost btn-sm" style="color:var(--text3)" onclick="setNoteStatus('${n.id}','pass');event.stopPropagation()">↪ Pass</button>
             <button class="btn btn-ghost btn-sm" onclick="editNote('${n.id}');event.stopPropagation()">✏ Edit</button>
-            <button class="btn btn-ghost btn-sm btn-danger" onclick="deleteNote('${n.id}');event.stopPropagation()">🗑</button>
+            <span class="caf-spacer"></span>
+            <button class="btn btn-ghost btn-sm btn-danger" onclick="deleteNote('${n.id}');event.stopPropagation()">🗑 <span class="del-label">Delete</span></button>
           </div>
         </div>`;
       });
@@ -7241,10 +7328,11 @@ function renderRemarksAccordion(){
           <span>🗓 ${created}</span>
           <span style="color:${n.status==='done'?'var(--done)':'var(--text3)'}">${n.status==='done'?'✅ Done':'↪ Passed'}</span>
         </div>
-        <div class="note-btns">
+        <div class="card-action-footer" style="margin:8px -12px -12px;border-radius:0 0 6px 6px" onclick="event.stopPropagation()">
           <button class="btn btn-ghost btn-sm" onclick="updateNote('${n.id}',{status:'active',resolvedOn:null});render()">↩ Restore</button>
           <button class="btn btn-ghost btn-sm" onclick="editNote('${n.id}')">✏ Edit</button>
-          <button class="btn btn-ghost btn-sm btn-danger" onclick="if(confirm('Delete this note?'))deleteNote('${n.id}')">🗑</button>
+          <span class="caf-spacer"></span>
+          <button class="btn btn-ghost btn-sm btn-danger" onclick="if(confirm('Delete this note?'))deleteNote('${n.id}')">🗑 <span class="del-label">Delete</span></button>
         </div>
       </div>`;
     });
@@ -7430,6 +7518,37 @@ function editLeave(id){
     const sec=document.getElementById('leaves-section');
     if(sec){const r=sec.getBoundingClientRect();if(r.top<0||r.top>window.innerHeight) sec.scrollIntoView({behavior:'smooth',block:'start'});}
   },80);
+}
+let ui_editLeaveRemarkId={}; // leaveId → remarkId being edited
+function submitLeaveRemark(leaveId){
+  const ta=document.getElementById('lr-input-'+leaveId);
+  const text=(ta?.value||'').trim();
+  if(!text){ toast('Enter remark text'); return; }
+  const l=(state.leaves||[]).find(x=>x.id===leaveId);if(!l)return;
+  if(!l.remarksList) l.remarksList=[];
+  l.remarksList.push({id:genId(),text,created:Date.now()});
+  if(ta) ta.value='';
+  updateLeave(leaveId,{remarksList:l.remarksList});
+  render();
+}
+function submitLeaveRemarkEdit(leaveId,remarkId){
+  const ta=document.getElementById('lr-edit-'+leaveId+'-'+remarkId);
+  const text=(ta?.value||'').trim();
+  if(!text){ toast('Enter remark text'); return; }
+  const l=(state.leaves||[]).find(x=>x.id===leaveId);if(!l)return;
+  const r=(l.remarksList||[]).find(x=>x.id===remarkId);
+  if(r){r.text=text;r.edited=Date.now();}
+  delete ui_editLeaveRemarkId[leaveId];
+  updateLeave(leaveId,{remarksList:l.remarksList});
+  render();
+}
+function deleteLeaveRemark(leaveId,remarkId){
+  if(!confirm('Delete this remark?')) return;
+  const l=(state.leaves||[]).find(x=>x.id===leaveId);if(!l)return;
+  l.remarksList=(l.remarksList||[]).filter(x=>x.id!==remarkId);
+  delete ui_editLeaveRemarkId[leaveId];
+  updateLeave(leaveId,{remarksList:l.remarksList});
+  render();
 }
 function toggleMeetingOpen(id){
   if(ui_openMeetings.has(id)) ui_openMeetings.delete(id); else ui_openMeetings.add(id);
@@ -8635,16 +8754,34 @@ function renderLeaveCard(l,today,isPast){
       <div><div class="cfield-label">Duration</div><div class="cfield-value">${days} day${days!==1?'s':''}</div></div>
       <div><div class="cfield-label">Status</div><div class="cfield-value">${l.status==='approved'?'✅ Approved':'⏳ Pending'}</div></div>
     </div>
-    <div class="card-remarks" onclick="event.stopPropagation()">
-      ${l.reason?`<span style="white-space:pre-wrap">💬 ${esc(l.reason)}</span> <button class="btn btn-ghost btn-xs" style="font-style:normal" onclick="event.stopPropagation();editLeave('${l.id}')" title="Edit reason">✏</button>`:`<button class="btn btn-ghost btn-xs" style="font-style:normal;color:var(--text3)" onclick="event.stopPropagation();editLeave('${l.id}')">+ Add reason</button>`}
+    <div class="leave-remarks-section" onclick="event.stopPropagation()">
+      <div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Remarks</div>
+      ${(()=>{
+        const editingRId=ui_editLeaveRemarkId[l.id];
+        let rhtml='';
+        (l.remarksList||[]).forEach(r=>{
+          const dt=new Date(r.created).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+          if(editingRId===r.id){
+            rhtml+=`<div style="margin-bottom:6px"><textarea class="ftextarea" id="lr-edit-${l.id}-${r.id}" style="min-height:44px;white-space:pre-wrap">${esc(r.text)}</textarea><div style="display:flex;gap:5px;margin-top:4px"><button class="btn btn-accent btn-sm" onclick="submitLeaveRemarkEdit('${l.id}','${r.id}');event.stopPropagation()">Save</button><button class="btn btn-ghost btn-sm" onclick="delete ui_editLeaveRemarkId['${l.id}'];render();event.stopPropagation()">Cancel</button></div></div>`;
+          } else {
+            rhtml+=`<div class="leave-remark-entry"><div><div class="leave-remark-text">${esc(r.text)}</div><div class="leave-remark-meta">${dt}${r.edited?' · edited':''}</div></div><div style="display:flex;gap:3px;flex-shrink:0;padding-top:1px"><button class="btn btn-ghost btn-xs" onclick="ui_editLeaveRemarkId['${l.id}']='${r.id}';render();event.stopPropagation()">✏</button><button class="btn btn-ghost btn-xs btn-danger" onclick="deleteLeaveRemark('${l.id}','${r.id}');event.stopPropagation()">🗑</button></div></div>`;
+          }
+        });
+        return rhtml;
+      })()}
+      <div class="sremark-add-row">
+        <textarea id="lr-input-${l.id}" placeholder="Add a remark…" rows="1" onclick="event.stopPropagation()"></textarea>
+        <button class="btn btn-ghost btn-sm" onclick="submitLeaveRemark('${l.id}');event.stopPropagation()">+ Add</button>
+      </div>
     </div>
-    <div class="leave-btns">
+    <div class="leave-btns-footer">
       ${l.status==='pending'
         ?`<button class="btn btn-done-active btn-sm" onclick="updateLeave('${l.id}',{status:'approved'});render();event.stopPropagation()">✅ Approve</button>`
         :`<button class="btn btn-ghost btn-sm" onclick="updateLeave('${l.id}',{status:'pending'});render();event.stopPropagation()">↩ Set Pending</button>`
       }
       <button class="btn btn-ghost btn-sm" onclick="editLeave('${l.id}');event.stopPropagation()">✏ Edit</button>
-      <button class="btn btn-ghost btn-sm btn-danger" onclick="if(confirm('Delete this leave record?'))deleteLeave('${l.id}');event.stopPropagation()">🗑 Delete</button>
+      <span class="caf-spacer"></span>
+      <button class="btn btn-ghost btn-sm btn-danger" onclick="if(confirm('Delete this leave record?'))deleteLeave('${l.id}');event.stopPropagation()">🗑 <span class="del-label">Delete</span></button>
     </div>
   </div>
 </div>`;
@@ -8743,13 +8880,14 @@ function renderUpcomingRow(sec,s,archKey){
         <div style="display:flex;gap:7px"><button class="btn btn-done-active btn-sm" onclick="submitComplForm('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">✅ Save &amp; Mark Done</button><button class="btn btn-ghost btn-sm" onclick="toggleComplForm('${s.id}');event.stopPropagation()">Cancel</button></div>
       </div>
     </div>
-    <div class="card-btns" style="margin-top:9px">
+    <div class="card-action-footer" onclick="event.stopPropagation()">
       <button class="btn btn-ghost btn-sm" onclick="editStory('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">✏ Edit</button>
       ${isCompleted
         ?`<button class="btn btn-done-active btn-sm" disabled>✅ Done</button>
           <button class="btn btn-not-done btn-sm" onclick="markNotDone('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">&#x21a9; Reopen</button>`
         :`<button class="btn btn-done btn-sm" onclick="toggleComplForm('${s.id}');event.stopPropagation()">Mark Done</button>`
       }
+      <span class="caf-spacer"></span>
       <button class="btn btn-ghost btn-sm btn-danger" onclick="confirmDelete('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">🗑 Delete</button>
     </div>
   </div>
@@ -8797,8 +8935,6 @@ function renderStoryCard(sec,s,archKey){
         ${s.created?`<span class="cs-chip" style="color:var(--text3)">Logged ${new Date(s.created).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</span>`:''}
       </div>
       <div class="card-tags">
-        ${secObj.hasWW&&!archKey?`<span class="ww-badge ww-${mode}" id="wwbadge-${s.id}" onclick="toggleWWMode('${sec}','${s.id}',${archKeyJS});event.stopPropagation()" title="Click to cycle: None → Working → Watching">${wwLabel}</span>`:''}
-
         ${(s.location==='Field'||s.location==='field')&&!archKey&&!(state.travelDismissed||[]).includes(s.id)?(()=>{
           const entries=(state.travelEntries||[]).filter(e=>e.storyId===s.id);
           const tc=entries.length;
@@ -8826,6 +8962,7 @@ function renderStoryCard(sec,s,archKey){
       ${sbL?`<span class="sbadge ${sbC}">${sbL}</span>`:''}
       ${deadlineBadge(s)}
       ${(s.carriedForward&&s.status!=='completed'&&!s.deadline_date)?`<span class="carry-badge">↻ +${s.carriedDays||1}d</span>`:''}
+      ${secObj.hasWW&&!archKey?`<span class="ww-badge ww-${mode}" id="wwbadge-${s.id}" onclick="toggleWWMode('${sec}','${s.id}',${archKeyJS});event.stopPropagation()" title="Click to cycle: None → Working → Watching">${wwLabel}</span>`:''}
       ${s.story_type?(()=>{
         const _typeLabel=t=>{const v=t.trim().toLowerCase();if(v==='tv')return 'TV';return v.charAt(0).toUpperCase()+v.slice(1);};
         const _types=s.story_type.split(',').map(t=>t.trim()).filter(Boolean);
@@ -8925,7 +9062,7 @@ function renderStoryCard(sec,s,archKey){
         <div style="display:flex;gap:7px"><button class="btn btn-done-active btn-sm" onclick="submitComplForm('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">✅ Save &amp; Mark Done</button><button class="btn btn-ghost btn-sm" onclick="toggleComplForm('${s.id}');event.stopPropagation()">Cancel</button></div>
       </div>
     </div>
-    <div class="card-btns">
+    <div class="card-action-footer" onclick="event.stopPropagation()">
       <button class="btn btn-ghost btn-sm" onclick="editStory('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">✏ Edit</button>
       ${s.status==='completed'
         ? `<button class="btn btn-done-active btn-sm" disabled>✅ Done</button>
@@ -8941,7 +9078,6 @@ function renderStoryCard(sec,s,archKey){
            <button class="btn btn-ghost btn-sm" onclick="unshelveStory('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">↩ Unshelf</button>`
         : `<button class="btn btn-done btn-sm" onclick="toggleComplForm('${s.id}');event.stopPropagation()">Mark Done</button>
            <button class="btn btn-not-done btn-sm" onclick="markStoryNotDone('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">⚫ Not done</button>
-           <button class="btn btn-postpone btn-sm" onclick="openStoryPostponeDialog('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">⏸ Postpone…</button>
            <button class="btn btn-shelve btn-sm" onclick="shelveStory('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">🗄 Shelve</button>`
       }
       ${sec==='requests'&&!archKey
@@ -8953,9 +9089,8 @@ function renderStoryCard(sec,s,archKey){
         </select>
       </div>`
       }
-      <div class="card-delete-row" onclick="event.stopPropagation()">
-        <button class="btn btn-ghost btn-sm btn-danger" onclick="confirmDelete('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">🗑 Delete</button>
-      </div>
+      <span class="caf-spacer"></span>
+      <button class="btn btn-ghost btn-sm btn-danger" onclick="confirmDelete('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">🗑 Delete</button>
     </div>
   </div>
 </div>`;

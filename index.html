@@ -539,7 +539,7 @@ body {
 .card.c-urgent      { border-left-color: var(--urgent);   --card-accent: rgba(220,38,38,.09); }
 .card.c-in-progress { border-left-color: var(--progress); --card-accent: rgba(217,119,6,.09); }
 .card.c-completed   { border-left-color: var(--done);     --card-accent: rgba(22,163,74,.08); }
-.card.c-on-hold     { border-left-color: var(--onhold);   --card-accent: rgba(124,58,237,.08); }
+.card.c-on-hold     { border: 1.5px dashed rgba(124,58,237,.45); border-left: 3px dashed var(--onhold); background: rgba(124,58,237,.03); --card-accent: rgba(124,58,237,.08); }
 .card.c-carried     { border-left-color: var(--carry);    --card-accent: rgba(234,88,12,.09); }
 .card.c-working     { border-left-color: var(--working);  --card-accent: rgba(13,148,136,.09); }
 .card.c-watching    { border-left-color: var(--watching); --card-accent: rgba(180,83,9,.09); }
@@ -757,7 +757,8 @@ body {
 .leave-remark-entry:last-of-type { border-bottom: none; }
 .leave-remark-text { font-size: 12.5px; color: var(--text2); line-height: 1.45; flex: 1; white-space: pre-wrap; }
 .leave-remark-meta { font-size: 10px; font-family: var(--mono); color: var(--text3); margin-top: 2px; }
-@media(max-width:720px){\n  .card-delete-row { width: 100%; border-top: 1px dashed var(--border); padding-top: 7px; margin-top: 3px; }
+@media(max-width:720px){
+  .card-delete-row { width: 100%; border-top: 1px dashed var(--border); padding-top: 7px; margin-top: 3px; }
   .card-delete-row button { width: 100%; text-align: left; }
 }
 @media(max-width:720px){
@@ -4218,6 +4219,37 @@ function submitForm(sec,archKey){
   ui.openForms.delete(k); delete ui.editMap[k]; render();
   if(window._pendingSyncRender){ window._pendingSyncRender=false; _teRefresh(); }
 }
+function expandResolvedCard(id, sec, archKey){
+  const bodyId='res-body-'+id;
+  const body=document.getElementById(bodyId);
+  if(!body) return;
+  const lazy=body.querySelector('.res-lazy[data-id="'+id+'"]');
+  if(!lazy) return;
+  const ak=archKey&&archKey!=='null'&&archKey!==''?archKey:null;
+  let story=null;
+  // 1. Try the given section + archKey
+  const arr=ak?((state.archive[ak]||{}).sections||{})[sec]:((state.sections||{})[sec]);
+  if(arr) story=arr.find(s=>s.id===id);
+  // 2. Search all active sections
+  if(!story){
+    for(const s of Object.values(state.sections||{})){
+      if(Array.isArray(s)){ const f=s.find(x=>x.id===id); if(f){story=f;break;} }
+    }
+  }
+  // 3. Search archive entries (resolved stories pulled from archive)
+  if(!story){
+    for(const [dateKey,entry] of Object.entries(state.archive||{})){
+      const secs=entry.sections||{};
+      for(const arr2 of Object.values(secs)){
+        if(Array.isArray(arr2)){ const f=arr2.find(x=>x.id===id); if(f){story={...f,_archiveDate:dateKey};break;} }
+      }
+      if(story) break;
+    }
+  }
+  if(!story) return;
+  const resolvedAk=story._archiveDate||ak;
+  lazy.outerHTML=renderCard(sec,story,resolvedAk);
+}
 function toggleCard(id){
   if(ui.openCards.has(id)) ui.openCards.delete(id); else ui.openCards.add(id);
   const b=document.getElementById('cb-'+id);
@@ -6234,7 +6266,7 @@ function renderTaskCard(t, today){
   else if(t.taskStatus==='not-done'||t.taskStatus==='transferred') cardCls+='ts-postponed';
   else if(isOverdue) cardCls+='ts-overdue';
   else if(t.taskStatus==='postponed-to') cardCls+='ts-postponed';
-  else if(isCarried&&!(t.isRecurring&&_daysFromToday!==null&&_daysFromToday<=0)) cardCls+='ts-carried';
+  else if(isCarried&&!t.isRecurring&&!(t.isRecurring&&_daysFromToday!==null&&_daysFromToday<=0)) cardCls+='ts-carried';
   else if(_daysFromToday===0) cardCls+='ts-today';
   else if(_daysFromToday===1) cardCls+='ts-tomorrow';
   else cardCls+='ts-pending';
@@ -6256,7 +6288,7 @@ function renderTaskCard(t, today){
     sbCls+='tsb-notdone';
     sbTxt=dot('#B91C1C')+'Overdue '+_overdueDay+'d';
   }
-  else if(isCarried&&!(_daysFromToday!==null&&_daysFromToday<=0)){ sbCls+='tsb-carried'; sbTxt='↻ +'+(t.carriedDays||1)+'d'; }
+  else if(isCarried&&!t.isRecurring&&!(_daysFromToday!==null&&_daysFromToday<=0)){ sbCls+='tsb-carried'; sbTxt='↻ +'+(t.carriedDays||1)+'d'; }
   else if(t.isRecurring&&_effectiveDue){
     const nd=Math.round((new Date(_effectiveDue+'T00:00:00').getTime()-new Date(today+'T00:00:00').getTime())/86400000);
     sbCls+='tsb-pending';
@@ -6548,7 +6580,11 @@ function renderCombinedAccordion(archKey){
         const isOpen=ui.openCards.has(s.id);
         const rowId='res-row-'+s.id, bodyId='res-body-'+s.id;
         const _cardAK=s._archiveDate||archKey||null;
-        g+=`<div style="margin-bottom:5px"><div id="${rowId}" style="display:${isOpen?'none':'flex'};align-items:center;gap:8px;padding:7px 11px;background:var(--surface);border:1px solid var(--border);border-radius:7px;cursor:pointer" onclick="toggleCard('${s.id}');"><span style="font-size:12px;color:${color};flex-shrink:0">${icon}</span><span style="font-size:12.5px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.title||'Untitled')}</span>${resolvedDate?`<span style="font-size:10px;color:var(--text3);flex-shrink:0">${resolvedDate}${postponeLabel}</span>`:''}<span style="font-size:11px;color:var(--border2);flex-shrink:0">▾</span></div><div id="${bodyId}" style="display:${isOpen?'block':'none'}">${renderCard(s._subsec||'ibu',s,_cardAK)}</div></div>`;
+        const _subsec=s._subsec||'ibu';
+        // Lazy render: only call renderCard() for already-open cards.
+        // Closed cards get an empty placeholder; expandResolvedCard() fills it on first click.
+        const bodyContent=isOpen?renderCard(_subsec,s,_cardAK):`<div class="res-lazy" data-id="${s.id}" data-sec="${_subsec}" data-ak="${_cardAK||''}"></div>`;
+        g+=`<div style="margin-bottom:5px"><div id="${rowId}" style="display:${isOpen?'none':'flex'};align-items:center;gap:8px;padding:7px 11px;background:var(--surface);border:1px solid var(--border);border-radius:7px;cursor:pointer" onclick="expandResolvedCard('${s.id}','${_subsec}','${_cardAK||''}');toggleCard('${s.id}');"><span style="font-size:12px;color:${color};flex-shrink:0">${icon}</span><span style="font-size:12.5px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.title||'Untitled')}</span>${resolvedDate?`<span style="font-size:10px;color:var(--text3);flex-shrink:0">${resolvedDate}${postponeLabel}</span>`:''}<span style="font-size:11px;color:var(--border2);flex-shrink:0">▾</span></div><div id="${bodyId}" style="display:${isOpen?'block':'none'}">${bodyContent}</div></div>`;
       });
       if(remaining>0){ const nb=Math.min(remaining,10); g+=`<div style="padding:4px 2px"><button class="btn btn-ghost btn-sm" onclick="ui_resolvedPages['${key}']=(ui_resolvedPages['${key}']||1)+1;render();event.stopPropagation()" style="color:var(--accent);border-color:rgba(207,102,64,.3);font-size:11.5px">Show ${nb} more <span style="opacity:.6;font-size:11px">(${remaining} remaining)</span></button></div>`; }
       g+='</div>'; // close groupBodyId
@@ -9041,8 +9077,8 @@ function renderStoryCard(sec,s,archKey){
 
       if(hasFull){
         // ── LAYOUT B (full card) ──
-        // Title + format chips top-left, badges top-right
-        // 2-col people grid below divider
+        // Title + format chips + subtitle chips always visible top
+        // Staff grid moves into card-body (shown on expand)
         const loggedStr=s.created?new Date(s.created).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'';
         let leftCells='', rightCells='';
         if(hasCor)  leftCells +=`<div class="csg-cell"><span class="csg-label">Correspondent</span><span class="csg-value">${esc(s.correspondent)}</span></div>`;
@@ -9051,25 +9087,25 @@ function renderStoryCard(sec,s,archKey){
         if(hasProd) rightCells+=`<div class="csg-cell"><span class="csg-label">Producer</span><span class="csg-value">${esc(s.producer)}</span></div>`;
         if(hasSE)   rightCells+=`<div class="csg-cell"><span class="csg-label">Shoot-Edit</span><span class="csg-value">${esc(s.shoot_edit)}</span></div>`;
         if(hasReq)  rightCells+=`<div class="csg-cell"><span class="csg-label">Commissioned by</span><span class="csg-value">${esc([s.req_name,s.req_team,s.req_location].filter(Boolean).join(', '))}</span></div>`;
+        // Compact closed-card subtitle: correspondent + location inline (always visible)
+        const closedSubtitle=`<div class="card-subtitle">
+          ${hasCor?`<span class="cs-chip">👤 ${esc(s.correspondent)}</span>`:''}
+          ${hasLoc?`<span class="cs-chip">📍 ${esc(loc)}</span>`:''}
+          ${loggedStr?`<span class="cs-chip" style="color:var(--text3)">Logged ${loggedStr}</span>`:''}
+          ${hasProd?`<span class="cs-chip hide-mobile">🎬 ${esc(s.producer)}</span>`:''}
+        </div>`;
         return`<div class="card-title-wrap">
           <div style="display:flex;align-items:flex-start;gap:10px">
             <div style="flex:1;min-width:0">
               <div class="card-title">${esc(s.title||'Untitled')} ${subsecBadge}</div>
               ${fmtChips}
-              <div class="card-subtitle show-mobile-only">
-                ${hasCor?`<span class="cs-chip">👤 ${esc(s.correspondent)}</span>`:''}
-                ${hasLoc?`<span class="cs-chip">📍 ${esc(loc)}</span>`:''}
-                ${s.created?`<span class="cs-chip" style="color:var(--text3)">Logged ${new Date(s.created).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</span>`:''}
-              </div>
+              ${closedSubtitle}
             </div>
             ${badgeCol}
             <span class="chevron${isOpen?' open':''}" id="ch-${s.id}">▾</span>
           </div>
-          <div class="card-staff-grid">
-            <div>${leftCells}</div>
-            <div>${rightCells}</div>
-          </div>
           ${extraTags?`<div class="card-tags">${extraTags}</div>`:''}
+          ${isOpen?`<div class="card-staff-grid"><div>${leftCells}</div><div>${rightCells}</div></div>`:''}
         </div>`;
       } else {
         // ── LAYOUT A sparse ──
@@ -9083,12 +9119,12 @@ function renderStoryCard(sec,s,archKey){
           <div style="display:flex;align-items:flex-start;gap:10px">
             <div style="flex:1;min-width:0">
               <div class="card-title">${esc(s.title||'Untitled')} ${subsecBadge}</div>
-              <div class="card-subtitle show-mobile-only">
+              <div class="card-subtitle">
                 ${hasCor?`<span class="cs-chip">👤 ${esc(s.correspondent)}</span>`:''}
                 ${hasLoc?`<span class="cs-chip">📍 ${esc(loc)}</span>`:''}
                 ${s.created?`<span class="cs-chip" style="color:var(--text3)">Logged ${new Date(s.created).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</span>`:''}
               </div>
-              ${sparseCells?`<div class="card-staff-grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr))">${sparseCells}</div>`:''}
+              ${isOpen&&sparseCells?`<div class="card-staff-grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr))">${sparseCells}</div>`:''}
             </div>
             ${badgeCol}
             <span class="chevron${isOpen?' open':''}" id="ch-${s.id}">▾</span>

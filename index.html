@@ -5674,7 +5674,20 @@ function setTaskStatus(id, status, postponeTo){
   if(status==='done'){
     const task2=(state.tasks||[]).find(t=>t.id===id);
     if(task2&&task2.isRecurring&&task2.recurFreq){
-      const nextDate=nextRecurrenceDate(task2);
+      // For weekly tasks, reanchor base to the most recent valid occurrence before spawning
+      let spawnBase=task2.deadline_date||todayStr();
+      if(task2.recurFreq==='weekly'&&(task2.recurDaysOfWeek||[]).length){
+        const _SD=['sun','mon','tue','wed','thu','fri','sat'];
+        const dow=task2.recurDaysOfWeek;
+        if(!dow.includes(_SD[new Date(spawnBase+'T00:00:00').getDay()])){
+          const _t=todayStr();
+          for(let i=0;i<=14;i++){
+            const d=new Date(_t+'T00:00:00'); d.setDate(d.getDate()-i);
+            if(dow.includes(_SD[d.getDay()])){ spawnBase=dateStr(d); break; }
+          }
+        }
+      }
+      const nextDate=nextRecurrenceDate({...task2,deadline_date:spawnBase});
       const newTask={
         title:       task2.title,
         notes:       task2.notes||'',
@@ -5933,10 +5946,20 @@ function renderTasksSection(){
       const _todayMs=new Date(_today+'T00:00:00').getTime();
       const _pending=(state.tasks||[]).filter(t=>t.taskStatus!=='done'&&t.taskStatus!=='not-done'&&t.taskStatus!=='transferred');
       if(!_pending.length) return '';
+      const _DAYS2=['sun','mon','tue','wed','thu','fri','sat'];
       const _effDate=t=>{
         if(!t.deadline_date && !t.isRecurring) return null;
         if(t.isRecurring){
-          const base=t.deadline_date||_today;
+          let base=t.deadline_date||_today;
+          if(t.recurFreq==='weekly'&&(t.recurDaysOfWeek||[]).length){
+            const dow=t.recurDaysOfWeek;
+            if(!dow.includes(_DAYS2[new Date(base+'T00:00:00').getDay()])){
+              for(let i=0;i<=14;i++){
+                const d=new Date(_today+'T00:00:00'); d.setDate(d.getDate()-i);
+                if(dow.includes(_DAYS2[d.getDay()])){ base=dateStr(d); break; }
+              }
+            }
+          }
           const mr=mostRecentRecurOccurrence({...t,deadline_date:base},_today);
           if(mr===_today) return _today;
           const nx=nextRecurrenceDate({...t,deadline_date:mr});
@@ -6134,10 +6157,26 @@ function renderTasksSection(){
     html+=`<div class="empty-state"><div class="empty-icon">☑</div><div class="empty-msg">No tasks yet — click <strong>+ Add</strong></div></div>`;
   } else {
     const todayMs=new Date(today+'T00:00:00').getTime();
+    const _DAYS=['sun','mon','tue','wed','thu','fri','sat'];
+    const _validRecurBase=(t,base)=>{
+      // Returns true if base date actually falls on a valid recurrence day for this task
+      if(t.recurFreq!=='weekly'||!(t.recurDaysOfWeek||[]).length) return true;
+      return t.recurDaysOfWeek.includes(_DAYS[new Date(base+'T00:00:00').getDay()]);
+    };
     const effectiveDate=t=>{
       if(!t.deadline_date && !t.isRecurring) return null;
       if(t.isRecurring){
-        const base=t.deadline_date||today;
+        let base=t.deadline_date||today;
+        // If base falls on the wrong day (spawn drift), reanchor to most recent valid occurrence
+        if(!_validRecurBase(t,base)){
+          const dow=t.recurDaysOfWeek||[];
+          base=today; // will be corrected by mostRecentRecurOccurrence scan below
+          for(let i=0;i<=14;i++){
+            const d=new Date(today+'T00:00:00');
+            d.setDate(d.getDate()-i);
+            if(dow.includes(_DAYS[d.getDay()])){ base=dateStr(d); break; }
+          }
+        }
         const mostRecent=mostRecentRecurOccurrence({...t,deadline_date:base},today);
         if(mostRecent===today) return today;
         const nxt=nextRecurrenceDate({...t,deadline_date:mostRecent});
@@ -6239,15 +6278,28 @@ function renderTaskCard(t, today){
   const TASK_DAY_NAMES={mon:'Monday',tue:'Tuesday',wed:'Wednesday',thu:'Thursday',fri:'Friday',sat:'Saturday',sun:'Sunday'};
   const isOpen=ui_openTasks.has(t.id);
   // For recurring tasks, calculate overdue from most recent occurrence, not original deadline
-  const _recurDue=t.isRecurring&&t.deadline_date?mostRecentRecurOccurrence(t,today):null;
+  const _TDAYS=['sun','mon','tue','wed','thu','fri','sat'];
+  // Reanchor deadline_date if it falls on the wrong day (spawn drift)
+  const _anchoredBase=(()=>{
+    if(!t.isRecurring||!t.deadline_date) return t.deadline_date||today;
+    if(t.recurFreq==='weekly'&&(t.recurDaysOfWeek||[]).length){
+      const dow=t.recurDaysOfWeek;
+      if(!dow.includes(_TDAYS[new Date(t.deadline_date+'T00:00:00').getDay()])){
+        for(let i=0;i<=14;i++){
+          const d=new Date(today+'T00:00:00'); d.setDate(d.getDate()-i);
+          if(dow.includes(_TDAYS[d.getDay()])) return dateStr(d);
+        }
+      }
+    }
+    return t.deadline_date;
+  })();
+  const _recurDue=t.isRecurring&&_anchoredBase?mostRecentRecurOccurrence({...t,deadline_date:_anchoredBase},today):null;
   // For recurring tasks, compute the true next occurrence to determine overdue state
   const _recurNextDue=(()=>{
-    if(!t.isRecurring||!t.deadline_date) return null;
-    const mostRecent=_recurDue||t.deadline_date;
-    // If the most recent occurrence IS today, the task is due today — don't advance
+    if(!t.isRecurring||!_anchoredBase) return null;
+    const mostRecent=_recurDue||_anchoredBase;
     if(mostRecent===today) return today;
     const nxt=nextRecurrenceDate({...t,deadline_date:mostRecent});
-    // If next occurrence is today or future, use it; otherwise advance one more
     return nxt>=today?nxt:nextRecurrenceDate({...t,deadline_date:nxt});
   })();
   // A recurring task is only overdue if its next scheduled occurrence is already in the past

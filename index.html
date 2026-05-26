@@ -4370,17 +4370,11 @@ function renderSearchHTML(){
   SECTIONS.forEach(sec=>{
     if(sec.isUpcoming) return;
     const arr=(state.sections[sec.key]||[]).filter(s=>!s._deleted);
-    // Sort: active first (by deadline asc, no-deadline last), then resolved (by updated desc)
-    const statusPriority=s=>['urgent','in-progress'].includes(s.status)?0:s.status==='completed'||s.status==='not-done'?2:1;
+    // Active first (urgent/in-progress), then others, then terminal — within each tier newest updated first
     arr.sort((a,b)=>{
-      const pa=statusPriority(a), pb=statusPriority(b);
-      if(pa!==pb) return pa-pb;
-      if(pa===0){ // active — by deadline asc
-        if(!a.deadline_date&&!b.deadline_date) return 0;
-        if(!a.deadline_date) return 1;
-        if(!b.deadline_date) return -1;
-        return a.deadline_date.localeCompare(b.deadline_date);
-      }
+      const tier=s=>(['urgent','in-progress'].includes(s.status)?0:['completed','not-done','shelved'].includes(s.status)?2:1);
+      const ta=tier(a),tb=tier(b);
+      if(ta!==tb) return ta-tb;
       return (b.updated||b.created||0)-(a.updated||a.created||0);
     });
     arr.forEach(s=>{
@@ -4480,10 +4474,9 @@ function renderSearchHTML(){
         const s=r.story;
         const dot2=col=>`<span class="badge-dot" style="background:${col}"></span>`; const sbL=s.status==='urgent'?dot2('#B91C1C')+'Urgent':s.status==='in-progress'?dot2('#B45309')+'In progress':s.status==='completed'?dot2('#15803D')+'Done':s.status==='not-done'?dot2('#475569')+'Not done':s.status==='on-hold'?dot2('#7C3AED')+'On hold':'';
         const secBadge=r.sec==='ibu'||r.sec==='other'?'Stories':r.secLabel;
-        const shelvedExtra=r.shelved||s.status==='shelved'?`ui_storiesShelvedOpen['${r.sec==='other'?'ibu':r.sec}']=true;`:'';
         const _rgKey=s.status==='completed'?'done':s.status==='not-done'?'not-done':s.status==='on-hold'?'on-hold':s.status==='postponed'?'postponed':s.status==='shelved'?'shelved':'';
         html+=`<div style="display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;"
-          onclick="goToStory('${s.id}','${r.sec==='other'?'ibu':r.sec}','${_rgKey}',${r.shelved||s.status==='shelved'})">
+          onclick="goToStory('${s.id}','${r.sec==='other'?'ibu':r.sec}')">
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.title||'Untitled')}</div>
             <div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--font)">${secBadge}${s.correspondent?' · '+esc(s.correspondent):''}${sbL?' · '+sbL:''}</div>
@@ -4541,128 +4534,73 @@ function renderSearchHTML(){
   html+=`</div>`;
   return html;
 }
-function goToStory(id, sec, rgKey, isShelved){
-  // Clear search state
+// ── Search navigation — DOM-walk approach ─────────────────────────────────
+// Single unified function. After render(), walks UP the DOM tree from the
+// target element and force-shows every hidden ancestor. No state-variable
+// guessing required.
+function _searchNav(view, id, extraSetup){
+  // 1. Clear search UI
   ui.search='';
-  ['search-input','search-input-mobile'].forEach(elId=>{const el=document.getElementById(elId);if(el)el.value='';});
+  ['search-input','search-input-mobile'].forEach(k=>{
+    const el=document.getElementById(k); if(el) el.value='';
+  });
   ui.filter='all';
-  ui.view='today';
-  ui.openSections=new Set([sec]);
+  // 2. Set view
+  ui.view=view;
   ui.openCards.clear();
-  ui.openCards.add(id);
-  // Open the resolved group if story is in one (combined ibu accordion)
-  if(rgKey){
-    if(!ui._resolvedGroupOpen) ui._resolvedGroupOpen={};
-    ui._resolvedGroupOpen[rgKey]=true;
-    ui_resolvedPages[rgKey]=9999;
-  }
-  // Open shelved toggle if story is shelved
-  if(isShelved) ui_storiesShelvedOpen[sec]=true;
-  // For requests section: completed/not-done go into ui_storiesDoneOpen (not _resolvedGroupOpen)
-  if(sec==='requests'&&rgKey){
-    ui_storiesDoneOpen['today-requests']=true;
-    // Also try _resolvedGroupOpen in case it's in the combined view somehow
-    if(!ui._resolvedGroupOpen) ui._resolvedGroupOpen={};
-    ui._resolvedGroupOpen[rgKey]=true;
-    ui_resolvedPages[rgKey]=9999;
-  }
-  // For upcoming events: open all date groups so the event is visible regardless of which group it's in
-  if(sec==='upcoming'){
-    const prefix='live-upcoming-';
-    ['today','overdue','tomorrow','upcoming','nodeadline'].forEach(k=>{
-      ui_upcomingGroupOpen[prefix+k]=true;
-    });
-    // Also open expired/completed sections
-    ui_expiredUpcomingOpen['today']=true;
-  }
+  // 3. Any caller-supplied state (e.g. openCards.add, openTasks.add)
+  if(extraSetup) extraSetup();
+  // 4. Render
   render();
   updateBnbActive();
   window.scrollTo({top:0});
+  // 5. After paint: find element, force-show all hidden ancestors, scroll+flash
   setTimeout(()=>requestAnimationFrame(()=>{
-    const el=document.querySelector('[data-id="'+id+'"]');
-    if(el){
-      el.scrollIntoView({behavior:'smooth',block:'center'});
-      el.style.transition='box-shadow .2s';
-      el.style.boxShadow='0 0 0 2px var(--accent)';
-      setTimeout(()=>{el.style.boxShadow='';},1200);
+    const target=document.querySelector('[data-id="'+id+'"]');
+    if(!target) return;
+    // Walk up DOM, show every hidden ancestor
+    let node=target.parentElement;
+    while(node&&node!==document.body){
+      const cs=window.getComputedStyle(node);
+      if(cs.display==='none'||node.style.display==='none'){
+        node.style.display='block';
+      }
+      node=node.parentElement;
     }
-  }),120);
+    // Also open the card body itself if it exists
+    const cb=document.getElementById('cb-'+id);
+    if(cb) cb.classList.add('open');
+    const ch=document.getElementById('ch-'+id);
+    if(ch) ch.classList.add('open');
+    // For res-row/res-body pattern (resolved stories)
+    const resRow=document.getElementById('res-row-'+id);
+    const resBody=document.getElementById('res-body-'+id);
+    if(resRow) resRow.style.display='none';
+    if(resBody) resBody.style.display='block';
+    // Scroll and flash
+    target.scrollIntoView({behavior:'smooth',block:'center'});
+    target.style.transition='box-shadow .25s';
+    target.style.boxShadow='0 0 0 2px var(--accent)';
+    setTimeout(()=>{target.style.boxShadow='';},1400);
+  }),150);
 }
-function _searchClearAndNav(view){
-  ui.search='';
-  ['search-input','search-input-mobile'].forEach(elId=>{const el=document.getElementById(elId);if(el)el.value='';});
-  ui.view=view;
-  ui.openCards.clear();
-}
-function _searchFlash(id){
-  setTimeout(()=>requestAnimationFrame(()=>{
-    const el=document.querySelector('[data-id="'+id+'"]');
-    if(el){
-      el.scrollIntoView({behavior:'smooth',block:'center'});
-      el.style.transition='box-shadow .2s';
-      el.style.boxShadow='0 0 0 2px var(--accent)';
-      setTimeout(()=>{el.style.boxShadow='';},1200);
-    }
-  }),120);
+function goToStory(id,sec){
+  _searchNav('today',id,()=>{
+    ui.openSections=new Set([sec==='other'?'ibu':sec]);
+    ui.openCards.add(id);
+  });
 }
 function goToTask(id){
-  _searchClearAndNav('tasks');
-  const t=(state.tasks||[]).find(x=>x.id===id); if(!t) return;
-  const isDone=t.taskStatus==='done'||t.taskStatus==='not-done'||t.taskStatus==='transferred';
-  if(isDone){
-    ui_doneTaskOpen=true;
-    ui_doneTaskPage=9999;
-  } else {
-    // Open all active groups and expand all pagination — scroll will find the card
-    if(!ui_taskGroupOpen) ui_taskGroupOpen={};
-    if(!ui_taskGroupPage) ui_taskGroupPage={};
-    ['today','overdue','tomorrow','upcoming','nodeadline'].forEach(k=>{
-      ui_taskGroupOpen[k]=true;
-      ui_taskGroupPage[k]=9999;
-    });
-  }
-  ui_openTasks.add(id);
-  render(); updateBnbActive(); window.scrollTo({top:0});
-  _searchFlash(id);
+  _searchNav('tasks',id,()=>{ ui_openTasks.add(id); });
 }
 function goToNote(id){
-  _searchClearAndNav('notes');
-  const n=(state.notes||[]).find(x=>x.id===id); if(!n) return;
-  if(n.status==='done'||n.status==='pass'||n.status==='passed'){
-    ui.notesResolvedOpen=true;
-  } else {
-    // Open all active groups and expand all pagination
-    if(!ui_noteGroupOpen) ui_noteGroupOpen={};
-    if(!ui_noteGroupPage) ui_noteGroupPage={};
-    ['today','overdue','tomorrow','upcoming','nodeadline'].forEach(k=>{
-      ui_noteGroupOpen[k]=true;
-      ui_noteGroupPage[k]=9999;
-    });
-  }
-  render(); updateBnbActive(); window.scrollTo({top:0});
-  _searchFlash(id);
+  _searchNav('notes',id,()=>{});
 }
 function goToLeave(id){
-  _searchClearAndNav('leaves');
-  ui_openLeaves.add(id);
-  const l=(state.leaves||[]).find(x=>x.id===id); if(!l) return;
-  const isPast=l.dateTo&&l.dateTo<todayStr();
-  if(isPast){
-    ui_showPastLeaves=true;
-    ui_leavesTab='status'; // past leaves only visible in status tab
-  }
-  render(); updateBnbActive(); window.scrollTo({top:0});
-  _searchFlash(id);
+  _searchNav('leaves',id,()=>{ ui_openLeaves.add(id); });
 }
 function goToMeeting(id){
-  _searchClearAndNav('meetings');
-  ui_openMeetings.add(id);
-  // Past/done meetings may be in a collapsed section
-  const m=(state.meetings||[]).find(x=>x.id===id); if(!m) return;
-  const isPastDone=m.status==='done'||m.status==='cancelled'||(m.date&&m.date<todayStr());
-  if(isPastDone) ui_meetPrevOpen=true;
-  render(); updateBnbActive(); window.scrollTo({top:0});
-  _searchFlash(id);
+  _searchNav('meetings',id,()=>{ ui_openMeetings.add(id); });
 }
 function clearSearch(){
   ui.search=''; ui.view='today';

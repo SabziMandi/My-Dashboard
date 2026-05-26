@@ -567,15 +567,9 @@ body {
 .cs-chip { font-size: 11px; color: var(--color,var(--text3)); font-family: var(--font); }
 .card-tags { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
 /* Desktop-only staff grid in card header */
-.card-staff-grid {
-  display: none;
-  grid-template-columns: 1fr 1fr;
-  gap: 5px 24px;
-  margin: 7px 0 2px;
-  padding-top: 7px;
-  border-top: 1px solid var(--border);
-}
+.card-staff-grid { display: none; grid-template-columns: 1fr 1fr; gap: 5px 24px; margin: 7px 0 2px; padding-top: 7px; border-top: 1px solid var(--border); }
 .card-staff-grid.open { display: grid; }
+.card-subtitle-closed.hidden { display: none; }
 .card-staff-grid > div { display: flex; flex-direction: column; gap: 4px; }
 .csg-cell { display: flex; flex-direction: column; gap: 1px; }
 .csg-label { font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text3); font-family: var(--mono); }
@@ -4256,10 +4250,12 @@ function toggleCard(id){
   const b=document.getElementById('cb-'+id);
   const c=document.getElementById('ch-'+id);
   const g=document.getElementById('csg-'+id);
+  const sub=document.querySelector(`[data-id="${id}"] .card-subtitle-closed`);
   const nowOpen=ui.openCards.has(id);
   if(b) b.classList.toggle('open',nowOpen);
   if(c) c.classList.toggle('open',nowOpen);
   if(g) g.classList.toggle('open',nowOpen);
+  if(sub) sub.classList.toggle('hidden',nowOpen);
   // Also toggle expand icon
   const icon=document.querySelector(`[data-id="${id}"] .uc-expand-icon`);
   if(icon) icon.classList.toggle('open',nowOpen);
@@ -5956,7 +5952,7 @@ function renderTasksSection(){
           let base=t.deadline_date||_today;
           if(t.recurFreq==='weekly'&&(t.recurDaysOfWeek||[]).length){
             const dow=t.recurDaysOfWeek;
-            if(!dow.includes(_DAYS2[new Date(base+'T00:00:00').getDay()])){
+            if(!t.deadline_date||!dow.includes(_DAYS2[new Date(base+'T00:00:00').getDay()])){
               for(let i=0;i<=14;i++){
                 const d=new Date(_today+'T00:00:00'); d.setDate(d.getDate()-i);
                 if(dow.includes(_DAYS2[d.getDay()])){ base=dateStr(d); break; }
@@ -6170,14 +6166,15 @@ function renderTasksSection(){
       if(!t.deadline_date && !t.isRecurring) return null;
       if(t.isRecurring){
         let base=t.deadline_date||today;
-        // If base falls on the wrong day (spawn drift), reanchor to most recent valid occurrence
-        if(!_validRecurBase(t,base)){
-          const dow=t.recurDaysOfWeek||[];
-          base=today; // will be corrected by mostRecentRecurOccurrence scan below
-          for(let i=0;i<=14;i++){
-            const d=new Date(today+'T00:00:00');
-            d.setDate(d.getDate()-i);
-            if(dow.includes(_DAYS[d.getDay()])){ base=dateStr(d); break; }
+        // For weekly tasks: if no deadline_date OR base is on wrong day, scan back for last valid occurrence
+        if(t.recurFreq==='weekly'&&(t.recurDaysOfWeek||[]).length){
+          const dow=t.recurDaysOfWeek;
+          if(!t.deadline_date||!dow.includes(_DAYS[new Date(base+'T00:00:00').getDay()])){
+            for(let i=0;i<=14;i++){
+              const d=new Date(today+'T00:00:00');
+              d.setDate(d.getDate()-i);
+              if(dow.includes(_DAYS[d.getDay()])){ base=dateStr(d); break; }
+            }
           }
         }
         const mostRecent=mostRecentRecurOccurrence({...t,deadline_date:base},today);
@@ -6282,19 +6279,21 @@ function renderTaskCard(t, today){
   const isOpen=ui_openTasks.has(t.id);
   // For recurring tasks, calculate overdue from most recent occurrence, not original deadline
   const _TDAYS=['sun','mon','tue','wed','thu','fri','sat'];
-  // Reanchor deadline_date if it falls on the wrong day (spawn drift)
+  // Reanchor to the correct recurrence day — handles both missing and drifted deadline_date
   const _anchoredBase=(()=>{
-    if(!t.isRecurring||!t.deadline_date) return t.deadline_date||today;
+    if(!t.isRecurring) return t.deadline_date||today;
     if(t.recurFreq==='weekly'&&(t.recurDaysOfWeek||[]).length){
       const dow=t.recurDaysOfWeek;
-      if(!dow.includes(_TDAYS[new Date(t.deadline_date+'T00:00:00').getDay()])){
+      const checkDate=t.deadline_date||today;
+      // If deadline_date is missing OR falls on wrong day, scan back for last valid occurrence
+      if(!t.deadline_date||!dow.includes(_TDAYS[new Date(checkDate+'T00:00:00').getDay()])){
         for(let i=0;i<=14;i++){
           const d=new Date(today+'T00:00:00'); d.setDate(d.getDate()-i);
           if(dow.includes(_TDAYS[d.getDay()])) return dateStr(d);
         }
       }
     }
-    return t.deadline_date;
+    return t.deadline_date||today;
   })();
   const _recurDue=t.isRecurring&&_anchoredBase?mostRecentRecurOccurrence({...t,deadline_date:_anchoredBase},today):null;
   // For recurring tasks, compute the true next occurrence to determine overdue state
@@ -9143,7 +9142,7 @@ function renderStoryCard(sec,s,archKey){
         if(hasSE)   rightCells+=`<div class="csg-cell"><span class="csg-label">Shoot-Edit</span><span class="csg-value">${esc(s.shoot_edit)}</span></div>`;
         if(hasReq)  rightCells+=`<div class="csg-cell"><span class="csg-label">Commissioned by</span><span class="csg-value">${esc([s.req_name,s.req_team,s.req_location].filter(Boolean).join(', '))}</span></div>`;
         // Compact closed-card subtitle: correspondent + location inline (always visible)
-        const closedSubtitle=`<div class="card-subtitle">
+        const closedSubtitle=`<div class="card-subtitle card-subtitle-closed${isOpen?' hidden':''}">
           ${hasCor?`<span class="cs-chip">👤 ${esc(s.correspondent)}</span>`:''}
           ${hasLoc?`<span class="cs-chip">📍 ${esc(loc)}</span>`:''}
           ${loggedStr?`<span class="cs-chip" style="color:var(--text3)">Logged ${loggedStr}</span>`:''}

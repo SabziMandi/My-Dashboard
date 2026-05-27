@@ -561,7 +561,7 @@ body {
 .card-top {
   display: grid;
   grid-template-columns: 1fr auto 18px;
-  grid-template-rows: auto auto auto;
+  grid-template-rows: auto auto auto auto auto;
   column-gap: 10px;
   padding: 11px 13px 10px;
   cursor: pointer; user-select: none;
@@ -569,8 +569,8 @@ body {
 .ct-row1 { grid-column: 1; grid-row: 1; align-self: center; }
 .ct-row2 { grid-column: 1; grid-row: 2; padding-top: 4px; align-self: center; }
 .ct-row3 { grid-column: 1; grid-row: 3; padding-top: 3px; align-self: center; }
-.card-right { grid-column: 2; grid-row: 1 / 4; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; align-self: start; }
-.chevron   { grid-column: 3; grid-row: 1 / 4; color: var(--text3); font-size: 13px; align-self: start; padding-top: 3px; }
+.card-right { grid-column: 2; grid-row: 1 / 6; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; align-self: start; }
+.chevron   { grid-column: 3; grid-row: 1 / 6; color: var(--text3); font-size: 13px; align-self: start; padding-top: 3px; }
 /* card-title-wrap not used in new layout but keep for compat */
 .card-title-wrap { flex: 1; min-width: 0; }
 .card-title { font-size: 13.5px; font-weight: 600; color: var(--text); line-height: 1.4; font-family: var(--font); }
@@ -622,7 +622,7 @@ body {
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
   border-left: 3px solid var(--border2);
-  margin: 8px -13px;
+  margin: 10px -13px 0;
   font-size: 12.5px;
 }
 .dl-band-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text3); font-family: var(--mono); }
@@ -726,7 +726,7 @@ body {
 
 .chevron { color: var(--text3); font-size: 14px; transition: transform .2s; flex-shrink: 0; margin-top: 2px; }
 .chevron.open { transform: rotate(180deg); }
-.card-body { display: none; padding: 8px 13px 11px; border-top: 1px solid var(--border); }
+.card-body { display: none; padding: 10px 13px 11px; border-top: 1px solid var(--border); }
 .card-body.open { display: block; }
 .card-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px,1fr)); gap: 9px; margin-top: 11px; }
 .cfield-label { font-size: 10.5px; color: var(--text3); font-family: var(--font); font-weight: 500; margin-bottom: 2px; }
@@ -805,6 +805,15 @@ body {
 .sremark-add-row { display: flex; align-items: flex-end; gap: 8px; padding-top: 7px; }
 .sremark-add-row textarea { flex: 1; font-size: 12.5px; min-height: 34px; max-height: 80px; resize: none; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface2); font-family: var(--font); color: var(--text); outline: none; line-height: 1.4; }
 .sremark-add-row textarea::placeholder { color: var(--text3); }
+/* Remarks section header with + icon */
+.sremark-section-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.sremark-section-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text3); font-family: var(--mono); }
+.sremark-add-btn { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 5px; border: 0.5px solid rgba(207,102,64,.4); background: transparent; color: var(--accent); font-size: 15px; line-height: 1; cursor: pointer; transition: background .12s; font-weight: 400; padding: 0; flex-shrink: 0; }
+.sremark-add-btn:hover { background: var(--accent-bg); }
+.sremark-inline-form { display: none; align-items: flex-end; gap: 7px; padding-top: 6px; }
+.sremark-inline-form.open { display: flex; }
+.sremark-inline-form textarea { flex: 1; font-size: 12px; min-height: 32px; max-height: 72px; resize: none; padding: 5px 9px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface2); font-family: var(--font); color: var(--text); outline: none; line-height: 1.4; }
+.sremark-inline-form textarea::placeholder { color: var(--text3); }
 /* Leave remarks CRUD */
 .leave-remarks-section { margin: 8px 0 4px; padding-top: 8px; border-top: 1px solid var(--border); }
 .leave-remark-entry { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px dashed var(--border); }
@@ -851,11 +860,7 @@ body {
     font-size: 12px;
     padding: 5px 8px;
   }
-  /* Delete on mobile: icon only for task/meeting/leave/note — saves grid space */
-  .task-btns-footer .btn-danger .del-label,
-  .leave-btns-footer .btn-danger .del-label,
-  .meeting-action-footer .btn-danger .del-label,
-  .note-card .card-action-footer .btn-danger .del-label { display: none; }
+  /* Delete on mobile: show del-label text for all footers */
   /* Story card status variants: span full width when only one action shows */
   .card-action-footer .btn-postpone,
   .card-action-footer .btn-shelve[disabled],
@@ -1581,6 +1586,51 @@ button.tasks-tab-btn {
 .mremark-text { font-size:12.5px; color:var(--text2); line-height:1.55; white-space:pre-wrap; }
 .mremark-meta { font-size:10px; color:var(--text3); font-family:var(--mono); margin-top:3px; }
 .meeting-form { background:var(--surface2); border:1px solid var(--accent); border-radius:10px; padding:14px; margin-bottom:10px; }
+/* Meeting form — frequency pills */
+.mf-freq-pills { display:flex; gap:6px; margin-top:6px; }
+.mf-freq-pill {
+  flex:1; padding:8px 6px; border-radius:7px;
+  border:1.5px solid var(--border); background:var(--surface2);
+  color:var(--text2); font-size:12.5px; cursor:pointer;
+  transition:all .15s; text-align:center;
+  font-family:var(--font); font-weight:500;
+  -webkit-tap-highlight-color:transparent;
+}
+.mf-freq-pill:hover { border-color:var(--border2); color:var(--text); }
+.mf-freq-pill.mf-freq-active {
+  background:var(--accent-bg); border-color:var(--accent);
+  color:var(--accent); font-weight:600;
+}
+/* Day-of-week circle pickers */
+.mf-dow-row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+.mf-dow-pill {
+  display:flex; align-items:center; justify-content:center;
+  width:36px; height:36px; border-radius:50%;
+  border:1.5px solid var(--border); background:var(--surface2);
+  color:var(--text2); font-size:12px; cursor:pointer;
+  transition:all .15s; font-family:var(--font); font-weight:500;
+  flex-shrink:0; user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.mf-dow-pill:hover { border-color:var(--border2); color:var(--text); }
+.mf-dow-pill.mf-dow-active {
+  background:var(--accent); border-color:var(--accent);
+  color:#fff; font-weight:700;
+}
+/* Form section divider — dot + label */
+.form-sec-div {
+  grid-column:1/-1;
+  display:flex; align-items:center; gap:8px;
+  padding:12px 0 4px;
+  border-top:1.5px solid var(--border);
+  margin-top:4px;
+}
+.form-sec-div:first-child,.form-sec-div.fsd-first { border-top:none; padding-top:0; margin-top:0; }
+.form-sec-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0; }
+.form-sec-label { font-size:11px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:.6px; font-family:var(--font); }
+/* Muted date wrapper when recurring is on */
+.mf-date-wrap { transition:opacity .2s; }
+.mf-date-wrap.mf-date-muted { opacity:.35; pointer-events:none; }
 </style>
 </head>
 <body>
@@ -3758,6 +3808,7 @@ function meetingToText(m){
   const recurDayLabel=m.isRecurring&&m.recurFreq==='weekly'&&(m.recurDaysOfWeek||[]).length
     ? 'every '+m.recurDaysOfWeek.map(d=>DAY_NAMES[d]||d).join(' / ')
     : m.isRecurring&&m.recurFreq==='daily'?'every day'
+    : m.isRecurring&&m.recurFreq==='monthly'?'every month'
     : m.isRecurring&&m.recurFreq==='custom'&&m.recurDays?'every '+m.recurDays+'d':'';
   const timeIST=m.time?ukToIST(m.time):'';
   const timeStr=m.isRecurring&&recurDayLabel
@@ -4312,13 +4363,13 @@ function toggleCard(id){
   const b=document.getElementById('cb-'+id);
   const c=document.getElementById('ch-'+id);
   const g=document.getElementById('csg-'+id);
-  const gMob=document.getElementById('csg-mob-'+id);
+  const mobStaffLine=document.getElementById('mob-staff-line-'+id);
   const card=document.querySelector(`[data-id="${id}"]`);
   const nowOpen=ui.openCards.has(id);
   if(b) b.classList.toggle('open',nowOpen);
   if(c) c.classList.toggle('open',nowOpen);
   if(g) g.classList.toggle('open',nowOpen);
-  if(gMob) gMob.classList.toggle('open',nowOpen);
+  if(mobStaffLine) mobStaffLine.style.display=nowOpen?'block':'none';
   // Toggle collapsed/expanded row visibility
   if(card){
     card.querySelectorAll('.ct-cls').forEach(el=>el.classList.toggle('hidden',nowOpen));
@@ -5488,8 +5539,12 @@ function buildStoryRemarksHTML(sec, s, archKey){
   const archKeyJS=archKey?`'${archKey}'`:'null';
   const list=s.remarksList||[];
   const editingId=_storyRemarkEditId[s.id];
+  const formId=`sr-form-${s.id}`;
   let html='<div class="story-remarks-list">';
-  html+=`<div style="margin:8px 0 4px"></div>`;
+  html+=`<div class="sremark-section-hdr">
+    <span class="sremark-section-lbl">Remarks${list.length?' ('+list.length+')':''}</span>
+    <button class="sremark-add-btn" onclick="event.stopPropagation();var f=document.getElementById('${formId}');f.classList.toggle('open');if(f.classList.contains('open'))f.querySelector('textarea')?.focus()" title="Add remark">+</button>
+  </div>`;
   list.forEach(r=>{
     const dt=new Date(r.created).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
     if(editingId===r.id){
@@ -5515,9 +5570,11 @@ function buildStoryRemarksHTML(sec, s, archKey){
       </div>`;
     }
   });
-  html+=`<div class="sremark-add-row" onclick="event.stopPropagation()">
+  if(!list.length) html+=`<div style="font-size:11.5px;color:var(--text3);font-style:italic;padding:2px 0 4px">No remarks yet.</div>`;
+  html+=`<div class="sremark-inline-form" id="${formId}" onclick="event.stopPropagation()">
     <textarea id="sr-input-${s.id}" placeholder="Add a remark… (Enter for new line)" rows="1"></textarea>
-    <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();submitStoryRemark('${sec}','${s.id}',${archKeyJS})">+ Add</button>
+    <button class="btn btn-accent btn-sm" onclick="event.stopPropagation();submitStoryRemark('${sec}','${s.id}',${archKeyJS});document.getElementById('${formId}')?.classList.remove('open')">Save</button>
+    <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();document.getElementById('${formId}')?.classList.remove('open')" title="Cancel">✕</button>
   </div>`;
   html+='</div>';
   return html;
@@ -6913,18 +6970,20 @@ function submitMeetingForm(){
   const recurDaysOfWeek=[];
   if(isRecurring){
     ['sun','mon','tue','wed','thu','fri','sat'].forEach(d=>{
-      if(document.getElementById('mf-dow-'+d)?.checked) recurDaysOfWeek.push(d);
+      if(document.getElementById('mf-dow-cb-'+d)?.checked) recurDaysOfWeek.push(d);
     });
   }
+  // Read freq from hidden input (set by pill buttons)
+  const recurFreq=isRecurring?(g('mf-recur-freq-val')||'weekly'):'';
   const data={
-    date:           g('mf-date'),
+    date:           isRecurring?'':g('mf-date'),
     name:           g('mf-name').trim(),
     time:           g('mf-time'),
     status:         g('mf-status')||'scheduled',
     isRecurring,
-    recurFreq:      isRecurring?g('mf-recur-freq'):'',
+    recurFreq,
     recurDaysOfWeek:isRecurring?recurDaysOfWeek:[],
-    recurDays:      isRecurring&&g('mf-recur-freq')==='custom'?parseInt(g('mf-recur-days'))||1:0,
+    recurDays:      0,
     agenda:         g('mf-agenda').trim(),
     participants,
     venue:          g('mf-venue').trim(),
@@ -6932,7 +6991,8 @@ function submitMeetingForm(){
     reminderNote:   g('mf-reminder-note').trim(),
   };
   if(!data.name){ toast('Please enter a meeting name'); return; }
-  if(!data.date){ toast('Please set a date'); return; }
+  if(!isRecurring&&!data.date){ toast('Please set a date'); return; }
+  if(isRecurring&&recurFreq==='weekly'&&recurDaysOfWeek.length===0){ toast('Please select at least one day of the week'); return; }
   if(ui_editMeetingId){
     updateMeeting(ui_editMeetingId, data);
     toast('Meeting updated ✓');
@@ -6964,22 +7024,33 @@ function editMeeting(id){
   render();
   setTimeout(()=>{
     const set=(eid,val)=>{ const el=document.getElementById(eid); if(el) el.value=val||''; };
-    set('mf-date', m.date); set('mf-name', m.name); set('mf-time', m.time); set('mf-time-ist', m.time?ukToIST(m.time):'');
+    set('mf-name', m.name); set('mf-time', m.time); set('mf-time-ist', m.time?ukToIST(m.time):'');
     set('mf-status', m.status||'scheduled'); set('mf-agenda', m.agenda||'');
     set('mf-venue', m.venue||''); set('mf-reminder', m.reminder||'off');
     set('mf-reminder-note', m.reminderNote||'');
-    if(m.isRecurring&&document.getElementById('mf-recurring')){
-      document.getElementById('mf-recurring').checked=true;
-      document.getElementById('mf-recur-fields')&&(document.getElementById('mf-recur-fields').style.display='block');
-      set('mf-recur-freq', m.recurFreq||'daily');
-      toggleMeetingRecurFields();
-      set('mf-recur-days', m.recurDays||1);
-      if(m.recurFreq==='weekly'&&m.recurDaysOfWeek?.length){
+    if(m.isRecurring){
+      const cb=document.getElementById('mf-recurring');
+      if(cb){ cb.checked=true; toggleMeetingRecurring(); }
+      // Map legacy 'custom' to 'weekly' for display; preserve actual value in hidden
+      const freq=m.recurFreq==='custom'?'weekly':(m.recurFreq||'weekly');
+      const hid=document.getElementById('mf-recur-freq-val');
+      if(hid) hid.value=freq;
+      // Activate the correct pill
+      document.querySelectorAll('.mf-freq-pill').forEach(p=>{
+        p.classList.toggle('mf-freq-active', p.dataset.freq===freq);
+      });
+      _syncMeetingRecurUI();
+      if(freq==='weekly'&&m.recurDaysOfWeek?.length){
         m.recurDaysOfWeek.forEach(d=>{
-          const cb=document.getElementById('mf-dow-'+d);
+          const cb=document.getElementById('mf-dow-cb-'+d);
           if(cb) cb.checked=true;
+          const pill=document.getElementById('mf-dow-'+d);
+          if(pill) pill.classList.add('mf-dow-active');
         });
       }
+    } else {
+      // One-off: restore date
+      set('mf-date', m.date);
     }
     // Restore participants
     const wrap=document.getElementById('mf-participants-wrap');
@@ -7022,27 +7093,55 @@ function onMeetingTimeISTChange(){
 
 function toggleMeetingRecurring(){
   const cb=document.getElementById('mf-recurring');
-  const fields=document.getElementById('mf-recur-fields');
-  if(fields) fields.style.display=cb?.checked?'block':'none';
+  const isRecurring=cb?.checked||false;
+  // Show/hide recurrence frequency pills
+  const freqWrap=document.getElementById('mf-recur-freq-wrap');
+  if(freqWrap) freqWrap.style.display=isRecurring?'block':'none';
+  // Mute date field when recurring — date is irrelevant for a recurring meeting
+  const dateWrap=document.getElementById('mf-date-wrap');
+  if(dateWrap) dateWrap.classList.toggle('mf-date-muted', isRecurring);
+  const dateInput=document.getElementById('mf-date');
+  if(dateInput) dateInput.disabled=isRecurring;
+  // Show/hide day-of-week picker based on current freq
+  _syncMeetingRecurUI();
+}
+function _syncMeetingRecurUI(){
+  const freq=document.getElementById('mf-recur-freq-val')?.value||'weekly';
+  const dowWrap=document.getElementById('mf-dow-wrap');
+  if(dowWrap) dowWrap.style.display=freq==='weekly'?'flex':'none';
+}
+function setMeetingRecurFreq(freq, el){
+  // Update hidden value
+  const hid=document.getElementById('mf-recur-freq-val');
+  if(hid) hid.value=freq;
+  // Update pill active state
+  document.querySelectorAll('.mf-freq-pill').forEach(p=>{
+    p.classList.toggle('mf-freq-active', p.dataset.freq===freq);
+  });
+  _syncMeetingRecurUI();
 }
 function toggleMeetingRecurFields(){
-  const freq=document.getElementById('mf-recur-freq')?.value;
-  const daysWrap=document.getElementById('mf-recur-days-wrap');
-  const dowWrap=document.getElementById('mf-dow-wrap');
-  if(daysWrap) daysWrap.style.display=freq==='custom'?'block':'none';
-  if(dowWrap)  dowWrap.style.display=freq==='weekly'?'flex':'none';
+  // Legacy alias — kept for editMeeting compatibility
+  _syncMeetingRecurUI();
 }
 
 function renderMeetingForm(){
   const isEdit=!!ui_editMeetingId;
   const today=todayStr();
+  const DAYS=[
+    {key:'mon',lbl:'M'},{key:'tue',lbl:'T'},{key:'wed',lbl:'W'},
+    {key:'thu',lbl:'T'},{key:'fri',lbl:'F'},{key:'sat',lbl:'S'},{key:'sun',lbl:'S'}
+  ];
   return`<div class="form-wrap" id="meeting-form-wrap">
     <div class="form-title">${isEdit?'✏ Edit Meeting':'+ New Meeting'}</div>
     <div class="form-grid">
-      <div class="fgroup"><label class="flabel">Meeting Name *</label><input class="finput" id="mf-name" placeholder="Morning call, Editorial standup…" autocomplete="off"></div>
-      <div class="fgroup"><label class="flabel">Date *</label><input class="finput" type="date" id="mf-date" value="${today}"></div>
-      <div class="fgroup"><label class="flabel">UK time (${ukLabel()})</label><input class="finput" type="time" id="mf-time" oninput="onMeetingTimeChange()" onblur="onMeetingTimeChange()"></div>
-      <div class="fgroup"><label class="flabel">India time (IST)</label><input class="finput" type="time" id="mf-time-ist" oninput="onMeetingTimeISTChange()" onblur="onMeetingTimeISTChange()"></div>
+
+      <!-- ── BASICS ── -->
+      <div class="form-sec-div fsd-first">
+        <span class="form-sec-dot"></span>
+        <span class="form-sec-label">Basics</span>
+      </div>
+      <div class="fgroup full"><label class="flabel">Meeting Name *</label><input class="finput" id="mf-name" placeholder="Morning call, Editorial standup…" autocomplete="off"></div>
       <div class="fgroup"><label class="flabel">Status</label>
         <select class="fselect" id="mf-status">
           <option value="scheduled">📅 Scheduled</option>
@@ -7050,39 +7149,55 @@ function renderMeetingForm(){
           <option value="cancelled">🚫 Cancelled</option>
         </select>
       </div>
-      <div class="fgroup full">
-        <label class="flabel" style="display:flex;align-items:center;gap:8px;cursor:pointer">
-          <input type="checkbox" id="mf-recurring" onchange="toggleMeetingRecurring()" style="width:14px;height:14px">
-          <span>Recurring meeting</span>
-          <span style="font-size:10.5px;color:var(--text3);font-family:var(--font)">— repeats on a schedule</span>
+      <div class="fgroup" style="grid-column:2/3"></div>
+      <div class="fgroup full"><label class="flabel">Agenda <span class="flabel-hint">(optional)</span></label><textarea class="ftextarea" id="mf-agenda" placeholder="What will be discussed…" style="min-height:56px;white-space:pre-wrap"></textarea></div>
+
+      <!-- ── SCHEDULE ── -->
+      <div class="form-sec-div">
+        <span class="form-sec-dot"></span>
+        <span class="form-sec-label">Schedule</span>
+      </div>
+
+      <!-- Recurring toggle — top of schedule -->
+      <div class="fgroup full" style="margin-bottom:2px">
+        <label style="display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none">
+          <input type="checkbox" id="mf-recurring" onchange="toggleMeetingRecurring()" style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer;flex-shrink:0">
+          <span style="font-size:13px;color:var(--text);font-weight:500">Recurring</span>
+          <span style="font-size:11px;color:var(--text3)">— repeats on a schedule</span>
         </label>
-        <div id="mf-recur-fields" style="display:none;margin-top:10px;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px">
-          <div class="form-grid">
-            <div class="fgroup"><label class="flabel">Repeats every</label>
-              <select class="fselect" id="mf-recur-freq" onchange="toggleMeetingRecurFields()">
-                <option value="daily">Day</option>
-                <option value="weekly">Selected days of week</option>
-                <option value="custom">Custom (every X days)</option>
-              </select>
-            </div>
-            <div id="mf-recur-days-wrap" style="display:none">
-              <div class="fgroup"><label class="flabel">Every X days</label><input class="finput" type="number" id="mf-recur-days" value="7" min="1" style="width:80px"></div>
-            </div>
-          </div>
-          <div id="mf-dow-wrap" style="display:none;margin-top:8px">
-            <div class="flabel" style="margin-bottom:6px">Repeats on</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap">
-              ${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((d,i)=>{
-                const key=d.toLowerCase().slice(0,3);
-                return`<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface2)">
-                  <input type="checkbox" id="mf-dow-${key}" value="${key}" style="width:12px;height:12px"> ${d}
-                </label>`;
-              }).join('')}
-            </div>
-          </div>
+      </div>
+
+      <!-- Recurring freq pills + day picker (hidden until recurring checked) -->
+      <div id="mf-recur-freq-wrap" style="display:none;grid-column:1/-1">
+        <input type="hidden" id="mf-recur-freq-val" value="weekly">
+        <div class="mf-freq-pills">
+          <button type="button" class="mf-freq-pill" data-freq="daily" onclick="setMeetingRecurFreq('daily',this)">Daily</button>
+          <button type="button" class="mf-freq-pill mf-freq-active" data-freq="weekly" onclick="setMeetingRecurFreq('weekly',this)">Weekly</button>
+          <button type="button" class="mf-freq-pill" data-freq="monthly" onclick="setMeetingRecurFreq('monthly',this)">Monthly</button>
+        </div>
+        <div id="mf-dow-wrap" class="mf-dow-row">
+          ${DAYS.map(d=>`<button type="button" class="mf-dow-pill" id="mf-dow-${d.key}" data-day="${d.key}"
+            onclick="this.classList.toggle('mf-dow-active');document.getElementById('mf-dow-cb-${d.key}').checked=this.classList.contains('mf-dow-active')"
+            title="${d.key}">${d.lbl}</button>
+            <input type="checkbox" id="mf-dow-cb-${d.key}" value="${d.key}" style="display:none">`).join('')}
         </div>
       </div>
-      <div class="fgroup full"><label class="flabel">Agenda</label><textarea class="ftextarea" id="mf-agenda" placeholder="What will be discussed…" style="min-height:60px;white-space:pre-wrap"></textarea></div>
+
+      <!-- Date — full width, mutes when recurring -->
+      <div class="fgroup full mf-date-wrap" id="mf-date-wrap">
+        <label class="flabel">Date${isEdit?'':' *'}</label>
+        <input class="finput" type="date" id="mf-date" value="${today}">
+      </div>
+
+      <!-- Time — BST and IST side by side -->
+      <div class="fgroup"><label class="flabel">Time (${ukLabel()})</label><input class="finput" type="time" id="mf-time" oninput="onMeetingTimeChange()" onblur="onMeetingTimeChange()"></div>
+      <div class="fgroup"><label class="flabel">Time (IST)</label><input class="finput" type="time" id="mf-time-ist" oninput="onMeetingTimeISTChange()" onblur="onMeetingTimeISTChange()"></div>
+
+      <!-- ── DETAILS ── -->
+      <div class="form-sec-div">
+        <span class="form-sec-dot"></span>
+        <span class="form-sec-label">Details</span>
+      </div>
       <div class="fgroup full">
         <label class="flabel">Participants</label>
         <div id="mf-participants-wrap"></div>
@@ -7090,7 +7205,7 @@ function renderMeetingForm(){
           <button type="button" class="btn btn-ghost btn-sm" onclick="addParticipantRow()">+ Add Person</button>
         </div>
       </div>
-      <div class="fgroup full"><label class="flabel">Venue / Link</label><input class="finput" id="mf-venue" placeholder="Room name, office, or meeting link (https://…)"></div>
+      <div class="fgroup full"><label class="flabel">Venue / Link <span class="flabel-hint">(optional)</span></label><input class="finput" id="mf-venue" placeholder="Room name, office, or meeting link (https://…)"></div>
       <div class="fgroup"><label class="flabel">Reminder</label>
         <select class="fselect" id="mf-reminder">
           <option value="off">Off</option>
@@ -7100,7 +7215,8 @@ function renderMeetingForm(){
           <option value="1day">1 day before</option>
         </select>
       </div>
-      <div class="fgroup"><label class="flabel">Reminder Note</label><input class="finput" id="mf-reminder-note" placeholder="e.g. Prepare talking points"></div>
+      <div class="fgroup"><label class="flabel">Reminder Note <span class="flabel-hint">(optional)</span></label><input class="finput" id="mf-reminder-note" placeholder="e.g. Prepare talking points"></div>
+
     </div>
     <div class="form-footer">
       <button class="btn btn-accent" onclick="submitMeetingForm()">${isEdit?'Update':'Add'}</button>
@@ -7160,6 +7276,7 @@ function renderMeetingCard(m, isPastOneOff=false, isNearest=false){
   const recurDayLabel=m.isRecurring&&m.recurFreq==='weekly'&&(m.recurDaysOfWeek||[]).length
     ? 'every '+m.recurDaysOfWeek.map(d=>DAY_NAMES[d]||d).join(' / ')
     : m.isRecurring&&m.recurFreq==='daily'?'every day'
+    : m.isRecurring&&m.recurFreq==='monthly'?'every month'
     : m.isRecurring&&m.recurFreq==='custom'&&m.recurDays?'every '+m.recurDays+'d':'';
   // Detect device local timezone offset vs IST
   const devOffMin=-(new Date().getTimezoneOffset());
@@ -7281,7 +7398,11 @@ function renderMeetingCard(m, isPastOneOff=false, isNearest=false){
       </div>
     </div>`:''}
     <div class="meeting-remarks-list">
-      ${(m.remarks||[]).length?`<div class="cfield-label" style="margin:10px 0 5px">Remarks</div>`:''}
+      <div class="sremark-section-hdr" style="margin-top:10px">
+        <span class="sremark-section-lbl">Remarks${(m.remarks||[]).length?' ('+m.remarks.length+')':''}</span>
+        <button class="sremark-add-btn" onclick="event.stopPropagation();var f=document.getElementById('mrf-form-${m.id}');f.classList.toggle('open');if(f.classList.contains('open'))f.querySelector('textarea')?.focus()" title="Add remark">+</button>
+      </div>
+      ${(m.remarks||[]).length===0?`<div style="font-size:11.5px;color:var(--text3);font-style:italic;padding:2px 0 4px">No remarks yet.</div>`:''}
       ${(m.remarks||[]).map(r=>{
         if(editingRemarkId===r.id){
           return`<div style="margin-bottom:6px">
@@ -7304,9 +7425,10 @@ function renderMeetingCard(m, isPastOneOff=false, isNearest=false){
           </div>
         </div>`;
       }).join('')}
-      <div class="sremark-add-row" style="margin-top:${(m.remarks||[]).length?'6':'10'}px" onclick="event.stopPropagation()">
+      <div class="sremark-inline-form" id="mrf-form-${m.id}" onclick="event.stopPropagation()">
         <textarea id="mrf-text-${m.id}" placeholder="Add a remark…" rows="1" onclick="event.stopPropagation()"></textarea>
-        <button class="btn btn-ghost btn-sm" onclick="submitMeetingRemark('${m.id}')">+ Add</button>
+        <button class="btn btn-accent btn-sm" onclick="submitMeetingRemark('${m.id}');document.getElementById('mrf-form-${m.id}')?.classList.remove('open')">Save</button>
+        <button class="btn btn-ghost btn-xs" onclick="document.getElementById('mrf-form-${m.id}')?.classList.remove('open')" title="Cancel">✕</button>
       </div>
     </div>
     <div class="meeting-action-footer">
@@ -8223,7 +8345,11 @@ function _teBuildEntryRemarksHTML(e){
   const list=e.remarks||[];
   const editingId=_teRemarkEditId[e.id];
   let html=`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
-    <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:7px">🗒 Remarks${list.length?' ('+list.length+')':''}</div>`;
+    <div class="sremark-section-hdr">
+      <span class="sremark-section-lbl">Remarks${list.length?' ('+list.length+')':''}</span>
+      <button class="sremark-add-btn" onclick="event.stopPropagation();var f=document.getElementById('ter-form-${e.id}');f.classList.toggle('open');if(f.classList.contains('open'))f.querySelector('textarea')?.focus()" title="Add remark">+</button>
+    </div>
+    ${list.length===0?`<div style="font-size:11.5px;color:var(--text3);font-style:italic;padding:2px 0 4px">No remarks yet.</div>`:''}`;
   list.forEach(r=>{
     const dt=new Date(r.ts).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
     if(editingId===r.id){
@@ -8249,9 +8375,10 @@ function _teBuildEntryRemarksHTML(e){
       </div>`;
     }
   });
-  html+=`<div class="sremark-add" onclick="event.stopPropagation()">
-    <textarea class="ftextarea" id="ter-input-${e.id}" placeholder="Add a remark… (Enter for new line)" style="flex:1;font-size:12px;min-height:44px;resize:vertical;white-space:pre-wrap"></textarea>
-    <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();_teAddEntryRemark('${e.id}')">+ Add</button>
+  html+=`<div class="sremark-inline-form" id="ter-form-${e.id}" onclick="event.stopPropagation()">
+    <textarea id="ter-input-${e.id}" placeholder="Add a remark…" style="flex:1;font-size:12px;min-height:36px;resize:vertical;white-space:pre-wrap" rows="1"></textarea>
+    <button class="btn btn-accent btn-sm" onclick="event.stopPropagation();_teAddEntryRemark('${e.id}');document.getElementById('ter-form-${e.id}')?.classList.remove('open')">Save</button>
+    <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();document.getElementById('ter-form-${e.id}')?.classList.remove('open')" title="Cancel">✕</button>
   </div>`;
   html+=`</div>`;
   return html;
@@ -8398,7 +8525,7 @@ function _teRenderBody(){
     const deadlineStr=s.deadline_date?(()=>{const diff=Math.round((new Date(s.deadline_date+'T00:00:00')-new Date(today+'T00:00:00'))/86400000);const lbl=diff<0?'Overdue '+Math.abs(diff)+'d':diff===0?'Due today':diff===1?'Due tomorrow':'Due '+_fmtDShort(s.deadline_date);const col=diff<0?'#B91C1C':diff<=2?'#B45309':'var(--text3)';return `<span style="font-size:10.5px;color:${col};flex-shrink:0">⏰ ${lbl}</span>`;})():'';
     const claimBadge=allClaimed?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:unclaimed?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${unclaimed} unclaimed</span>`:'';
     const secLabel={ibu:'Stories',other:'Other Stories',requests:'Requests'}[sec]||sec;
-    html+=`<div style="margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden"><div style="display:flex;align-items:center;gap:7px;padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap"><span style="font-size:13px">📡</span><span style="font-size:13px;font-weight:600;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:80px">${esc(s.title||'Untitled')}</span>${deadlineStr}${bookPayBadge}${claimBadge}<button onclick="_teDismissStory('${s.id}')" style="padding:2px 7px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--text3);cursor:pointer;flex-shrink:0" title="Hide from this list">✕ Hide</button></div><div style="padding:10px 13px;display:flex;flex-direction:column;gap:8px">${_teSubAccordion(s.id,sec)}</div></div>`;
+    html+=`<div style="margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden"><div style="display:flex;align-items:center;gap:7px;padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap"><span style="font-size:13px">📡</span><span style="font-size:13px;font-weight:600;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:80px">${esc(s.title||'Untitled')}</span>${deadlineStr}${bookPayBadge}${claimBadge}<button onclick="_teDismissStory('${s.id}')" style="padding:2px 7px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--text3);cursor:pointer;flex-shrink:0;margin-left:auto" title="Hide from this list">✕ Hide</button></div><div style="padding:10px 13px;display:flex;flex-direction:column;gap:8px">${_teSubAccordion(s.id,sec)}</div></div>`;
   });
   // Safety net: any entries linked to a story not found by _teGetStories()
   // (story may not yet be in archive if sync hasn't completed) — show them anyway
@@ -8423,7 +8550,7 @@ function _teRenderBody(){
           <span style="font-size:13px">📡</span>
           <span style="font-size:13px;font-weight:600;color:var(--text);flex:1">Story (syncing…)</span>
           ${claimBadge}
-          <button onclick="_teDismissStory('${sid}')" style="padding:2px 7px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--text3);cursor:pointer;flex-shrink:0">✕ Hide</button>
+          <button onclick="_teDismissStory('${sid}')" style="padding:2px 7px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--text3);cursor:pointer;flex-shrink:0;margin-left:auto">✕ Hide</button>
         </div>
         <div style="padding:10px 13px;display:flex;flex-direction:column;gap:8px">${_teSubAccordion(sid,'ibu')}</div>
       </div>`;
@@ -8433,7 +8560,7 @@ function _teRenderBody(){
   if((genEntries.length||stories.length===0)&&!state.travelGeneralDismissed){
     const genExp=genEntries.filter(e=>e.type==='expense'),genUnclaimed=genExp.filter(e=>_teGetClaimed(e)!=='yes').length;
     const genBadge=genUnclaimed?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${genUnclaimed} unclaimed</span>`:(genExp.length?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:'');
-    html+=`<div style="margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden"><div style="display:flex;align-items:center;gap:7px;padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border)"><span style="font-size:13px">📋</span><span style="font-size:13px;font-weight:600;color:var(--text);flex:1">General</span>${genBadge}<button onclick="if(confirm('Delete all General entries?'))_teDeleteGeneral()" style="padding:2px 7px;font-size:10px;border:1px solid rgba(220,38,38,.3);border-radius:5px;background:transparent;color:#DC2626;cursor:pointer;flex-shrink:0" title="Delete all General entries">🗑</button><button onclick="_teDismissGeneral()" style="padding:2px 7px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--text3);cursor:pointer;flex-shrink:0" title="Hide General from this list">✕ Hide</button></div><div style="padding:10px 13px;display:flex;flex-direction:column;gap:8px">${_teSubAccordion('gen',null)}</div></div>`;
+    html+=`<div style="margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden"><div style="display:flex;align-items:center;gap:7px;padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border)"><span style="font-size:13px">📋</span><span style="font-size:13px;font-weight:600;color:var(--text);flex:1">General</span>${genBadge}<button onclick="if(confirm('Delete all General entries?'))_teDeleteGeneral()" style="padding:2px 7px;font-size:10px;border:1px solid rgba(220,38,38,.3);border-radius:5px;background:transparent;color:#DC2626;cursor:pointer;flex-shrink:0" title="Delete all General entries">🗑</button><button onclick="_teDismissGeneral()" style="padding:2px 7px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--text3);cursor:pointer;flex-shrink:0;margin-left:auto" title="Hide General from this list">✕ Hide</button></div><div style="padding:10px 13px;display:flex;flex-direction:column;gap:8px">${_teSubAccordion('gen',null)}</div></div>`;
   }
   if(stories.length===0&&_teEntriesGeneral().length===0&&!_te.open) html+=`<div style="text-align:center;padding:22px 16px;color:var(--text3);font-size:13px">No travel or expenses yet. Use <strong style="color:var(--accent)">+ Add</strong> to log a cab, flight, hotel or expense.</div>`;
   const dismissedStories=_teGetStories().filter(({s})=>dismissed.includes(s.id));
@@ -8969,15 +9096,17 @@ function renderLeaveCard(l,today,isPast){
   </div>
   <div class="leave-body${isOpen?' open':''}" id="lb-${l.id}">
     <div class="card-fields" style="margin-top:8px">
-      <div><div class="cfield-label">Employee</div><div class="cfield-value">${esc(l.employeeName||'Unknown')}</div></div>
-      <div><div class="cfield-label">Type</div><div class="cfield-value">${typeInfo.label}</div></div>
-      <div><div class="cfield-label">Start</div><div class="cfield-value">${fmtDate(l.dateFrom)}</div></div>
-      <div><div class="cfield-label">End</div><div class="cfield-value">${fmtDate(l.dateTo)}</div></div>
+      <div><div class="cfield-label">From</div><div class="cfield-value">${fmtDate(l.dateFrom)}</div></div>
+      <div><div class="cfield-label">To</div><div class="cfield-value">${fmtDate(l.dateTo)}</div></div>
       <div><div class="cfield-label">Duration</div><div class="cfield-value">${days} day${days!==1?'s':''}</div></div>
-      <div><div class="cfield-label">Status</div><div class="cfield-value">${l.status==='approved'?'✅ Approved':'⏳ Pending'}</div></div>
+      ${isOnLeave?`<div><div class="cfield-label">Days left</div><div class="cfield-value">${Math.max(0,Math.round((new Date(l.dateTo+'T00:00:00')-new Date(today+'T00:00:00'))/86400000)+1)}</div></div>`:isUpcoming?`<div><div class="cfield-label">Starts in</div><div class="cfield-value">${Math.round((new Date(l.dateFrom+'T00:00:00')-new Date(today+'T00:00:00'))/86400000)}d</div></div>`:''}
     </div>
     <div class="leave-remarks-section" onclick="event.stopPropagation()">
-      <div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Remarks</div>
+      <div class="sremark-section-hdr">
+        <span class="sremark-section-lbl">Remarks${(l.remarksList||[]).length?' ('+(l.remarksList||[]).length+')':''}</span>
+        <button class="sremark-add-btn" onclick="event.stopPropagation();var f=document.getElementById('lrf-form-${l.id}');f.classList.toggle('open');if(f.classList.contains('open'))f.querySelector('textarea')?.focus()" title="Add remark">+</button>
+      </div>
+      ${(l.remarksList||[]).length===0?`<div style="font-size:11.5px;color:var(--text3);font-style:italic;padding:2px 0 4px">No remarks yet.</div>`:''}
       ${(()=>{
         const editingRId=ui_editLeaveRemarkId[l.id];
         let rhtml='';
@@ -8991,9 +9120,10 @@ function renderLeaveCard(l,today,isPast){
         });
         return rhtml;
       })()}
-      <div class="sremark-add-row">
+      <div class="sremark-inline-form" id="lrf-form-${l.id}">
         <textarea id="lr-input-${l.id}" placeholder="Add a remark…" rows="1" onclick="event.stopPropagation()"></textarea>
-        <button class="btn btn-ghost btn-sm" onclick="submitLeaveRemark('${l.id}');event.stopPropagation()">+ Add</button>
+        <button class="btn btn-accent btn-sm" onclick="submitLeaveRemark('${l.id}');document.getElementById('lrf-form-${l.id}')?.classList.remove('open');event.stopPropagation()">Save</button>
+        <button class="btn btn-ghost btn-xs" onclick="document.getElementById('lrf-form-${l.id}')?.classList.remove('open');event.stopPropagation()" title="Cancel">✕</button>
       </div>
     </div>
     <div class="leave-btns-footer">
@@ -9203,38 +9333,48 @@ function renderStoryCard(sec,s,archKey){
       const loggedStr=s.created?new Date(s.created).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'';
       const updatedStr=s.updated?new Date(s.updated).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
 
-      const row2Closed=fmtChips?`<div class="ct-row2 ct-cls${isOpen?' hidden':''}">${fmtChips}</div>`:'';
-      const row2Open=loc?`<div class="ct-row2 ct-opn${isOpen?'':' hidden'}"><span style="font-size:11px;color:var(--text3)">📍 ${esc(loc)}</span></div>`:'';
-      const row3Closed=(hasCor||hasSE)?`<div class="ct-row3 ct-cls${isOpen?' hidden':''}">
+      const row2Closed=fmtChips?`<div class="ct-row2 ct-cls${isOpen?' hidden':''} hide-mobile">${fmtChips}</div>`:'';
+      const row2Open=loc?`<div class="ct-row2 ct-opn${isOpen?'':' hidden'} hide-mobile"><span style="font-size:11px;color:var(--text3)">📍 ${esc(loc)}</span></div>`:'';
+      // Mobile collapsed: line 2 = correspondent (medium weight), line 3 = location
+      const mobCorLine=hasCor?`<div class="ct-row2 ct-cls${isOpen?' hidden':''} show-mobile-only" style="padding-top:3px"><span style="font-size:11.5px;color:var(--text2);font-weight:500">👤 ${esc(s.correspondent)}</span></div>`:'';
+      const mobLocLine=loc?`<div class="${hasCor?'ct-row3':'ct-row2'} ct-cls${isOpen?' hidden':''} show-mobile-only" style="padding-top:2px"><span style="font-size:11px;color:var(--text3)">📍 ${esc(loc)}</span></div>`:'';
+      // Mobile expanded: line 2 = correspondent, line 3 = location
+      const mobCorOpenLine=hasCor?`<div class="ct-row2 ct-opn${isOpen?'':' hidden'} show-mobile-only" style="padding-top:3px"><span style="font-size:11.5px;color:var(--text2);font-weight:500">👤 ${esc(s.correspondent)}</span></div>`:'';
+      const mobLocOpenLine=loc?`<div class="${hasCor?'ct-row3':'ct-row2'} ct-opn${isOpen?'':' hidden'} show-mobile-only" style="padding-top:2px"><span style="font-size:11px;color:var(--text3)">📍 ${esc(loc)}</span></div>`:'';
+      const row3Closed=(hasCor||hasSE)?`<div class="ct-row3 ct-cls${isOpen?' hidden':''} hide-mobile">
         ${hasCor?`<span class="cs-chip">👤 ${esc(s.correspondent)}</span>`:''}
-        ${hasCor&&hasSE?`<span class="cs-chip hide-mobile" style="color:var(--border2)">·</span>`:''}
-        ${hasSE?`<span class="cs-chip hide-mobile">📷 ${esc(s.shoot_edit)}</span>`:''}
+        ${hasCor&&hasSE?`<span class="cs-chip" style="color:var(--border2)">·</span>`:''}
+        ${hasSE?`<span class="cs-chip">📷 ${esc(s.shoot_edit)}</span>`:''}
       </div>`:'';
-      const row3Open=fmtChips?`<div class="ct-row3 ct-opn${isOpen?'':' hidden'}">${fmtChips}</div>`:'';
+      const row3Open=fmtChips?`<div class="ct-row3 ct-opn${isOpen?'':' hidden'} hide-mobile">${fmtChips}</div>`:'';
+
+      // Mobile expanded: single horizontal staff line (replaces old mobile-staff-list column layout)
+      const mobStaffParts=[];
+      if(s.req_name||s.req_team) mobStaffParts.push(`Comm: <strong style="color:var(--text);font-weight:500">${esc([s.req_name,s.req_team].filter(Boolean).join(', '))}</strong>`);
+      if(hasSE) mobStaffParts.push(`Shoot-Edit: <strong style="color:var(--text);font-weight:500">${esc(s.shoot_edit)}</strong>`);
+      if(s.producer) mobStaffParts.push(`Producer: <strong style="color:var(--text);font-weight:500">${esc(s.producer)}</strong>`);
+      if(loggedStr) mobStaffParts.push(`<span style="color:var(--text3)">Logged ${loggedStr}</span>`);
+      const mobStaffLine=mobStaffParts.length?`<div class="show-mobile-only" style="grid-column:1/-1;padding:6px 13px 8px;border-top:1.5px solid var(--border2);font-size:11px;color:var(--text2);line-height:1.7;display:${isOpen?'block':'none'}" id="mob-staff-line-${s.id}">${mobStaffParts.join(`<span style="color:var(--border2);margin:0 5px">·</span>`)}</div>`:'';
 
       // 6-cell desktop staff grid
       const gridCells=[
-        (s.req_name||s.req_team)?`<div class="csg-cell"><span class="csg-label">Commissioned by</span><span class="csg-value">${esc([s.req_name,s.req_team,s.req_location].filter(Boolean).join(', '))}</span></div>`:`<div class="csg-cell"></div>`,
+        hasCor?`<div class="csg-cell"><span class="csg-label">Correspondent</span><span class="csg-value">${esc(s.correspondent)}</span></div>`:`<div class="csg-cell"></div>`,
         hasSE?`<div class="csg-cell"><span class="csg-label">Shoot-Edit</span><span class="csg-value">${esc(s.shoot_edit)}</span></div>`:`<div class="csg-cell"></div>`,
         loggedStr?`<div class="csg-cell"><span class="csg-label">Logged</span><span class="csg-value">${loggedStr}</span></div>`:`<div class="csg-cell"></div>`,
-        hasCor?`<div class="csg-cell"><span class="csg-label">Correspondent</span><span class="csg-value">${esc(s.correspondent)}</span></div>`:`<div class="csg-cell"></div>`,
+        (s.req_name||s.req_team)?`<div class="csg-cell"><span class="csg-label">Commissioned by</span><span class="csg-value">${esc([s.req_name,s.req_team,s.req_location].filter(Boolean).join(', '))}</span></div>`:`<div class="csg-cell"></div>`,
         s.producer?`<div class="csg-cell"><span class="csg-label">Producer</span><span class="csg-value">${esc(s.producer)}</span></div>`:`<div class="csg-cell"></div>`,
         updatedStr?`<div class="csg-cell"><span class="csg-label">Last updated</span><span class="csg-value">${updatedStr}</span></div>`:`<div class="csg-cell"></div>`,
       ].join('');
       const hasGrid=hasCor||hasSE||s.producer||(s.req_name||s.req_team)||loggedStr||updatedStr;
 
-      // Mobile staff list
-      const mobStaff=[];
-      if(s.req_name||s.req_team) mobStaff.push(`<div class="msl-row"><span class="msl-lbl">Commissioned</span><span class="msl-val">${esc([s.req_name,s.req_team].filter(Boolean).join(', '))}</span></div>`);
-      if(hasCor)   mobStaff.push(`<div class="msl-row"><span class="msl-lbl">Correspondent</span><span class="msl-val">${esc(s.correspondent)}</span></div>`);
-      if(hasSE)    mobStaff.push(`<div class="msl-row"><span class="msl-lbl">Shoot-Edit</span><span class="msl-val">${esc(s.shoot_edit)}</span></div>`);
-      if(s.producer) mobStaff.push(`<div class="msl-row"><span class="msl-lbl">Producer</span><span class="msl-val">${esc(s.producer)}</span></div>`);
-      if(loggedStr)  mobStaff.push(`<div class="msl-row"><span class="msl-lbl">Logged</span><span class="msl-val">${loggedStr}</span></div>`);
+      // Old mobile-staff-list removed — replaced by mobStaffLine horizontal format above
 
       return`<div class="ct-row1"><div class="card-title">${esc(s.title||'Untitled')} ${subsecBadge}</div></div>
         ${row2Closed}${row2Open}
+        ${mobCorLine}${mobCorOpenLine}
+        ${mobLocLine}${mobLocOpenLine}
         ${row3Closed}${row3Open}
-        ${extraTags?`<div style="grid-column:1;grid-row:4;padding-top:4px"><div class="card-tags">${extraTags}</div></div>`:''}
+        ${extraTags?`<div style="grid-column:1;grid-row:5;padding-top:4px"><div class="card-tags">${extraTags}</div></div>`:''}
         <div class="card-right">
           ${sbL?`<span class="sbadge ${sbC}">${sbL}</span>`:''}
           ${deadlineBadge(s)}
@@ -9243,7 +9383,7 @@ function renderStoryCard(sec,s,archKey){
         </div>
         <span class="chevron${isOpen?' open':''}" id="ch-${s.id}">▾</span>
         ${hasGrid?`<div class="card-staff-grid${isOpen?' open':''} hide-mobile" id="csg-${s.id}">${gridCells}</div>`:''}
-        ${hasGrid&&mobStaff.length?`<div class="mobile-staff-list show-mobile-only${isOpen?' open':''}" id="csg-mob-${s.id}">${mobStaff.join('')}</div>`:''}`;
+        ${mobStaffLine}`;
     })()}
   </div>
   ${(()=>{
@@ -9252,15 +9392,8 @@ function renderStoryCard(sec,s,archKey){
   })()}
   <div class="card-body${isOpen?' open':''}" id="cb-${s.id}">
     ${(()=>{
-      const metaParts=[];
-      if(s.producer)    metaParts.push(`Producer: ${esc(s.producer)}`);
-      if(s.shoot_edit)  metaParts.push(`Shoot-Edit: ${esc(s.shoot_edit)}`);
-      if(s.req_name||s.req_team) metaParts.push(`By ${esc([s.req_name,s.req_team].filter(Boolean).join('/'))}`)
-      if(reqTime)       metaParts.push(`Logged ${new Date(s.created).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}`);
-      const metaLine=metaParts.length?`<div class="show-mobile-only" style="font-size:11px;color:var(--text3);margin-bottom:4px;line-height:1.6;font-family:var(--font)">${metaParts.join(' · ')}</div>`:'';
       const descLine=s.description?`<div style="font-size:12px;color:var(--text2);line-height:1.55;white-space:pre-wrap;padding:6px 0">${esc(s.description)}</div>`:'';
-      if(!descLine&&!metaLine) return '';
-      return `${metaLine}${descLine}`;
+      return descLine;
     })()}
     ${(s.broadcast_times&&s.broadcast_times.length)||(s.time_uk||s.time_ist)?(()=>{
       const _slotTagCls=(plat)=>{
@@ -9319,9 +9452,8 @@ function renderStoryCard(sec,s,archKey){
         </div>`;
       }
       slotsHTML+='</div>';
-      return `<div class="card-sec-break"></div><div style="padding:0 13px 6px">${slotsHTML}</div>`;
+      return `<div class="card-sec-break" style="margin-top:6px"></div><div style="padding:0 13px 6px">${slotsHTML}</div>`;
     })():''}
-    <div class="card-sec-break"></div>
     ${s.deadline_date?(()=>{
       const dlStr=fmtDate(s.deadline_date)+(s.deadline_uk?' · '+esc(s.deadline_uk)+' '+ukLabel():'')+(s.deadline_ist?' / '+esc(s.deadline_ist)+' IST':'');
       const dlMs=new Date(s.deadline_date+'T00:00:00').getTime();
@@ -9330,9 +9462,9 @@ function renderStoryCard(sec,s,archKey){
       const dlOverdue=dlDiff<0&&!['completed','not-done','shelved'].includes(s.status);
       const overdueStr=dlOverdue?`<span class="dl-band-overdue">● Overdue ${Math.abs(dlDiff)}d</span>`:'';
       const reminderStr=s.reminder&&s.reminder!=='off'?`<span class="dl-band-reminder">⏰ ${s.reminder}</span>`:'';
-      return`<div class="dl-band${dlOverdue?' dl-overdue-band':''}">${dlOverdue?'⏰':'📅'} <span class="dl-band-label">Deadline</span><span class="dl-band-value">${dlStr}</span>${overdueStr}${reminderStr}</div>`;
-    })():s.reminder&&s.reminder!=='off'?`<div class="dl-band">⏰ <span class="dl-band-label">Reminder</span><span class="dl-band-value">${s.reminder}</span></div>`:''}
-    <div class="card-sec-break"></div>
+      return`<div class="dl-band${dlOverdue?' dl-overdue-band':''}" style="margin-top:0">${dlOverdue?'⏰':'📅'} <span class="dl-band-label">Deadline</span><span class="dl-band-value">${dlStr}</span>${overdueStr}${reminderStr}</div>`;
+    })():s.reminder&&s.reminder!=='off'?`<div class="dl-band" style="margin-top:0">⏰ <span class="dl-band-label">Reminder</span><span class="dl-band-value">${s.reminder}</span></div>`:''}
+    <div class="card-sec-break" style="margin-top:8px;margin-bottom:4px"></div>
     ${s.remarks?`<div class="card-legacy-remark" onclick="event.stopPropagation()">💬 ${esc(s.remarks)}</div>`:''}
     ${buildStoryRemarksHTML(sec,s,archKey)}
     ${(s.location==='Field'||s.location==='field')&&!archKey?`<div style="font-size:12px;color:var(--text3);padding:6px 0">🗺 Travel & expenses for this story are managed in the <b>Travel &amp; Expenses</b> accordion below.</div>`:''}

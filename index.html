@@ -1587,6 +1587,20 @@ button.tasks-tab-btn {
 .mremark-text { font-size:12.5px; color:var(--text2); line-height:1.55; white-space:pre-wrap; }
 .mremark-meta { font-size:10px; color:var(--text3); font-family:var(--mono); margin-top:3px; }
 .meeting-form { background:var(--surface2); border:1px solid var(--accent); border-radius:10px; padding:14px; margin-bottom:10px; }
+/* Meeting form — 3-column grid */
+.mf-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px 14px;
+  align-items: start;
+}
+.mf-span3 { grid-column: 1 / -1; }
+.mf-span2 { grid-column: span 2; }
+.mf-grid .form-sec-div { grid-column: 1 / -1; }
+@media(max-width:720px){
+  .mf-grid { grid-template-columns: 1fr; }
+  .mf-span2 { grid-column: 1 / -1; }
+}
 /* Meeting form — frequency pills */
 .mf-freq-pills { display:flex; gap:6px; margin-top:6px; }
 .mf-freq-pill {
@@ -1595,6 +1609,7 @@ button.tasks-tab-btn {
   color:var(--text2); font-size:12.5px; cursor:pointer;
   transition:all .15s; text-align:center;
   font-family:var(--font); font-weight:500;
+  outline:none;
   -webkit-tap-highlight-color:transparent;
 }
 .mf-freq-pill:hover { border-color:var(--border2); color:var(--text); }
@@ -1610,7 +1625,7 @@ button.tasks-tab-btn {
   border:1.5px solid var(--border); background:var(--surface2);
   color:var(--text2); font-size:12px; cursor:pointer;
   transition:all .15s; font-family:var(--font); font-weight:500;
-  flex-shrink:0; user-select:none;
+  flex-shrink:0; user-select:none; outline:none;
   -webkit-tap-highlight-color:transparent;
 }
 .mf-dow-pill:hover { border-color:var(--border2); color:var(--text); }
@@ -7135,14 +7150,15 @@ function renderMeetingForm(){
   ];
   return`<div class="form-wrap" id="meeting-form-wrap">
     <div class="form-title">${isEdit?'✏ Edit Meeting':'+ New Meeting'}</div>
-    <div class="form-grid">
+    <div class="mf-grid">
 
       <!-- ── BASICS ── -->
-      <div class="form-sec-div fsd-first">
+      <div class="form-sec-div fsd-first mf-span3">
         <span class="form-sec-dot"></span>
         <span class="form-sec-label">Basics</span>
       </div>
-      <div class="fgroup full"><label class="flabel">Meeting Name *</label><input class="finput" id="mf-name" placeholder="Morning call, Editorial standup…" autocomplete="off"></div>
+      <div class="fgroup mf-span3"><label class="flabel">Meeting Name *</label><input class="finput" id="mf-name" placeholder="Morning call, Editorial standup…" autocomplete="off"></div>
+      <div class="fgroup mf-span3"><label class="flabel">Agenda <span class="flabel-hint">(optional)</span></label><textarea class="ftextarea" id="mf-agenda" placeholder="What will be discussed…" style="min-height:56px;white-space:pre-wrap"></textarea></div>
       <div class="fgroup"><label class="flabel">Status</label>
         <select class="fselect" id="mf-status">
           <option value="scheduled">📅 Scheduled</option>
@@ -7150,17 +7166,15 @@ function renderMeetingForm(){
           <option value="cancelled">🚫 Cancelled</option>
         </select>
       </div>
-      <div class="fgroup" style="grid-column:2/3"></div>
-      <div class="fgroup full"><label class="flabel">Agenda <span class="flabel-hint">(optional)</span></label><textarea class="ftextarea" id="mf-agenda" placeholder="What will be discussed…" style="min-height:56px;white-space:pre-wrap"></textarea></div>
 
       <!-- ── SCHEDULE ── -->
-      <div class="form-sec-div">
+      <div class="form-sec-div mf-span3">
         <span class="form-sec-dot"></span>
         <span class="form-sec-label">Schedule</span>
       </div>
 
-      <!-- Recurring toggle — top of schedule -->
-      <div class="fgroup full" style="margin-bottom:2px">
+      <!-- Recurring toggle — full width -->
+      <div class="fgroup mf-span3" style="margin-bottom:2px">
         <label style="display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none">
           <input type="checkbox" id="mf-recurring" onchange="toggleMeetingRecurring()" style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer;flex-shrink:0">
           <span style="font-size:13px;color:var(--text);font-weight:500">Recurring</span>
@@ -7168,8 +7182,8 @@ function renderMeetingForm(){
         </label>
       </div>
 
-      <!-- Recurring freq pills + day picker (hidden until recurring checked) -->
-      <div id="mf-recur-freq-wrap" style="display:none;grid-column:1/-1">
+      <!-- Freq pills + day picker — hidden until recurring checked -->
+      <div id="mf-recur-freq-wrap" style="display:none" class="mf-span3">
         <input type="hidden" id="mf-recur-freq-val" value="weekly">
         <div class="mf-freq-pills">
           <button type="button" class="mf-freq-pill" data-freq="daily" onclick="setMeetingRecurFreq('daily',this)">Daily</button>
@@ -7184,29 +7198,28 @@ function renderMeetingForm(){
         </div>
       </div>
 
-      <!-- Date — full width, mutes when recurring -->
-      <div class="fgroup full mf-date-wrap" id="mf-date-wrap">
+      <!-- Date col 1 · BST col 2 · IST col 3 — one aligned row -->
+      <div class="fgroup mf-date-wrap" id="mf-date-wrap">
         <label class="flabel">Date${isEdit?'':' *'}</label>
         <input class="finput" type="date" id="mf-date" value="${today}">
       </div>
-
-      <!-- Time — BST and IST side by side -->
       <div class="fgroup"><label class="flabel">Time (${ukLabel()})</label><input class="finput" type="time" id="mf-time" oninput="onMeetingTimeChange()" onblur="onMeetingTimeChange()"></div>
       <div class="fgroup"><label class="flabel">Time (IST)</label><input class="finput" type="time" id="mf-time-ist" oninput="onMeetingTimeISTChange()" onblur="onMeetingTimeISTChange()"></div>
 
       <!-- ── DETAILS ── -->
-      <div class="form-sec-div">
+      <div class="form-sec-div mf-span3">
         <span class="form-sec-dot"></span>
         <span class="form-sec-label">Details</span>
       </div>
-      <div class="fgroup full">
+      <div class="fgroup mf-span3">
         <label class="flabel">Participants</label>
         <div id="mf-participants-wrap"></div>
         <div style="display:flex;gap:7px;margin-top:6px">
           <button type="button" class="btn btn-ghost btn-sm" onclick="addParticipantRow()">+ Add Person</button>
         </div>
       </div>
-      <div class="fgroup full"><label class="flabel">Venue / Link <span class="flabel-hint">(optional)</span></label><input class="finput" id="mf-venue" placeholder="Room name, office, or meeting link (https://…)"></div>
+      <div class="fgroup mf-span3"><label class="flabel">Venue / Link <span class="flabel-hint">(optional)</span></label><input class="finput" id="mf-venue" placeholder="Room name, office, or meeting link (https://…)"></div>
+      <!-- Reminder col 1 · Reminder Note spans cols 2–3 -->
       <div class="fgroup"><label class="flabel">Reminder</label>
         <select class="fselect" id="mf-reminder">
           <option value="off">Off</option>
@@ -7216,7 +7229,7 @@ function renderMeetingForm(){
           <option value="1day">1 day before</option>
         </select>
       </div>
-      <div class="fgroup"><label class="flabel">Reminder Note <span class="flabel-hint">(optional)</span></label><input class="finput" id="mf-reminder-note" placeholder="e.g. Prepare talking points"></div>
+      <div class="fgroup mf-span2"><label class="flabel">Reminder Note <span class="flabel-hint">(optional)</span></label><input class="finput" id="mf-reminder-note" placeholder="e.g. Prepare talking points"></div>
 
     </div>
     <div class="form-footer">

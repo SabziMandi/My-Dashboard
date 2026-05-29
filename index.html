@@ -4610,6 +4610,10 @@ function render(){
   renderOnLeavePill();
   updateBnbActive();
   restoreFormState(savedForm);
+  // Re-populate backup banners after every render — the div lives inside #main-content
+  // so innerHTML replacement wipes it each time. Without this, the banner flashes
+  // briefly at the 300ms setTimeout then disappears when Firebase sync triggers render().
+  if(ui.view==='today') renderMonthlyBackupBanner();
 }
 
 function injectDataLists(){
@@ -9907,8 +9911,6 @@ function init(){
   updateDateHeader(); render();
   renderOnLeavePill();
     initMobileScrollCollapse();
-  // Show backup banners after render (only on today view)
-  setTimeout(()=>renderMonthlyBackupBanner(), 300);
   updateClock(); setInterval(updateClock, 30000);
   initScrollHeader();
   // Click outside search to close

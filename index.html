@@ -636,7 +636,7 @@ body {
 .card-legacy-remark { font-size: 11.5px; color: var(--text3); font-style: italic; padding: 4px 0 2px; }
 /* Format chips */
 .fmt-chips { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
-.fmt-chip { font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 12px; font-family: var(--mono); letter-spacing: .02em; background: var(--surface3); color: var(--text2); border: 0.5px solid var(--border2); }
+.fmt-chip { font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 20px; font-family: var(--font); letter-spacing: .01em; background: var(--surface3); color: var(--text2); border: 0.5px solid var(--border2); white-space: nowrap; }
 .fmt-chip.sb-fmt-tv     { background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE; }
 .fmt-chip.sb-fmt-radio  { background: #FFF7ED; color: #C2410C; border-color: #FED7AA; }
 .fmt-chip.sb-fmt-social { background: #F0FDF4; color: #15803D; border-color: #BBF7D0; }
@@ -2037,6 +2037,7 @@ function loadLocal(){
   if(!state.notes)           state.notes=[];
   if(!state.travelEntries)   state.travelEntries=[];
   if(!state.travelDismissed) state.travelDismissed=[];
+  if(!state.travelGroupDismissed) state.travelGroupDismissed=[];
   if(!state.travelRestored)  state.travelRestored=[];
   if(!state.deletedIds)      state.deletedIds={};
   if(!state.staffNames)      state.staffNames={correspondents:[],producers:[],shootEdit:[]};
@@ -2337,7 +2338,12 @@ function startRealtimeSync(){
       const hasOpenForm=ui.openForms.size>0||_te.open;
       // Also block render if user is actively typing in a remark field
       const activeEl=document.activeElement;
-      const typingInRemark=activeEl&&(activeEl.id&&activeEl.id.startsWith('sr-')||activeEl.closest&&activeEl.closest('.sremark-add'));
+      const typingInRemark=activeEl&&(
+        (activeEl.id&&activeEl.id.startsWith('sr-'))||
+        (activeEl.closest&&activeEl.closest('.sremark-add'))||
+        (activeEl.closest&&activeEl.closest('#acc-body-remarks'))||
+        (activeEl.id&&(activeEl.id==='nf-headline'||activeEl.id==='nf-text'||activeEl.id==='nf-deadline'))
+      );
       if(hasOpenForm||typingInRemark){
         // Form is open — don't re-render (would lose user's input focus and feel jarring)
         // Mark that a sync arrived so render fires when the form closes
@@ -2454,15 +2460,11 @@ function shouldShowWeeklyBackup(){
   const wk=_weekKey(today);
   if(state.weeklyBackupDismissed===wk) return false;
   if(state.lastWeeklyBackup===wk) return false;
-  // Trigger on Friday (or last working day of week) at/after hour
+  // Trigger on Friday only (getDay()===5). Never Thursday or any other day.
   const d=new Date(today+'T00:00:00');
-  const dayOfWeek=d.getDay(); // 5=Fri
-  if(dayOfWeek!==5&&!(s.workDaysOnly&&dayOfWeek===4)) {
-    // Show on Friday only
-    if(dayOfWeek!==5) return false;
-  }
+  if(d.getDay()!==5) return false;
   const now=new Date(), istMin=((now.getUTCHours()*60+now.getUTCMinutes())+IST_OFF)%1440;
-  return Math.floor(istMin/60)>=(s.hour||18);
+  return Math.floor(istMin/60)>=(s.hour||17);
 }
 function dismissMonthlyBackup(){
   state.monthlyBackupDismissed=todayStr().slice(0,7);
@@ -4590,6 +4592,13 @@ function upcomingDueBadge(s){
   const days=Math.ceil(diff/86400000);
   return `<span class="upcoming-due-badge">📅 in ${days}d</span>`;
 }
+/** Re-render while guaranteeing the Notes/Remarks accordion stays open.
+ *  Use this inside any note action (done, pass, delete, submit) so the
+ *  accordion never collapses mid-interaction. */
+function renderKeepRemarks(){
+  ui.openSections.add('remarks');
+  render();
+}
 function render(){
   // Preserve any open form's values across the re-render
   const savedForm=captureFormState();
@@ -5078,7 +5087,7 @@ function renderNotesView(){
     const notesLog=state.archive[cur]?.notesLog||[];
     if(!notesLog.length){
       html+=`<div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-        <button class="btn btn-accent btn-sm" onclick="ui_noteForm=!ui_noteForm;render();setTimeout(()=>document.getElementById('nf-text')?.focus(),60)">+ Add</button>
+        <button class="btn btn-accent btn-sm" onclick="ui_noteForm=!ui_noteForm;renderKeepRemarks();setTimeout(()=>document.getElementById('nf-text')?.focus(),60)">+ Add</button>
       </div>`;
       if(ui_noteForm){
         html+=`<div class="form-wrap">
@@ -5089,7 +5098,7 @@ function renderNotesView(){
           </div>
           <div class="form-footer">
             <button class="btn btn-accent btn-sm" onclick="submitNoteForm()">${ui_editNoteId?'Update':'Add'}</button>
-            <button class="btn btn-ghost btn-sm" onclick="ui_noteForm=false;ui_editNoteId=null;render()">Cancel</button>
+            <button class="btn btn-ghost btn-sm" onclick="ui_noteForm=false;ui_editNoteId=null;renderKeepRemarks()">Cancel</button>
           </div>
         </div>`;
       }
@@ -5097,7 +5106,7 @@ function renderNotesView(){
     } else {
       html+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
         <span style="font-size:11px;font-family:var(--font);color:var(--text3);letter-spacing:.6px">${notesLog.length} note${notesLog.length===1?'':'s'} on this day</span>
-        <button class="btn btn-accent btn-sm" onclick="ui_noteForm=!ui_noteForm;render();setTimeout(()=>document.getElementById('nf-text')?.focus(),60)">+ Add</button>
+        <button class="btn btn-accent btn-sm" onclick="ui_noteForm=!ui_noteForm;renderKeepRemarks();setTimeout(()=>document.getElementById('nf-text')?.focus(),60)">+ Add</button>
       </div>`;
       if(ui_noteForm){
         html+=`<div class="form-wrap">
@@ -5108,7 +5117,7 @@ function renderNotesView(){
           </div>
           <div class="form-footer">
             <button class="btn btn-accent btn-sm" onclick="submitNoteForm()">${ui_editNoteId?'Update':'Add'}</button>
-            <button class="btn btn-ghost btn-sm" onclick="ui_noteForm=false;ui_editNoteId=null;render()">Cancel</button>
+            <button class="btn btn-ghost btn-sm" onclick="ui_noteForm=false;ui_editNoteId=null;renderKeepRemarks()">Cancel</button>
           </div>
         </div>`;
       }
@@ -5134,7 +5143,7 @@ function renderNotesView(){
           ${isLive?`<div class="card-action-footer" style="margin:8px -12px -12px;border-radius:0 0 6px 6px">
             ${nd.status!=='done'?`<button class="btn btn-done-active btn-sm" onclick="setNoteStatus('${nd.id}','done')">✅ Done</button>`:''}
             ${nd.status==='active'?`<button class="btn btn-ghost btn-sm" style="color:var(--text3)" onclick="setNoteStatus('${nd.id}','pass')">↪ Pass</button>`:''}
-            ${nd.status!=='active'?`<button class="btn btn-ghost btn-sm" onclick="updateNote('${nd.id}',{status:'active',resolvedOn:null});render()">↩ Restore</button>`:''}
+            ${nd.status!=='active'?`<button class="btn btn-ghost btn-sm" onclick="updateNote('${nd.id}',{status:'active',resolvedOn:null});renderKeepRemarks()">↩ Restore</button>`:''}
             <button class="btn btn-ghost btn-sm" onclick="editNote('${nd.id}')">✏ Edit</button>
             <span class="caf-spacer"></span>
             <button class="btn btn-ghost btn-sm btn-danger" onclick="if(confirm('Delete this note?'))deleteNote('${nd.id}')">🗑 <span class="del-label">Delete</span></button>
@@ -6809,7 +6818,7 @@ function editNote(id){
   const note=(state.notes||[]).find(n=>n.id===id); if(!note) return;
   ui_editNoteId=id;
   ui_noteForm=true;
-  render();
+  renderKeepRemarks();
   setTimeout(()=>{
     const h=document.getElementById('nf-headline');
     const t=document.getElementById('nf-text');
@@ -6873,7 +6882,7 @@ function deleteNote(id){
   if(!state.deletedIds) state.deletedIds={};
   if(!state.deletedIds.notes) state.deletedIds.notes=[];
   if(!state.deletedIds.notes.includes(id)) state.deletedIds.notes.push(id);
-  saveAndPush(); render();
+  saveAndPush(); renderKeepRemarks();
 }
 function setNoteStatus(id, status){
   if(!state.notes) return;
@@ -6905,12 +6914,11 @@ function setNoteStatus(id, status){
   }
 
   toast(status==='done'?'✅ Note marked Done':'↪ Note passed');
-  
-  render();
+  renderKeepRemarks();
 }
 function toggleNotesResolved(){
   ui.notesResolvedOpen=!ui.notesResolvedOpen;
-  render();
+  renderKeepRemarks();
 }
 function submitNoteForm(){
   const g=id=>(document.getElementById(id)||{}).value||'';
@@ -6927,11 +6935,11 @@ function submitNoteForm(){
   }
   ui_noteForm=false;
   ui_notePage=1;
-  render();
+  renderKeepRemarks();
 }
 function toggleNoteOpen(id){
   if(ui_openNotes.has(id)) ui_openNotes.delete(id); else ui_openNotes.add(id);
-  render();
+  renderKeepRemarks();
 }
 let ui_meetingForm=false;
 let ui_editMeetingId=null;
@@ -7584,7 +7592,7 @@ function renderRemarksAccordion(){
       </div>
       <div class="form-footer">
         <button class="btn btn-accent btn-sm" onclick="submitNoteForm()">${ui_editNoteId?'Update':'Add'}</button>
-        <button class="btn btn-ghost btn-sm" onclick="ui_noteForm=false;ui_editNoteId=null;render()">Cancel</button>
+        <button class="btn btn-ghost btn-sm" onclick="ui_noteForm=false;ui_editNoteId=null;renderKeepRemarks()">Cancel</button>
       </div>
     </div>`;
   }
@@ -7691,7 +7699,7 @@ function renderRemarksAccordion(){
           <span style="color:${n.status==='done'?'var(--done)':'var(--text3)'}">${n.status==='done'?'✅ Done':'↪ Passed'}</span>
         </div>
         <div class="card-action-footer" style="margin:8px -12px -12px;border-radius:0 0 6px 6px" onclick="event.stopPropagation()">
-          <button class="btn btn-ghost btn-sm" onclick="updateNote('${n.id}',{status:'active',resolvedOn:null});render()">↩ Restore</button>
+          <button class="btn btn-ghost btn-sm" onclick="updateNote('${n.id}',{status:'active',resolvedOn:null});renderKeepRemarks()">↩ Restore</button>
           <button class="btn btn-ghost btn-sm" onclick="editNote('${n.id}')">✏ Edit</button>
           <span class="caf-spacer"></span>
           <button class="btn btn-ghost btn-sm btn-danger" onclick="if(confirm('Delete this note?'))deleteNote('${n.id}')">🗑 <span class="del-label">Delete</span></button>
@@ -7713,7 +7721,7 @@ function renderRemarksAccordion(){
         <div class="fi-form-footer">
           <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doEmailNotes()" title="Email">✉<span class="bim-text"> Email</span></button>
           <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doExportNotesTxt()" title="Export">↓<span class="bim-text"> Export</span></button>
-          <button class="btn btn-accent btn-sm btn-icon-mobile" onclick="ui_noteForm=!ui_noteForm;render();setTimeout(()=>document.getElementById('nf-headline')?.focus(),60)" title="Add note">+<span class="bim-text"> Add</span></button>
+          <button class="btn btn-accent btn-sm btn-icon-mobile" onclick="ui_noteForm=!ui_noteForm;renderKeepRemarks();setTimeout(()=>document.getElementById('nf-headline')?.focus(),60)" title="Add note">+<span class="bim-text"> Add</span></button>
         </div>
         ${body}
       </div>
@@ -7762,7 +7770,7 @@ function renderRemarksAccordion(){
       <div class="sec-head">
         <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doEmailNotes()" title="Email">✉<span class="bim-text"> Email</span></button>
         <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doExportNotesTxt()" title="Export">↓<span class="bim-text"> Export</span></button>
-        <button class="btn btn-accent btn-sm btn-icon-mobile" onclick="ui_noteForm=!ui_noteForm;render();setTimeout(()=>document.getElementById('nf-headline')?.focus(),60)" title="Add note">+<span class="bim-text"> Add</span></button>
+        <button class="btn btn-accent btn-sm btn-icon-mobile" onclick="ui_noteForm=!ui_noteForm;renderKeepRemarks();setTimeout(()=>document.getElementById('nf-headline')?.focus(),60)" title="Add note">+<span class="bim-text"> Add</span></button>
       </div>
       ${body}
     </div>
@@ -8063,7 +8071,22 @@ function _teGetStories(){
 }
 
 function _teEntriesForStory(sid){ return (state.travelEntries||[]).filter(e=>e.storyId===sid); }
-function _teEntriesGeneral(){ return (state.travelEntries||[]).filter(e=>!e.storyId); }
+function _teEntriesGeneral(){ return (state.travelEntries||[]).filter(e=>!e.storyId&&!e._deleted); }
+/** Returns all distinct general groups as [{groupId, groupLabel}] sorted by creation time */
+function _teGetGeneralGroups(){
+  const entries=_teEntriesGeneral();
+  const seen=new Map(); // groupId → {groupId,groupLabel,minCreated}
+  entries.forEach(e=>{
+    const gid=e.groupId||'__default';
+    const lbl=e.groupLabel||'General';
+    if(!seen.has(gid)) seen.set(gid,{groupId:gid,groupLabel:lbl,minCreated:e.created||0});
+    else if((e.created||0)<seen.get(gid).minCreated) seen.get(gid).minCreated=e.created||0;
+  });
+  return [...seen.values()].sort((a,b)=>a.minCreated-b.minCreated);
+}
+function _teEntriesForGroup(gid){
+  return _teEntriesGeneral().filter(e=>(e.groupId||'__default')===gid);
+}
 
 // ── CRUD ──────────────────────────────────────────────────
 function _teSave(){ saveAndPush(); _teRefresh(); }
@@ -8084,28 +8107,46 @@ function _teDelete(id){
   if(!state.deletedIds.travelEntries.includes(id)) state.deletedIds.travelEntries.push(id);
   _teSave();
 }
-function _teDismissGeneral(){
-  state.travelGeneralDismissed=true;
-  _teSave();
-  _teRefresh();
+/** Dismiss (hide) a general group from the active list */
+function _teDismissGroup(gid){
+  if(!state.travelGroupDismissed) state.travelGroupDismissed=[];
+  if(!state.travelGroupDismissed.includes(gid)) state.travelGroupDismissed.push(gid);
+  // Legacy: if dismissing __default group, also set old flag for backward compat
+  if(gid==='__default') state.travelGeneralDismissed=true;
+  _teSave(); _teRefresh();
 }
-function _teDeleteGeneral(){
-  const toDelete=(state.travelEntries||[]).filter(e=>!e.storyId).map(e=>e.id);
+function _teRestoreGroup(gid){
+  state.travelGroupDismissed=(state.travelGroupDismissed||[]).filter(x=>x!==gid);
+  if(gid==='__default') state.travelGeneralDismissed=false;
+  _teSave(); _teRefresh();
+}
+function _teDeleteGroup(gid){
+  const toDelete=_teEntriesForGroup(gid).map(e=>e.id);
   toDelete.forEach(id=>{
     state.travelEntries=(state.travelEntries||[]).filter(e=>e.id!==id);
+    if(!state.deletedIds) state.deletedIds={};
     if(!state.deletedIds.travelEntries) state.deletedIds.travelEntries=[];
     if(!state.deletedIds.travelEntries.includes(id)) state.deletedIds.travelEntries.push(id);
   });
-  state.travelGeneralDismissed=true;
+  state.travelGroupDismissed=(state.travelGroupDismissed||[]).filter(x=>x!==gid);
+  if(gid==='__default') state.travelGeneralDismissed=false;
   _teSave();
-  toast(toDelete.length?`🗑 General entries deleted (${toDelete.length})`:'🗑 General removed');
+  toast(toDelete.length?`🗑 Group deleted (${toDelete.length} entr${toDelete.length===1?'y':'ies'})`:'🗑 Group removed');
   _teRefresh();
 }
-function _teRestoreGeneral(){
-  state.travelGeneralDismissed=false;
-  _teSave();
-  _teRefresh();
+/** Rename a general group — updates groupLabel on all its entries */
+function _teRenameGroup(gid, newLabel){
+  const trimmed=(newLabel||'').trim();
+  if(!trimmed){ toast('Enter a name'); return; }
+  (state.travelEntries||[]).forEach(e=>{
+    if(!e.storyId&&(e.groupId||'__default')===gid){ e.groupLabel=trimmed; e.updated=Date.now(); }
+  });
+  _teSave(); _teRefresh();
 }
+// Legacy stubs — kept so any bookmarked calls don't break
+function _teDismissGeneral(){ _teDismissGroup('__default'); }
+function _teRestoreGeneral(){ _teRestoreGroup('__default'); }
+function _teDeleteGeneral(){ _teDeleteGroup('__default'); }
 function _teDismissStory(sid){
   if(!state.travelDismissed) state.travelDismissed=[];
   if(!state.travelDismissed.includes(sid)) state.travelDismissed.push(sid);
@@ -8207,6 +8248,11 @@ function _teSetType(t){
   const tb=document.getElementById('acc-body-travel');
   if(tb&&tb.classList.contains('open')) tb.innerHTML=_teRenderBody();
 }
+/** Show/hide the group name row depending on whether a story is selected */
+function _teOnStoryChange(val){
+  const row=document.getElementById('te-group-row');
+  if(row) row.style.display=val?'none':'';
+}
 function _teSubmit(){
   const g=id=>{ const el=document.getElementById('te-'+id); return el?(el.type==='checkbox'?el.checked:(el.value||'').trim()):''; };
   const type=_te.type;
@@ -8236,12 +8282,28 @@ function _teSubmit(){
   else if(type==='fixer') data={fixerName:g('fixername'),where:g('where'),phone:g('phone'),email:g('email'),startDate:g('startdate'),endDate:g('enddate'),fixerDays:g('fixerdays'),rateDay:g('rateday'),fixerTotal:g('fixertotal'),payment:g('payment'),paidBy:g('paidby'),claimed:g('claimed'),status:g('status'),fixerNotes:(document.getElementById('te-fixernotes')?.value||'').trim()};
   else if(type==='other') data={what:g('what'),when:g('when'),amount:g('amount'),paidBy:g('paidby'),otherNotes:(document.getElementById('te-othernotes')?.value||'').trim()};
 
-  const entry={type,storyId,storySec,data};
+  // Resolve groupId/groupLabel for unlinked (General) entries
+  let groupId=null, groupLabel=null;
+  if(!storyId){
+    const rawLabel=(document.getElementById('te-groupname')?.value||'').trim();
+    if(rawLabel){
+      // Reuse existing groupId if a group with this label already exists
+      const existingGrp=_teGetGeneralGroups().find(g=>g.groupLabel.toLowerCase()===rawLabel.toLowerCase());
+      groupId=existingGrp?existingGrp.groupId:genId();
+      groupLabel=existingGrp?existingGrp.groupLabel:rawLabel;
+    } else {
+      groupId='__default';
+      groupLabel='General';
+    }
+  }
+
+  const entry={type,storyId,storySec,data,groupId,groupLabel};
   // Basic validation — require at least one meaningful field
   const hasContent=Object.values(data).some(v=>v&&String(v).trim());
   if(!hasContent){ toast('Please fill in at least one field'); return; }
   if(_te.editId) _teUpdate(_te.editId,entry);
   else _teAdd(entry);
+
   _te={open:false,type:'cab',storyId:null,storySec:null,editId:null};
   const tb=document.getElementById('acc-body-travel');
   if(tb&&tb.classList.contains('open')) tb.innerHTML=_teRenderBody();
@@ -8282,14 +8344,23 @@ function _teBuildForm(){
   // Form dropdown: only active live-board stories so user can't accidentally
   // link new expenses to resolved/archived stories.
   // Existing entries linked to archived stories remain intact via _teGetStories().
+  const _INACTIVE_TRAVEL_STATUSES=new Set(['shelved','completed','not-done']);
   const allStories=[];
   ['ibu','other','requests'].forEach(sec=>{
-    (state.sections[sec]||[]).filter(s=>!s._deleted&&s.title).forEach(s=>{
+    (state.sections[sec]||[]).filter(s=>!s._deleted&&s.title&&!_INACTIVE_TRAVEL_STATUSES.has(s.status)).forEach(s=>{
       allStories.push({sec,s});
     });
   });
   const secLabel={ibu:'Stories',other:'Other Stories',requests:'Requests'};
   const storyOpts=allStories.map(({sec,s})=>`<option value="${s.id}"${curStory===s.id?' selected':''}>${esc((s.title||'').slice(0,45))} · ${secLabel[sec]||sec}${s.field_location?' · '+esc(s.field_location):''}</option>`).join('');
+
+  // Group picker — only shown when no story is linked (General entries)
+  const existingGroups=_teGetGeneralGroups();
+  const curGroupId=_te.groupId||(editEntry?.groupId)||'__default';
+  const curGroupLabel=_te.groupLabel||(editEntry?.groupLabel)||'';
+  // Build datalist of existing group names for autocomplete
+  const groupDatalistId='te-group-datalist';
+  const groupDatalistOpts=existingGroups.map(g=>`<option value="${esc(g.groupLabel)}"></option>`).join('');
 
   const payOpts=(cur)=>['account','bbc-direct','card','cash','unpaid','upi'].map(v=>`<option value="${v}"${(cur||'cash')===v?' selected':''}>${_payLabel(v)}</option>`).join('');
   const fi=(id,lbl,val,tp,ph,extra)=>`<div class="fgroup"><label class="flabel">${lbl}</label><input class="finput" id="te-${id}" type="${tp||'text'}" value="${esc(val||'')}" placeholder="${ph||''}" ${extra||''}></div>`;
@@ -8308,12 +8379,17 @@ function _teBuildForm(){
 
   return`<div class="note-add-form" style="border-color:var(--accent);margin-bottom:16px" onclick="event.stopPropagation()">
     <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:14px">${_te.editId?'Edit':'New'} Travel / Expense Entry</div>
+    <datalist id="${groupDatalistId}">${groupDatalistOpts}</datalist>
     <div class="fgroup full" style="margin-bottom:12px">
       <label class="flabel">Link to story <span style="font-size:10px;color:var(--text3)">(optional)</span></label>
-      <select class="fselect" id="te-story">
+      <select class="fselect" id="te-story" onchange="_teOnStoryChange(this.value)">
         <option value="">— General / Unlinked —</option>
         ${storyOpts}
       </select>
+    </div>
+    <div class="fgroup full" id="te-group-row" style="margin-bottom:12px;${curStory?'display:none':''}">
+      <label class="flabel">Group / trip name <span style="font-size:10px;color:var(--text3)">(optional — groups related unlinked entries)</span></label>
+      <input class="finput" id="te-groupname" list="${groupDatalistId}" value="${esc(curGroupLabel)}" placeholder="e.g. Mumbai trip, Chennai assignment…" autocomplete="off">
     </div>
     <div class="fgroup full" style="margin-bottom:14px">
       <label class="flabel">Type</label>
@@ -8323,7 +8399,7 @@ function _teBuildForm(){
     </div>
     <div style="border-top:1px solid var(--border);margin:4px 0 12px"></div>
     <div class="form-grid">${fields}</div>
-    <div style="display:flex;gap:8px;margin-top:14px">
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center">
       <button class="btn btn-accent btn-sm" id="te-submit-btn" onclick="_teSubmit()">Save entry</button>
       <button class="btn btn-ghost btn-sm" onclick="_teCloseForm()">Cancel</button>
     </div>
@@ -8479,18 +8555,20 @@ function _teToggleExpenses(sid){ui_teExpensesOpen[sid]=!ui_teExpensesOpen[sid];c
 function _teShowMoreBookings(sid){ui_teBookingsPage[sid]=(ui_teBookingsPage[sid]||1)+1;const b=document.getElementById('te-book-inner-'+sid);if(b)b.innerHTML=_teBuildBookingsInner(sid);}
 function _teShowMoreExpenses(sid){ui_teExpensesPage[sid]=(ui_teExpensesPage[sid]||1)+1;const b=document.getElementById('te-exp-inner-'+sid);if(b)b.innerHTML=_teBuildExpensesInner(sid);}
 function _teMarkAllClaimed(sid){const isGen=(!sid||sid==='gen');(state.travelEntries||[]).filter(e=>isGen?!e.storyId:e.storyId===sid).filter(e=>e.type==='expense').forEach(e=>_teUpdate(e.id,{data:{...e.data,claimed:'yes'}}));toast('✅ All expenses marked claimed');}
-function _teBuildBookingsInner(sid){
-  const isGen=(!sid||sid==='gen');
-  const entries=(isGen?_teEntriesGeneral():_teEntriesForStory(sid)).filter(e=>['cab','flight','hotel','fixer','other'].includes(e.type));
+function _teBuildBookingsInner(sid, gid){
+  const isGrp=sid&&sid.startsWith('grp:');
+  const isGen=(!sid||sid==='gen')&&!isGrp;
+  const entries=(isGrp?_teEntriesForGroup(gid||sid.slice(4)):isGen?_teEntriesGeneral():_teEntriesForStory(sid)).filter(e=>['cab','flight','hotel','fixer','other'].includes(e.type));
   if(!entries.length) return '<div style="font-size:12px;color:var(--text3);padding:6px 2px">No bookings yet.</div>';
   const page=ui_teBookingsPage[sid]||1,limit=page*10,visible=entries.slice(0,limit),remaining=entries.length-limit;
   let h=visible.map(e=>_teRenderEntry(e)).join('');
   if(remaining>0) h+=`<div style="text-align:center;padding:7px 0;border-top:1px solid var(--border)"><button class="btn btn-ghost btn-sm" onclick="_teShowMoreBookings('${sid}');event.stopPropagation()" style="color:var(--accent);border-color:rgba(207,102,64,.3);font-size:11.5px">Show ${Math.min(remaining,10)} more <span style="opacity:.6;font-size:11px">(${remaining} remaining)</span></button></div>`;
   return h;
 }
-function _teBuildExpensesInner(sid){
-  const isGen=(!sid||sid==='gen');
-  const allExp=(isGen?_teEntriesGeneral():_teEntriesForStory(sid)).filter(e=>e.type==='expense');
+function _teBuildExpensesInner(sid, gid){
+  const isGrp=sid&&sid.startsWith('grp:');
+  const isGen=(!sid||sid==='gen')&&!isGrp;
+  const allExp=(isGrp?_teEntriesForGroup(gid||sid.slice(4)):isGen?_teEntriesGeneral():_teEntriesForStory(sid)).filter(e=>e.type==='expense');
   if(!allExp.length) return '<div style="font-size:12px;color:var(--text3);padding:6px 2px">No expenses yet.</div>';
   const page=ui_teExpensesPage[sid]||1,limit=page*10,visible=allExp.slice(0,limit),remaining=allExp.length-limit;
   let h=visible.map(e=>_teRenderEntry(e)).join('');
@@ -8499,6 +8577,38 @@ function _teBuildExpensesInner(sid){
   if(total>0) h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 11px;background:rgba(13,148,136,.05);border-top:1px solid rgba(13,148,136,.2);margin-top:2px"><span style="font-size:12px;font-weight:600;color:var(--working)">Total</span><span style="font-size:14px;font-weight:700;color:var(--working)">Rs ${total.toLocaleString('en-IN')}</span></div>`;
   return h;
 }
+/** Variant of _teSubAccordion for a general group identified by groupId */
+function _teSubAccordionForGroup(gid){
+  // Reuse _teSubAccordion logic with a synthetic sid='grp:'+gid
+  // We pass entries via override by temporarily patching the call.
+  // Simpler: just inline the same logic with _teEntriesForGroup.
+  const sid='grp:'+gid;
+  const sec=null;
+  const entries=_teEntriesForGroup(gid);
+  const bookings=entries.filter(e=>['cab','flight','hotel','fixer','other'].includes(e.type));
+  const expenses=entries.filter(e=>e.type==='expense');
+  const allClaimed=expenses.length>0&&expenses.every(e=>_teGetClaimed(e)==='yes');
+  const expTotal=(()=>{const t=expenses.reduce((s,e)=>{const _m=String(e.data?.amount||'').match(/[0-9]+(?:\.[0-9]+)?/);const n=_m?parseFloat(_m[0]):0;return s+(isNaN(n)?0:n);},0);return t>0?'Rs '+t.toLocaleString('en-IN'):'';})();
+  const bookOpen=ui_teBookingsOpen[sid]===true;
+  const expOpen=ui_teExpensesOpen[sid]===true;
+  const allBookUnpaid=bookings.filter(e=>e.type==='fixer'?_teGetClaimed(e)!=='yes':e.data?.payment==='unpaid').length;
+  const allBookPaid=bookings.length>0&&allBookUnpaid===0;
+  const bookBadges=(()=>{
+    if(!bookings.length) return '';
+    if(allBookPaid) return `<span class="sbadge sb-in-progress">All paid</span>`;
+    return (allBookUnpaid?`<span class="sbadge" style="background:rgba(186,117,23,.09);color:#854F0B;border:0.5px solid rgba(186,117,23,.3);font-size:11px"><span class="badge-dot" style="background:#BA7517"></span>${allBookUnpaid} unpaid</span>`:'')+
+      `<span class="sbadge" style="background:rgba(37,99,235,.07);color:#1d4ed8;border:0.5px solid rgba(37,99,235,.25);font-size:11px">${bookings.length} entr${bookings.length===1?'y':'ies'}</span>`;
+  })();
+  const addBookBtns=`<button class="ttb-add-btn ttb-cab" onclick="_teOpenForm({type:'cab'})">🚕 <span class="ttb-lbl">Cab</span></button><button class="ttb-add-btn ttb-flight" onclick="_teOpenForm({type:'flight'})">✈️ <span class="ttb-lbl">Flight</span></button><button class="ttb-add-btn ttb-hotel" onclick="_teOpenForm({type:'hotel'})">🏨 <span class="ttb-lbl">Hotel</span></button><button class="ttb-add-btn ttb-fixer" onclick="_teOpenForm({type:'fixer'})">🤝 <span class="ttb-lbl">Fixer</span></button><button class="ttb-add-btn ttb-other" onclick="_teOpenForm({type:'other'})">📦 <span class="ttb-lbl">Other</span></button>`;
+  const addExpBtn=`<button class="btn btn-ghost btn-sm" onclick="_teOpenForm({type:'expense'})">💳 Add expense</button>`;
+  return `<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleBookings('${sid}')"><span style="font-size:14px">🗓</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Bookings</span>${bookBadges}<span id="te-book-chev-${sid}" style="font-size:11px;color:var(--text3)">${bookOpen?'▾':'▸'}</span></div><div id="te-book-body-${sid}" style="display:${bookOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-book-inner-${sid}" style="padding:8px 11px">${_teBuildBookingsInner(sid,gid)}</div><div style="display:flex;gap:5px;flex-wrap:wrap;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addBookBtns}</div></div></div>
+    <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleExpenses('${sid}')"><span style="font-size:14px">💳</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Expenses</span>${allClaimed?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:expenses.filter(e=>_teGetClaimed(e)!=='yes').length?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${expenses.filter(e=>_teGetClaimed(e)!=='yes').length} unclaimed</span>`:''}${expTotal?`<span class="sbadge" style="background:rgba(13,148,136,.07);color:#0D9488;border:0.5px solid rgba(13,148,136,.25);font-weight:600;font-size:11px">${expTotal}</span>`:''}<span id="te-exp-chev-${sid}" style="font-size:11px;color:var(--text3)">${expOpen?'▾':'▸'}</span></div><div id="te-exp-body-${sid}" style="display:${expOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-exp-inner-${sid}" style="padding:8px 11px">${_teBuildExpensesInner(sid,gid)}</div><div style="display:flex;align-items:center;gap:5px;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addExpBtn}<div style="flex:1"></div>${allClaimed?`<button class="btn btn-ghost btn-sm" style="color:var(--text3);cursor:default">✓ Claimed</button>`:`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllClaimedGroup('${gid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark all claimed</button>`}</div></div></div>`;
+}
+function _teMarkAllClaimedGroup(gid){
+  _teEntriesForGroup(gid).filter(e=>e.type==='expense').forEach(e=>_teUpdate(e.id,{data:{...e.data,claimed:'yes'}}));
+  toast('✅ All expenses marked claimed');
+}
+
 function _teSubAccordion(sid,sec){
   const isGen=(!sid||sid==='gen');
   const entries=isGen?_teEntriesGeneral():_teEntriesForStory(sid);
@@ -8574,16 +8684,39 @@ function _teRenderBody(){
       </div>`;
     });
   }
-  const genEntries=_teEntriesGeneral();
-  if((genEntries.length||stories.length===0)&&!state.travelGeneralDismissed){
-    const genExp=genEntries.filter(e=>e.type==='expense'),genUnclaimed=genExp.filter(e=>_teGetClaimed(e)!=='yes').length;
-    const genBadge=genUnclaimed?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${genUnclaimed} unclaimed</span>`:(genExp.length?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:'');
-    html+=`<div style="margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden"><div style="display:flex;align-items:center;gap:7px;padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border)"><span style="font-size:13px">📋</span><span style="font-size:13px;font-weight:600;color:var(--text);flex:1">General</span>${genBadge}<button onclick="if(confirm('Delete all General entries?'))_teDeleteGeneral()" style="padding:2px 7px;font-size:10px;border:1px solid rgba(220,38,38,.3);border-radius:5px;background:transparent;color:#DC2626;cursor:pointer;flex-shrink:0" title="Delete all General entries">🗑</button><button onclick="_teDismissGeneral()" style="padding:2px 7px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--text3);cursor:pointer;flex-shrink:0;margin-left:auto" title="Hide General from this list">✕ Hide</button></div><div style="padding:10px 13px;display:flex;flex-direction:column;gap:8px">${_teSubAccordion('gen',null)}</div></div>`;
+  // Render one card per general group (each named trip/assignment gets its own card)
+  const allGroups=_teGetGeneralGroups();
+  const dismissedGroups=new Set(state.travelGroupDismissed||[]);
+  // Legacy: honour the old travelGeneralDismissed flag for the __default group
+  if(state.travelGeneralDismissed) dismissedGroups.add('__default');
+  const activeGroups=allGroups.filter(g=>!dismissedGroups.has(g.groupId));
+  if(activeGroups.length||stories.length===0){
+    activeGroups.forEach(({groupId:gid,groupLabel:glbl})=>{
+      const grpEntries=_teEntriesForGroup(gid);
+      if(!grpEntries.length) return; // nothing to show
+      const grpExp=grpEntries.filter(e=>e.type==='expense');
+      const grpUnclaimed=grpExp.filter(e=>_teGetClaimed(e)!=='yes').length;
+      const grpBadge=grpUnclaimed
+        ?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${grpUnclaimed} unclaimed</span>`
+        :(grpExp.length?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:'');
+      const grpIcon=gid==='__default'?'📋':'🗂';
+      // Pass groupId into _teSubAccordion via a synthetic key prefixed 'grp:'
+      html+=`<div style="margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:7px;padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap">
+          <span style="font-size:13px">${grpIcon}</span>
+          <span style="font-size:13px;font-weight:600;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(glbl)}</span>
+          ${grpBadge}
+          <button onclick="if(confirm('Delete all entries in \'${esc(glbl)}\'?'))_teDeleteGroup('${gid}')" style="padding:2px 7px;font-size:10px;border:1px solid rgba(220,38,38,.3);border-radius:5px;background:transparent;color:#DC2626;cursor:pointer;flex-shrink:0" title="Delete group">🗑</button>
+          <button onclick="_teDismissGroup('${gid}')" style="padding:2px 7px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--text3);cursor:pointer;flex-shrink:0;margin-left:auto" title="Hide from list">✕ Hide</button>
+        </div>
+        <div style="padding:10px 13px;display:flex;flex-direction:column;gap:8px">${_teSubAccordionForGroup(gid)}</div>
+      </div>`;
+    });
   }
   if(stories.length===0&&_teEntriesGeneral().length===0&&!_te.open) html+=`<div style="text-align:center;padding:22px 16px;color:var(--text3);font-size:13px">No travel or expenses yet. Use <strong style="color:var(--accent)">+ Add</strong> to log a cab, flight, hotel or expense.</div>`;
   const dismissedStories=_teGetStories().filter(({s})=>dismissed.includes(s.id));
-  const genDismissed=!!state.travelGeneralDismissed;
-  const totalResolved=dismissedStories.length+(genDismissed?1:0);
+  const dismissedGrps=allGroups.filter(g=>dismissedGroups.has(g.groupId));
+  const totalResolved=dismissedStories.length+dismissedGrps.length;
   if(totalResolved>0){
     html+=`<div style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--border)">
       <div style="display:flex;align-items:center;gap:6px;padding:4px 0;cursor:pointer;user-select:none" onclick="(function(el){const items=el.nextElementSibling;const open=items.style.display==='none'||!items.style.display;items.style.display=open?'block':'none';el.querySelector('.te-res-chev').textContent=open?'▾':'▸';})(this)">
@@ -8616,25 +8749,26 @@ function _teRenderBody(){
         </div>
       </div>`;
     });
-    if(genDismissed){
-      const genEntries2=_teEntriesGeneral();
-      const genExp2=genEntries2.filter(e=>e.type==='expense');
-      const genUnclaimed2=genExp2.filter(e=>_teGetClaimed(e)!=='yes').length;
-      const genBadge2=genUnclaimed2?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${genUnclaimed2} unclaimed</span>`:(genExp2.length?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:'');
-      const genAllEntriesHtml=genEntries2.map(e=>_teRenderEntry(e)).join('');
+    dismissedGrps.forEach(({groupId:gid,groupLabel:glbl})=>{
+      const grpEntries2=_teEntriesForGroup(gid);
+      const grpExp2=grpEntries2.filter(e=>e.type==='expense');
+      const grpUnclaimed2=grpExp2.filter(e=>_teGetClaimed(e)!=='yes').length;
+      const grpBadge2=grpUnclaimed2?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${grpUnclaimed2} unclaimed</span>`:(grpExp2.length?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:'');
+      const grpAllEntriesHtml=grpEntries2.map(e=>_teRenderEntry(e)).join('');
+      const grpIcon2=gid==='__default'?'📋':'🗂';
       html+=`<div style="margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;opacity:.9">
         <div style="display:flex;align-items:center;gap:7px;padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border)">
-          <span style="font-size:13px">📋</span>
-          <span style="font-size:13px;font-weight:600;color:var(--text);flex:1">General</span>
-          ${genBadge2}
-          <button onclick="_teRestoreGeneral()" style="padding:2px 8px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--accent);cursor:pointer;flex-shrink:0">↩ Restore</button>
-          <button onclick="if(confirm('Permanently delete all General entries?'))_teDeleteGeneral()" style="padding:2px 7px;font-size:10px;border:1px solid rgba(220,38,38,.3);border-radius:5px;background:transparent;color:#DC2626;cursor:pointer;flex-shrink:0">🗑</button>
+          <span style="font-size:13px">${grpIcon2}</span>
+          <span style="font-size:13px;font-weight:600;color:var(--text);flex:1">${esc(glbl)}</span>
+          ${grpBadge2}
+          <button onclick="_teRestoreGroup('${gid}')" style="padding:2px 8px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--accent);cursor:pointer;flex-shrink:0">↩ Restore</button>
+          <button onclick="if(confirm('Permanently delete this group?'))_teDeleteGroup('${gid}')" style="padding:2px 7px;font-size:10px;border:1px solid rgba(220,38,38,.3);border-radius:5px;background:transparent;color:#DC2626;cursor:pointer;flex-shrink:0">🗑</button>
         </div>
         <div style="padding:10px 13px;display:flex;flex-direction:column;gap:6px">
-          ${genAllEntriesHtml||`<div style="font-size:12px;color:var(--text3);padding:4px 0">No entries</div>`}
+          ${grpAllEntriesHtml||`<div style="font-size:12px;color:var(--text3);padding:4px 0">No entries</div>`}
         </div>
       </div>`;
-    }
+    });
     html+=`</div></div>`;
   }
   return html;

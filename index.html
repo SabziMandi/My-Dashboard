@@ -8120,6 +8120,13 @@ function _teRestoreGroup(gid){
   if(gid==='__default') state.travelGeneralDismissed=false;
   _teSave(); _teRefresh();
 }
+/** Safe delete confirmation — reads gid/label from data attributes to avoid
+ *  inline JS string-escaping issues with apostrophes and special characters. */
+function _teConfirmDeleteGroup(btn){
+  const gid=btn.dataset.gid;
+  const glbl=btn.dataset.glbl||'this group';
+  if(confirm('Delete all entries in "'+glbl+'"?')) _teDeleteGroup(gid);
+}
 function _teDeleteGroup(gid){
   const toDelete=_teEntriesForGroup(gid).map(e=>e.id);
   toDelete.forEach(id=>{
@@ -8718,7 +8725,7 @@ function _teRenderBody(){
           <span style="font-size:13px">${grpIcon}</span>
           <span style="font-size:13px;font-weight:600;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(glbl)}</span>
           ${grpBadge}
-          <button onclick="if(confirm('Delete all entries in \'${esc(glbl)}\'?'))_teDeleteGroup('${gid}')" style="padding:2px 7px;font-size:10px;border:1px solid rgba(220,38,38,.3);border-radius:5px;background:transparent;color:#DC2626;cursor:pointer;flex-shrink:0" title="Delete group">🗑</button>
+          <button onclick="_teConfirmDeleteGroup(this)" data-gid="${esc(gid)}" data-glbl="${esc(glbl)}" style="padding:2px 7px;font-size:10px;border:1px solid rgba(220,38,38,.3);border-radius:5px;background:transparent;color:#DC2626;cursor:pointer;flex-shrink:0" title="Delete group">🗑</button>
           <button onclick="_teDismissGroup('${gid}')" style="padding:2px 7px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--text3);cursor:pointer;flex-shrink:0;margin-left:auto" title="Hide from list">✕ Hide</button>
         </div>
         <div style="padding:10px 13px;display:flex;flex-direction:column;gap:8px">${_teSubAccordionForGroup(gid)}</div>
@@ -8774,7 +8781,7 @@ function _teRenderBody(){
           <span style="font-size:13px;font-weight:600;color:var(--text);flex:1">${esc(glbl)}</span>
           ${grpBadge2}
           <button onclick="_teRestoreGroup('${gid}')" style="padding:2px 8px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--accent);cursor:pointer;flex-shrink:0">↩ Restore</button>
-          <button onclick="if(confirm('Permanently delete this group?'))_teDeleteGroup('${gid}')" style="padding:2px 7px;font-size:10px;border:1px solid rgba(220,38,38,.3);border-radius:5px;background:transparent;color:#DC2626;cursor:pointer;flex-shrink:0">🗑</button>
+          <button onclick="_teConfirmDeleteGroup(this)" data-gid="${esc(gid)}" data-glbl="${esc(glbl)}" style="padding:2px 7px;font-size:10px;border:1px solid rgba(220,38,38,.3);border-radius:5px;background:transparent;color:#DC2626;cursor:pointer;flex-shrink:0">🗑</button>
         </div>
         <div style="padding:10px 13px;display:flex;flex-direction:column;gap:6px">
           ${grpAllEntriesHtml||`<div style="font-size:12px;color:var(--text3);padding:4px 0">No entries</div>`}

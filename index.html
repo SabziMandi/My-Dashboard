@@ -8238,18 +8238,28 @@ function _teOpenForm(opts){
   },80);
 }
 function _teCloseForm(){
-  _te={open:false,type:'cab',storyId:null,storySec:null,editId:null};
+  _te={open:false,type:'cab',storyId:null,storySec:null,editId:null,groupId:null,groupLabel:null};
   const tb=document.getElementById('acc-body-travel');
   if(tb&&tb.classList.contains('open')) tb.innerHTML=_teRenderBody();
   if(window._pendingSyncRender){ window._pendingSyncRender=false; render(); }
 }
+/** Persist any in-progress form values back to _te before a DOM rebuild.
+ *  Called before every _teRenderBody() that happens mid-form. */
+function _teCaptureFormState(){
+  const gn=document.getElementById('te-groupname');
+  if(gn) _te.groupLabel=gn.value.trim();
+  const st=document.getElementById('te-story');
+  if(st){ _te.storyId=st.value||null; }
+}
 function _teSetType(t){
+  _teCaptureFormState();
   _te.type=t;
   const tb=document.getElementById('acc-body-travel');
   if(tb&&tb.classList.contains('open')) tb.innerHTML=_teRenderBody();
 }
-/** Show/hide the group name row depending on whether a story is selected */
+/** Save story selection to _te and show/hide the group name row */
 function _teOnStoryChange(val){
+  _te.storyId=val||null;
   const row=document.getElementById('te-group-row');
   if(row) row.style.display=val?'none':'';
 }
@@ -8282,10 +8292,12 @@ function _teSubmit(){
   else if(type==='fixer') data={fixerName:g('fixername'),where:g('where'),phone:g('phone'),email:g('email'),startDate:g('startdate'),endDate:g('enddate'),fixerDays:g('fixerdays'),rateDay:g('rateday'),fixerTotal:g('fixertotal'),payment:g('payment'),paidBy:g('paidby'),claimed:g('claimed'),status:g('status'),fixerNotes:(document.getElementById('te-fixernotes')?.value||'').trim()};
   else if(type==='other') data={what:g('what'),when:g('when'),amount:g('amount'),paidBy:g('paidby'),otherNotes:(document.getElementById('te-othernotes')?.value||'').trim()};
 
+  // Capture any in-progress form state before reading values
+  _teCaptureFormState();
   // Resolve groupId/groupLabel for unlinked (General) entries
   let groupId=null, groupLabel=null;
   if(!storyId){
-    const rawLabel=(document.getElementById('te-groupname')?.value||'').trim();
+    const rawLabel=(_te.groupLabel||document.getElementById('te-groupname')?.value||'').trim();
     if(rawLabel){
       // Reuse existing groupId if a group with this label already exists
       const existingGrp=_teGetGeneralGroups().find(g=>g.groupLabel.toLowerCase()===rawLabel.toLowerCase());
@@ -8304,7 +8316,7 @@ function _teSubmit(){
   if(_te.editId) _teUpdate(_te.editId,entry);
   else _teAdd(entry);
 
-  _te={open:false,type:'cab',storyId:null,storySec:null,editId:null};
+  _te={open:false,type:'cab',storyId:null,storySec:null,editId:null,groupId:null,groupLabel:null};
   const tb=document.getElementById('acc-body-travel');
   if(tb&&tb.classList.contains('open')) tb.innerHTML=_teRenderBody();
   if(window._pendingSyncRender){ window._pendingSyncRender=false; render(); }

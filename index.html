@@ -8193,12 +8193,18 @@ function _teDeleteGeneral(){ _teDeleteGroup('__default'); }
 /** Check if a story's T&E is fully settled: all bookings paid AND all expenses claimed */
 function _teIsFullyResolved(sid){
   const entries=(state.travelEntries||[]).filter(e=>e.storyId===sid&&!e._deleted);
-  if(!entries.length) return false;
+  if(!entries.length) return false; // no entries = nothing to resolve
   const bookings=entries.filter(e=>['cab','flight','hotel','fixer','other'].includes(e.type));
   const expenses=entries.filter(e=>e.type==='expense');
-  const allBookPaid=bookings.length===0||bookings.every(e=>e.type==='fixer'?_teGetClaimed(e)==='yes':e.data?.payment!=='unpaid');
+  // All bookings paid: fixer uses claimed field; cab/flight/hotel/other use payment field
+  const allBookPaid=bookings.length===0||bookings.every(e=>
+    e.type==='fixer' ? _teGetClaimed(e)==='yes' : (e.data?.payment||'')!=='unpaid'
+  );
+  // All expenses claimed
   const allClaimed=expenses.length===0||expenses.every(e=>_teGetClaimed(e)==='yes');
-  return allBookPaid&&allClaimed;
+  // Need at least one booking or one expense to auto-resolve (not just empty entries)
+  const hasContent=bookings.length>0||expenses.length>0;
+  return hasContent&&allBookPaid&&allClaimed;
 }
 /** After any payment/claim change, check if story should auto-resolve or un-resolve */
 function _teCheckAutoResolve(sid){
@@ -8210,10 +8216,17 @@ function _teCheckAutoResolve(sid){
     state.travelAutoResolved.push(sid);
     saveLocal();
     toast('✅ All paid & claimed — moved to Resolved');
+    _teRefresh();
   } else if(!fullyDone&&alreadyResolved){
     state.travelAutoResolved=state.travelAutoResolved.filter(x=>x!==sid);
     saveLocal();
+    _teRefresh();
   }
+}
+/** Run auto-resolve check for ALL story-linked entries — call after bulk operations */
+function _teCheckAutoResolveAll(){
+  const storyIds=new Set((state.travelEntries||[]).filter(e=>e.storyId&&!e._deleted).map(e=>e.storyId));
+  storyIds.forEach(sid=>_teCheckAutoResolve(sid));
 }
 
 function _teDismissStory(sid){
@@ -8750,8 +8763,54 @@ function _teToggleBookings(sid){ui_teBookingsOpen[sid]=!ui_teBookingsOpen[sid];c
 function _teToggleExpenses(sid){ui_teExpensesOpen[sid]=!ui_teExpensesOpen[sid];const b=document.getElementById('te-exp-body-'+sid);const cv=document.getElementById('te-exp-chev-'+sid);if(b)b.style.display=ui_teExpensesOpen[sid]?'block':'none';if(cv)cv.textContent=ui_teExpensesOpen[sid]?'▾':'▸';}
 function _teShowMoreBookings(sid){ui_teBookingsPage[sid]=(ui_teBookingsPage[sid]||1)+1;const b=document.getElementById('te-book-inner-'+sid);if(b)b.innerHTML=_teBuildBookingsInner(sid);}
 function _teShowMoreExpenses(sid){ui_teExpensesPage[sid]=(ui_teExpensesPage[sid]||1)+1;const b=document.getElementById('te-exp-inner-'+sid);if(b)b.innerHTML=_teBuildExpensesInner(sid);}
-function _teMarkAllClaimed(sid){const isGen=(!sid||sid==='gen');(state.travelEntries||[]).filter(e=>isGen?!e.storyId:e.storyId===sid).filter(e=>e.type==='expense').forEach(e=>_teUpdate(e.id,{data:{...e.data,claimed:'yes'}}));toast('✅ All expenses marked claimed');}
-function _teBuildBookingsInner(sid, gid){
+function _teMarkAllClaimed(sid){
+  const isGen=(!sid||sid==='gen');
+  (state.travelEntries||[]).filter(e=>isGen?!e.storyId:e.storyId===sid).filter(e=>e.type==='expense').forEach(e=>{
+    const i=(state.travelEntries||[]).findIndex(x=>x.id===e.id);
+    if(i>=0) state.travelEntries[i]={...state.travelEntries[i],data:{...e.data,claimed:'yes'},updated:Date.now()};
+  });
+  saveAndPush();
+  toast('✅ All expenses marked claimed');
+  if(!isGen) setTimeout(()=>_teCheckAutoResolve(sid),0);
+  _teRefresh();
+}
+function _teMarkAllPaid(sid){
+  const isGen=(!sid||sid==='gen');
+  (state.travelEntries||[]).filter(e=>isGen?!e.storyId:e.storyId===sid).filter(e=>['cab','flight','hotel','other'].includes(e.type)&&e.data?.payment==='unpaid').forEach(e=>{
+    const i=(state.travelEntries||[]).findIndex(x=>x.id===e.id);
+    if(i>=0) state.travelEntries[i]={...state.travelEntries[i],data:{...e.data,payment:'cash'},updated:Date.now()};
+  });
+  (state.travelEntries||[]).filter(e=>isGen?!e.storyId:e.storyId===sid).filter(e=>e.type==='fixer'&&_teGetClaimed(e)!=='yes').forEach(e=>{
+    const i=(state.travelEntries||[]).findIndex(x=>x.id===e.id);
+    if(i>=0) state.travelEntries[i]={...state.travelEntries[i],data:{...e.data,claimed:'yes'},updated:Date.now()};
+  });
+  saveAndPush();
+  toast('✅ All bookings marked paid');
+  if(!isGen) setTimeout(()=>_teCheckAutoResolve(sid),0);
+  _teRefresh();
+}
+function _teMarkAllClaimedGroup(gid){
+  _teEntriesForGroup(gid).filter(e=>e.type==='expense').forEach(e=>{
+    const i=(state.travelEntries||[]).findIndex(x=>x.id===e.id);
+    if(i>=0) state.travelEntries[i]={...state.travelEntries[i],data:{...e.data,claimed:'yes'},updated:Date.now()};
+  });
+  saveAndPush();
+  toast('✅ All expenses marked claimed');
+  _teRefresh();
+}
+function _teMarkAllPaidGroup(gid){
+  _teEntriesForGroup(gid).filter(e=>['cab','flight','hotel','other'].includes(e.type)&&e.data?.payment==='unpaid').forEach(e=>{
+    const i=(state.travelEntries||[]).findIndex(x=>x.id===e.id);
+    if(i>=0) state.travelEntries[i]={...state.travelEntries[i],data:{...e.data,payment:'cash'},updated:Date.now()};
+  });
+  _teEntriesForGroup(gid).filter(e=>e.type==='fixer'&&_teGetClaimed(e)!=='yes').forEach(e=>{
+    const i=(state.travelEntries||[]).findIndex(x=>x.id===e.id);
+    if(i>=0) state.travelEntries[i]={...state.travelEntries[i],data:{...e.data,claimed:'yes'},updated:Date.now()};
+  });
+  saveAndPush();
+  toast('✅ All bookings marked paid');
+  _teRefresh();
+}function _teBuildBookingsInner(sid, gid){
   const isGrp=sid&&sid.startsWith('grp:');
   const isGen=(!sid||sid==='gen')&&!isGrp;
   const entries=(isGrp?_teEntriesForGroup(gid||sid.slice(4)):isGen?_teEntriesGeneral():_teEntriesForStory(sid)).filter(e=>['cab','flight','hotel','fixer','other'].includes(e.type));
@@ -8797,12 +8856,8 @@ function _teSubAccordionForGroup(gid){
   })();
   const addBookBtns=`<button class="ttb-add-btn ttb-cab" onclick="_teOpenForm({type:'cab'})">🚕 <span class="ttb-lbl">Cab</span></button><button class="ttb-add-btn ttb-flight" onclick="_teOpenForm({type:'flight'})">✈️ <span class="ttb-lbl">Flight</span></button><button class="ttb-add-btn ttb-hotel" onclick="_teOpenForm({type:'hotel'})">🏨 <span class="ttb-lbl">Hotel</span></button><button class="ttb-add-btn ttb-fixer" onclick="_teOpenForm({type:'fixer'})">🤝 <span class="ttb-lbl">Fixer</span></button><button class="ttb-add-btn ttb-other" onclick="_teOpenForm({type:'other'})">📦 <span class="ttb-lbl">Other</span></button>`;
   const addExpBtn=`<button class="btn btn-ghost btn-sm" onclick="_teOpenForm({type:'expense'})">💳 Add expense</button>`;
-  return `<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleBookings('${sid}')"><span style="font-size:14px">🗓</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Bookings</span>${bookBadges}<span id="te-book-chev-${sid}" style="font-size:11px;color:var(--text3)">${bookOpen?'▾':'▸'}</span></div><div id="te-book-body-${sid}" style="display:${bookOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-book-inner-${sid}" style="padding:8px 11px">${_teBuildBookingsInner(sid,gid)}</div><div style="display:flex;gap:5px;flex-wrap:wrap;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addBookBtns}</div></div></div>
+  return `<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleBookings('${sid}')"><span style="font-size:14px">🗓</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Bookings</span>${bookBadges}<span id="te-book-chev-${sid}" style="font-size:11px;color:var(--text3)">${bookOpen?'▾':'▸'}</span></div><div id="te-book-body-${sid}" style="display:${bookOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-book-inner-${sid}" style="padding:8px 11px">${_teBuildBookingsInner(sid,gid)}</div><div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addBookBtns}<div style='flex:1'></div>${allBookPaid?'':`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllPaidGroup('${gid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark all paid</button>`}</div></div></div>
     <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleExpenses('${sid}')"><span style="font-size:14px">💳</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Expenses</span>${allClaimed?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:expenses.filter(e=>_teGetClaimed(e)!=='yes').length?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${expenses.filter(e=>_teGetClaimed(e)!=='yes').length} unclaimed</span>`:''}${expTotal?`<span class="sbadge" style="background:rgba(13,148,136,.07);color:#0D9488;border:0.5px solid rgba(13,148,136,.25);font-weight:600;font-size:11px">${expTotal}</span>`:''}<span id="te-exp-chev-${sid}" style="font-size:11px;color:var(--text3)">${expOpen?'▾':'▸'}</span></div><div id="te-exp-body-${sid}" style="display:${expOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-exp-inner-${sid}" style="padding:8px 11px">${_teBuildExpensesInner(sid,gid)}</div><div style="display:flex;align-items:center;gap:5px;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addExpBtn}<div style="flex:1"></div>${allClaimed?`<button class="btn btn-ghost btn-sm" style="color:var(--text3);cursor:default">✓ Claimed</button>`:`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllClaimedGroup('${gid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark all claimed</button>`}</div></div></div>`;
-}
-function _teMarkAllClaimedGroup(gid){
-  _teEntriesForGroup(gid).filter(e=>e.type==='expense').forEach(e=>_teUpdate(e.id,{data:{...e.data,claimed:'yes'}}));
-  toast('✅ All expenses marked claimed');
 }
 
 function _teSubAccordion(sid,sec){
@@ -8829,7 +8884,7 @@ function _teSubAccordion(sid,sec){
   })();
   const addBookBtns=isGen?`<button class="ttb-add-btn ttb-cab" onclick="_teOpenForm({type:'cab'})">🚕 <span class="ttb-lbl">Cab</span></button><button class="ttb-add-btn ttb-flight" onclick="_teOpenForm({type:'flight'})">✈️ <span class="ttb-lbl">Flight</span></button><button class="ttb-add-btn ttb-hotel" onclick="_teOpenForm({type:'hotel'})">🏨 <span class="ttb-lbl">Hotel</span></button><button class="ttb-add-btn ttb-fixer" onclick="_teOpenForm({type:'fixer'})">🤝 <span class="ttb-lbl">Fixer</span></button><button class="ttb-add-btn ttb-other" onclick="_teOpenForm({type:'other'})">📦 <span class="ttb-lbl">Other</span></button>`:`<button class="ttb-add-btn ttb-cab" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'cab'})">🚕 <span class="ttb-lbl">Cab</span></button><button class="ttb-add-btn ttb-flight" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'flight'})">✈️ <span class="ttb-lbl">Flight</span></button><button class="ttb-add-btn ttb-hotel" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'hotel'})">🏨 <span class="ttb-lbl">Hotel</span></button><button class="ttb-add-btn ttb-fixer" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'fixer'})">🤝 <span class="ttb-lbl">Fixer</span></button><button class="ttb-add-btn ttb-other" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'other'})">📦 <span class="ttb-lbl">Other</span></button>`;
   const addExpBtn=isGen?`<button class="btn btn-ghost btn-sm" onclick="_teOpenForm({type:'expense'})">💳 Add expense</button>`:`<button class="btn btn-ghost btn-sm" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'expense'})">💳 Add expense</button>`;
-  return `<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleBookings('${sid}')"><span style="font-size:14px">🗓</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Bookings</span>${bookBadges}<span id="te-book-chev-${sid}" style="font-size:11px;color:var(--text3)">${bookOpen?'▾':'▸'}</span></div><div id="te-book-body-${sid}" style="display:${bookOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-book-inner-${sid}" style="padding:8px 11px">${_teBuildBookingsInner(sid)}</div><div style="display:flex;gap:5px;flex-wrap:wrap;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addBookBtns}</div></div></div>
+  return `<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleBookings('${sid}')"><span style="font-size:14px">🗓</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Bookings</span>${bookBadges}<span id="te-book-chev-${sid}" style="font-size:11px;color:var(--text3)">${bookOpen?'▾':'▸'}</span></div><div id="te-book-body-${sid}" style="display:${bookOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-book-inner-${sid}" style="padding:8px 11px">${_teBuildBookingsInner(sid)}</div><div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addBookBtns}<div style='flex:1'></div>${allBookPaid?'':`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllPaid('${sid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark all paid</button>`}</div></div></div>
     <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleExpenses('${sid}')"><span style="font-size:14px">💳</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Expenses</span>${allClaimed?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:expenses.filter(e=>_teGetClaimed(e)!=='yes').length?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${expenses.filter(e=>_teGetClaimed(e)!=='yes').length} unclaimed</span>`:''}${expTotal?`<span class="sbadge" style="background:rgba(13,148,136,.07);color:#0D9488;border:0.5px solid rgba(13,148,136,.25);font-weight:600;font-size:11px">${expTotal}</span>`:''}<span id="te-exp-chev-${sid}" style="font-size:11px;color:var(--text3)">${expOpen?'▾':'▸'}</span></div><div id="te-exp-body-${sid}" style="display:${expOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-exp-inner-${sid}" style="padding:8px 11px">${_teBuildExpensesInner(sid)}</div><div style="display:flex;align-items:center;gap:5px;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addExpBtn}<div style="flex:1"></div>${allClaimed?`<button class="btn btn-ghost btn-sm" style="color:var(--text3);cursor:default">✓ Claimed</button>`:`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllClaimed('${sid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark all claimed</button>`}</div></div></div>`;
 }
 function _teRenderBody(){
@@ -8852,16 +8907,19 @@ function _teRenderBody(){
     const claimBadge=allClaimed?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:unclaimed?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${unclaimed} unclaimed</span>`:'';
     html+=`<div style="margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden"><div style="display:flex;align-items:center;gap:7px;padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap"><span style="font-size:13px">📡</span><span style="font-size:13px;font-weight:600;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:80px">${esc(s.title||'Untitled')}</span>${deadlineStr}${bookPayBadge}${claimBadge}<button onclick="_teDismissStory('${s.id}')" style="padding:2px 7px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--text3);cursor:pointer;flex-shrink:0;margin-left:auto" title="Hide from this list">✕ Hide</button></div><div style="padding:10px 13px;display:flex;flex-direction:column;gap:8px">${_teSubAccordion(s.id,sec)}</div></div>`;
   });
-  // Safety net: any entries linked to a story not found by _teGetStories()
-  // (story may not yet be in archive if sync hasn't completed) — show them anyway
+  // Safety net: entries linked to a story not found in the active stories list.
+  // These are "syncing" stories (found in Firestore but not yet in local archive).
+  // Exclude storyIds that are auto-resolved or manually dismissed.
   const foundStoryIds=new Set(stories.map(({s})=>s.id));
+  // Build a quick id→title lookup from _teGetStories (which already scanned archive)
+  const teStoryTitleMap=new Map(_teGetStories().map(({s})=>[s.id,s.title||'']));
   const orphanedEntries=(state.travelEntries||[]).filter(e=>
     e.storyId && !e._deleted &&
     !foundStoryIds.has(e.storyId) &&
+    !autoResolved.includes(e.storyId) &&
     !(state.travelDismissed||[]).includes(e.storyId)
   );
   if(orphanedEntries.length){
-    // Group orphaned entries by storyId
     const byStory={};
     orphanedEntries.forEach(e=>{
       if(!byStory[e.storyId]) byStory[e.storyId]=[];
@@ -8870,10 +8928,14 @@ function _teRenderBody(){
     Object.entries(byStory).forEach(([sid,entries])=>{
       const unclaimed=entries.filter(e=>e.type==='expense'&&_teGetClaimed(e)!=='yes').length;
       const claimBadge=unclaimed?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${unclaimed} unclaimed</span>`:'';
+      const knownTitle=teStoryTitleMap.get(sid);
+      const titleHtml=knownTitle
+        ?`<span style="font-size:13px;font-weight:600;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:80px">${esc(knownTitle)}</span>`
+        :`<span style="font-size:13px;font-weight:600;color:var(--text2);flex:1">Story <span style="font-size:11px;font-weight:400;color:var(--text3)">(syncing…)</span></span>`;
       html+=`<div style="margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
         <div style="display:flex;align-items:center;gap:7px;padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap">
           <span style="font-size:13px">📡</span>
-          <span style="font-size:13px;font-weight:600;color:var(--text);flex:1">Story (syncing…)</span>
+          ${titleHtml}
           ${claimBadge}
           <button onclick="_teDismissStory('${sid}')" style="padding:2px 7px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--text3);cursor:pointer;flex-shrink:0;margin-left:auto">✕ Hide</button>
         </div>
@@ -8918,15 +8980,14 @@ function _teRenderBody(){
   const dismissedGrps=allGroups.filter(g=>dismissedGroups.has(g.groupId));
   const totalResolved=autoResolvedStories.length+dismissedStories.length+dismissedGrps.length;
   if(totalResolved>0){
-    const resId='te-resolved-body-'+Date.now().toString(36);
     html+=`<div style="margin-top:10px;border:1px solid rgba(22,163,74,.2);border-radius:10px;overflow:hidden;background:rgba(22,163,74,.04)">
-      <div style="display:flex;align-items:center;gap:7px;padding:9px 13px;cursor:pointer;user-select:none;background:rgba(22,163,74,.07);border-bottom:1px solid rgba(22,163,74,.15)" onclick="(function(el){const b=el.nextElementSibling;const open=b.style.display==='none'||!b.style.display;b.style.display=open?'block':'none';el.querySelector('.te-res-chev').textContent=open?'▾':'▸';})(this)">
+      <div style="display:flex;align-items:center;gap:7px;padding:9px 13px;cursor:pointer;user-select:none;background:rgba(22,163,74,.07);border-bottom:1px solid rgba(22,163,74,.15)" onclick="(function(el){const b=el.nextElementSibling;const open=b.style.display==='none'||!b.style.display;b.style.display=open?'flex':'none';el.querySelector('.te-res-chev').textContent=open?'▾':'▸';})(this)">
         <span style="font-size:14px">✅</span>
         <span style="font-size:12px;font-weight:600;color:#15803D;font-family:var(--font)">${totalResolved} resolved</span>
         <span style="font-size:11px;color:#15803D;opacity:.7;font-family:var(--font)">&nbsp;· all paid &amp; claimed</span>
         <span class="te-res-chev" style="font-size:11px;color:#15803D;margin-left:auto">▸</span>
       </div>
-      <div style="display:none;padding:10px 13px;display:flex;flex-direction:column;gap:8px">`;
+      <div style="display:none;flex-direction:column;gap:8px;padding:10px 13px">`;
 
     // Helper: render a resolved story card
     const _renderResolvedStory=(s,sec,isAuto)=>{

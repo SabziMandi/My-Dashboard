@@ -1164,6 +1164,45 @@ body {
   border-left: 3px solid var(--accent);
   --card-accent: rgba(207,102,64,.09);
 }
+/* Mobile: note cards get extra bottom margin and a subtle divider feel */
+@media(max-width:720px){
+  .note-card {
+    margin-bottom: 10px;
+    box-shadow: 0 1px 4px rgba(90,70,50,.07);
+  }
+  /* Collapsed note footer — hidden by default on mobile */
+  .note-card .card-action-footer.note-footer-collapsed {
+    display: none !important;
+  }
+  /* Tap-to-expand indicator on mobile */
+  .note-card-tap-hint {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 7px;
+    padding-top: 6px;
+    border-top: 1px dashed var(--border);
+    font-size: 10.5px;
+    color: var(--text3);
+    font-family: var(--mono);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  .note-card-tap-hint:active { color: var(--accent); }
+  /* When footer is expanded */
+  .note-card.note-actions-open .note-card-tap-hint { display: none; }
+  .note-card.note-actions-open .card-action-footer.note-footer-collapsed {
+    display: grid !important;
+  }
+}
+/* Desktop: never show the tap hint */
+@media(min-width:721px){
+  .note-card-tap-hint { display: none !important; }
+  .note-card .card-action-footer.note-footer-collapsed {
+    display: grid !important;
+  }
+}
 .note-card.note-done    { border-left-color: var(--done);     opacity: .6; --card-accent: rgba(22,163,74,.08); }
 .note-card.note-pass    { border-left-color: var(--text3);    opacity: .5; --card-accent: rgba(154,140,126,.09); }
 .note-card.note-carried { border-left-color: var(--carry);                 --card-accent: rgba(234,88,12,.09); }
@@ -5140,7 +5179,7 @@ function renderNotesView(){
             <span>${created}${statusLabel}</span>
             ${nd.deadline_date?`<span>📅 ${fmtDate(nd.deadline_date)}</span>`:''}
           </div>
-          ${isLive?`<div class="card-action-footer" style="margin:8px -12px -12px;border-radius:0 0 6px 6px">
+          ${isLive?`<div class="note-card-tap-hint">✦ Tap to show actions</div><div class="card-action-footer note-footer-collapsed" style="margin:8px -12px -12px;border-radius:0 0 6px 6px" onclick="event.stopPropagation()">
             ${nd.status!=='done'?`<button class="btn btn-done-active btn-sm" onclick="setNoteStatus('${nd.id}','done')">✅ Done</button>`:''}
             ${nd.status==='active'?`<button class="btn btn-ghost btn-sm" style="color:var(--text3)" onclick="setNoteStatus('${nd.id}','pass')">↪ Pass</button>`:''}
             ${nd.status!=='active'?`<button class="btn btn-ghost btn-sm" onclick="updateNote('${nd.id}',{status:'active',resolvedOn:null});renderKeepRemarks()">↩ Restore</button>`:''}
@@ -5256,7 +5295,11 @@ function renderAccordion(sec,archKey){
   const archKeyJS=archKey?`'${archKey}'`:'null';
   // Build info strip — logic differs per section type
   const _accStrip=(()=>{
-    if(!activeStories.length) return '';
+    if(!activeStories.length){
+      // On mobile, show a hint in the collapsed info strip for requests
+      if(sec.key==='requests') return `<div class="acc-info-strip"><span style="font-size:10px;color:var(--text3);font-style:italic;font-family:var(--font)">No requests yet</span></div>`;
+      return '';
+    }
     const today=todayStr();
 
     if(sec.key==='requests'){
@@ -5302,7 +5345,7 @@ function renderAccordion(sec,archKey){
     return esc(eligible[0].title||'');
   }
   const eligible=activeStories.filter(s=>s.status!=='on-hold'&&s.status!=='completed'&&s.status!=='not-done'&&s.status!=='shelved');
-  if(!eligible.length) return '';
+  if(!eligible.length) return sec.key==='requests'?'No requests':'';
   eligible.sort((a,b)=>(b.created||0)-(a.created||0));
   return esc(eligible[0].title||'');
 })()}</span>
@@ -7660,7 +7703,7 @@ function renderRemarksAccordion(){
         }
         const isOverdueNote=n.deadline_date&&Math.round((new Date(n.deadline_date+'T00:00:00').getTime()-todayMs)/86400000)<0;
         const carriedChip=n.carriedForward&&!isOverdueNote?`<span class="carry-badge">↻ +${n.carriedDays||1}d</span>`:'';
-        body+=`<div class="note-card${n.carriedForward?' note-carried':''}" data-id="${n.id}">
+        body+=`<div class="note-card${n.carriedForward?' note-carried':''}" data-id="${n.id}" onclick="(function(card){if(window.innerWidth<=720){card.classList.toggle('note-actions-open')}})(this)">
           ${n.headline?`<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px;font-family:var(--font)">${esc(n.headline)}</div>`:''}
           ${n.text?`<div class="note-text">${esc(n.text)}</div>`:''}
           <div class="note-meta">
@@ -7668,7 +7711,8 @@ function renderRemarksAccordion(){
             ${dlChip}
             ${carriedChip}
           </div>
-          <div class="card-action-footer" style="margin:8px -12px -12px;border-radius:0 0 6px 6px" onclick="event.stopPropagation()">
+          <div class="note-card-tap-hint">✦ Tap to show actions</div>
+          <div class="card-action-footer note-footer-collapsed" style="margin:8px -12px -12px;border-radius:0 0 6px 6px" onclick="event.stopPropagation()">
             <button class="btn btn-done-active btn-sm" onclick="setNoteStatus('${n.id}','done');event.stopPropagation()">✅ Done</button>
             <button class="btn btn-ghost btn-sm" style="color:var(--text3)" onclick="setNoteStatus('${n.id}','pass');event.stopPropagation()">↪ Pass</button>
             <button class="btn btn-ghost btn-sm" onclick="editNote('${n.id}');event.stopPropagation()">✏ Edit</button>
@@ -7691,14 +7735,15 @@ function renderRemarksAccordion(){
     body+=`<div id="notes-res-body" style="display:${isResOpen?'block':'none'}">`;
     resolvedSorted.forEach(n=>{
       const created=new Date(n.created).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-      body+=`<div class="note-card ${n.status==='done'?'note-done':'note-pass'}" data-id="${n.id}">
+      body+=`<div class="note-card ${n.status==='done'?'note-done':'note-pass'}" data-id="${n.id}" onclick="(function(card){if(window.innerWidth<=720){card.classList.toggle('note-actions-open')}})(this)">
         ${n.headline?`<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px;font-family:var(--font);text-decoration:${n.status==='done'?'line-through':''}">${esc(n.headline)}</div>`:''}
         ${n.text?`<div class="note-text" style="text-decoration:${n.status==='done'?'line-through':''}">${esc(n.text)}</div>`:''}
         <div class="note-meta">
           <span>🗓 ${created}</span>
           <span style="color:${n.status==='done'?'var(--done)':'var(--text3)'}">${n.status==='done'?'✅ Done':'↪ Passed'}</span>
         </div>
-        <div class="card-action-footer" style="margin:8px -12px -12px;border-radius:0 0 6px 6px" onclick="event.stopPropagation()">
+        <div class="note-card-tap-hint">✦ Tap to show actions</div>
+        <div class="card-action-footer note-footer-collapsed" style="margin:8px -12px -12px;border-radius:0 0 6px 6px" onclick="event.stopPropagation()">
           <button class="btn btn-ghost btn-sm" onclick="updateNote('${n.id}',{status:'active',resolvedOn:null});renderKeepRemarks()">↩ Restore</button>
           <button class="btn btn-ghost btn-sm" onclick="editNote('${n.id}')">✏ Edit</button>
           <span class="caf-spacer"></span>
@@ -8316,7 +8361,24 @@ function _teSubmit(){
     }
   }
 
-  const entry={type,storyId,storySec,data,groupId,groupLabel};
+  // FIX: When editing an entry that was linked to a story, preserve the original
+  // storyId/storySec even if the story is now inactive (completed/not-done/shelved)
+  // and therefore no longer appears in the form's story dropdown.
+  let finalStoryId=storyId;
+  let finalStorySec=storySec;
+  let finalGroupId=groupId;
+  let finalGroupLabel=groupLabel;
+  if(_te.editId){
+    const origEntry=(state.travelEntries||[]).find(e=>e.id===_te.editId);
+    if(origEntry?.storyId && !storyId){
+      // The dropdown returned empty — story is probably inactive; keep original link
+      finalStoryId=origEntry.storyId;
+      finalStorySec=origEntry.storySec;
+      finalGroupId=null;
+      finalGroupLabel=null;
+    }
+  }
+  const entry={type,storyId:finalStoryId,storySec:finalStorySec,data,groupId:finalGroupId,groupLabel:finalGroupLabel};
   // Basic validation — require at least one meaningful field
   const hasContent=Object.values(data).some(v=>v&&String(v).trim());
   if(!hasContent){ toast('Please fill in at least one field'); return; }
@@ -8360,16 +8422,23 @@ function _teBuildForm(){
   const ed=editEntry?.data||{};
   const curStory=_te.storyId||editEntry?.storyId||'';
 
-  // Form dropdown: only active live-board stories so user can't accidentally
-  // link new expenses to resolved/archived stories.
-  // Existing entries linked to archived stories remain intact via _teGetStories().
+  // Form dropdown: active live-board stories + the currently-linked story (even if inactive)
+  // so editing never loses the link silently.
   const _INACTIVE_TRAVEL_STATUSES=new Set(['shelved','completed','not-done']);
   const allStories=[];
+  const seenStoryIds=new Set();
   ['ibu','other','requests'].forEach(sec=>{
     (state.sections[sec]||[]).filter(s=>!s._deleted&&s.title&&!_INACTIVE_TRAVEL_STATUSES.has(s.status)).forEach(s=>{
-      allStories.push({sec,s});
+      allStories.push({sec,s}); seenStoryIds.add(s.id);
     });
   });
+  // Always include the currently-linked story (even if inactive) so the link isn't lost
+  if(curStory&&!seenStoryIds.has(curStory)){
+    ['ibu','other','requests'].forEach(sec=>{
+      const found=(state.sections[sec]||[]).find(s=>s.id===curStory);
+      if(found&&!found._deleted){ allStories.unshift({sec,s:found}); seenStoryIds.add(found.id); }
+    });
+  }
   const secLabel={ibu:'Stories',other:'Other Stories',requests:'Requests'};
   const storyOpts=allStories.map(({sec,s})=>`<option value="${s.id}"${curStory===s.id?' selected':''}>${esc((s.title||'').slice(0,45))} · ${secLabel[sec]||sec}${s.field_location?' · '+esc(s.field_location):''}</option>`).join('');
 
@@ -8550,7 +8619,11 @@ function _teRenderEntry(e){
       <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px">${_typeName[e.type]}</div>
       ${det}
       ${remHTML}
-      <div style="display:flex;gap:7px;justify-content:flex-end;margin-top:10px;padding-top:8px;border-top:1px dashed var(--border)">
+      <div style="display:flex;gap:7px;justify-content:flex-end;margin-top:10px;padding-top:8px;border-top:1px dashed var(--border);flex-wrap:wrap">
+        ${e.type==='fixer'&&_teGetClaimed(e)!=='yes'?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),claimed:'yes'}});event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark paid</button>`:''}
+        ${e.type==='fixer'&&_teGetClaimed(e)==='yes'?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),claimed:'no'}});event.stopPropagation()" style="color:var(--text3)">↩ Undo paid</button>`:''}
+        ${e.type==='expense'&&_teGetClaimed(e)!=='yes'?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),claimed:'yes'}});event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark claimed</button>`:''}
+        ${['cab','flight','hotel','other'].includes(e.type)&&d.payment==='unpaid'?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),payment:'cash'}});event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark paid</button>`:''}
         <button class="btn btn-ghost btn-sm" onclick="_teOpenForm({type:'${e.type}',storyId:${e.storyId?`'${e.storyId}'`:'null'},storySec:${e.storySec?`'${e.storySec}'`:'null'},editId:'${e.id}'});event.stopPropagation()">✏ Edit</button>
         <button class="btn btn-ghost btn-sm btn-danger" onclick="_teDelete('${e.id}');event.stopPropagation()">🗑 Delete</button>
       </div>
@@ -8574,6 +8647,17 @@ function _teToggleExpenses(sid){ui_teExpensesOpen[sid]=!ui_teExpensesOpen[sid];c
 function _teShowMoreBookings(sid){ui_teBookingsPage[sid]=(ui_teBookingsPage[sid]||1)+1;const b=document.getElementById('te-book-inner-'+sid);if(b)b.innerHTML=_teBuildBookingsInner(sid);}
 function _teShowMoreExpenses(sid){ui_teExpensesPage[sid]=(ui_teExpensesPage[sid]||1)+1;const b=document.getElementById('te-exp-inner-'+sid);if(b)b.innerHTML=_teBuildExpensesInner(sid);}
 function _teMarkAllClaimed(sid){const isGen=(!sid||sid==='gen');(state.travelEntries||[]).filter(e=>isGen?!e.storyId:e.storyId===sid).filter(e=>e.type==='expense').forEach(e=>_teUpdate(e.id,{data:{...e.data,claimed:'yes'}}));toast('✅ All expenses marked claimed');}
+function _teMarkAllPaid(sid){
+  const isGen=(!sid||sid==='gen');
+  (state.travelEntries||[]).filter(e=>isGen?!e.storyId:e.storyId===sid).filter(e=>['cab','flight','hotel','other'].includes(e.type)&&e.data?.payment==='unpaid').forEach(e=>_teUpdate(e.id,{data:{...e.data,payment:'cash'}}));
+  (state.travelEntries||[]).filter(e=>isGen?!e.storyId:e.storyId===sid).filter(e=>e.type==='fixer'&&_teGetClaimed(e)!=='yes').forEach(e=>_teUpdate(e.id,{data:{...e.data,claimed:'yes'}}));
+  toast('✅ All bookings marked paid');
+}
+function _teMarkAllPaidGroup(gid){
+  _teEntriesForGroup(gid).filter(e=>['cab','flight','hotel','other'].includes(e.type)&&e.data?.payment==='unpaid').forEach(e=>_teUpdate(e.id,{data:{...e.data,payment:'cash'}}));
+  _teEntriesForGroup(gid).filter(e=>e.type==='fixer'&&_teGetClaimed(e)!=='yes').forEach(e=>_teUpdate(e.id,{data:{...e.data,claimed:'yes'}}));
+  toast('✅ All bookings marked paid');
+}
 function _teBuildBookingsInner(sid, gid){
   const isGrp=sid&&sid.startsWith('grp:');
   const isGen=(!sid||sid==='gen')&&!isGrp;
@@ -8620,7 +8704,7 @@ function _teSubAccordionForGroup(gid){
   })();
   const addBookBtns=`<button class="ttb-add-btn ttb-cab" onclick="_teOpenForm({type:'cab'})">🚕 <span class="ttb-lbl">Cab</span></button><button class="ttb-add-btn ttb-flight" onclick="_teOpenForm({type:'flight'})">✈️ <span class="ttb-lbl">Flight</span></button><button class="ttb-add-btn ttb-hotel" onclick="_teOpenForm({type:'hotel'})">🏨 <span class="ttb-lbl">Hotel</span></button><button class="ttb-add-btn ttb-fixer" onclick="_teOpenForm({type:'fixer'})">🤝 <span class="ttb-lbl">Fixer</span></button><button class="ttb-add-btn ttb-other" onclick="_teOpenForm({type:'other'})">📦 <span class="ttb-lbl">Other</span></button>`;
   const addExpBtn=`<button class="btn btn-ghost btn-sm" onclick="_teOpenForm({type:'expense'})">💳 Add expense</button>`;
-  return `<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleBookings('${sid}')"><span style="font-size:14px">🗓</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Bookings</span>${bookBadges}<span id="te-book-chev-${sid}" style="font-size:11px;color:var(--text3)">${bookOpen?'▾':'▸'}</span></div><div id="te-book-body-${sid}" style="display:${bookOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-book-inner-${sid}" style="padding:8px 11px">${_teBuildBookingsInner(sid,gid)}</div><div style="display:flex;gap:5px;flex-wrap:wrap;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addBookBtns}</div></div></div>
+  return `<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleBookings('${sid}')"><span style="font-size:14px">🗓</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Bookings</span>${bookBadges}<span id="te-book-chev-${sid}" style="font-size:11px;color:var(--text3)">${bookOpen?'▾':'▸'}</span></div><div id="te-book-body-${sid}" style="display:${bookOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-book-inner-${sid}" style="padding:8px 11px">${_teBuildBookingsInner(sid,gid)}</div><div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addBookBtns}<div style="flex:1"></div>${allBookPaid?'':`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllPaidGroup('${gid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark all paid</button>`}</div></div></div>
     <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleExpenses('${sid}')"><span style="font-size:14px">💳</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Expenses</span>${allClaimed?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:expenses.filter(e=>_teGetClaimed(e)!=='yes').length?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${expenses.filter(e=>_teGetClaimed(e)!=='yes').length} unclaimed</span>`:''}${expTotal?`<span class="sbadge" style="background:rgba(13,148,136,.07);color:#0D9488;border:0.5px solid rgba(13,148,136,.25);font-weight:600;font-size:11px">${expTotal}</span>`:''}<span id="te-exp-chev-${sid}" style="font-size:11px;color:var(--text3)">${expOpen?'▾':'▸'}</span></div><div id="te-exp-body-${sid}" style="display:${expOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-exp-inner-${sid}" style="padding:8px 11px">${_teBuildExpensesInner(sid,gid)}</div><div style="display:flex;align-items:center;gap:5px;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addExpBtn}<div style="flex:1"></div>${allClaimed?`<button class="btn btn-ghost btn-sm" style="color:var(--text3);cursor:default">✓ Claimed</button>`:`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllClaimedGroup('${gid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark all claimed</button>`}</div></div></div>`;
 }
 function _teMarkAllClaimedGroup(gid){
@@ -8652,7 +8736,7 @@ function _teSubAccordion(sid,sec){
   })();
   const addBookBtns=isGen?`<button class="ttb-add-btn ttb-cab" onclick="_teOpenForm({type:'cab'})">🚕 <span class="ttb-lbl">Cab</span></button><button class="ttb-add-btn ttb-flight" onclick="_teOpenForm({type:'flight'})">✈️ <span class="ttb-lbl">Flight</span></button><button class="ttb-add-btn ttb-hotel" onclick="_teOpenForm({type:'hotel'})">🏨 <span class="ttb-lbl">Hotel</span></button><button class="ttb-add-btn ttb-fixer" onclick="_teOpenForm({type:'fixer'})">🤝 <span class="ttb-lbl">Fixer</span></button><button class="ttb-add-btn ttb-other" onclick="_teOpenForm({type:'other'})">📦 <span class="ttb-lbl">Other</span></button>`:`<button class="ttb-add-btn ttb-cab" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'cab'})">🚕 <span class="ttb-lbl">Cab</span></button><button class="ttb-add-btn ttb-flight" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'flight'})">✈️ <span class="ttb-lbl">Flight</span></button><button class="ttb-add-btn ttb-hotel" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'hotel'})">🏨 <span class="ttb-lbl">Hotel</span></button><button class="ttb-add-btn ttb-fixer" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'fixer'})">🤝 <span class="ttb-lbl">Fixer</span></button><button class="ttb-add-btn ttb-other" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'other'})">📦 <span class="ttb-lbl">Other</span></button>`;
   const addExpBtn=isGen?`<button class="btn btn-ghost btn-sm" onclick="_teOpenForm({type:'expense'})">💳 Add expense</button>`:`<button class="btn btn-ghost btn-sm" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'expense'})">💳 Add expense</button>`;
-  return `<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleBookings('${sid}')"><span style="font-size:14px">🗓</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Bookings</span>${bookBadges}<span id="te-book-chev-${sid}" style="font-size:11px;color:var(--text3)">${bookOpen?'▾':'▸'}</span></div><div id="te-book-body-${sid}" style="display:${bookOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-book-inner-${sid}" style="padding:8px 11px">${_teBuildBookingsInner(sid)}</div><div style="display:flex;gap:5px;flex-wrap:wrap;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addBookBtns}</div></div></div>
+  return `<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleBookings('${sid}')"><span style="font-size:14px">🗓</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Bookings</span>${bookBadges}<span id="te-book-chev-${sid}" style="font-size:11px;color:var(--text3)">${bookOpen?'▾':'▸'}</span></div><div id="te-book-body-${sid}" style="display:${bookOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-book-inner-${sid}" style="padding:8px 11px">${_teBuildBookingsInner(sid)}</div><div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addBookBtns}<div style="flex:1"></div>${allBookPaid?'':`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllPaid('${sid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark all paid</button>`}</div></div></div>
     <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleExpenses('${sid}')"><span style="font-size:14px">💳</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Expenses</span>${allClaimed?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:expenses.filter(e=>_teGetClaimed(e)!=='yes').length?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${expenses.filter(e=>_teGetClaimed(e)!=='yes').length} unclaimed</span>`:''}${expTotal?`<span class="sbadge" style="background:rgba(13,148,136,.07);color:#0D9488;border:0.5px solid rgba(13,148,136,.25);font-weight:600;font-size:11px">${expTotal}</span>`:''}<span id="te-exp-chev-${sid}" style="font-size:11px;color:var(--text3)">${expOpen?'▾':'▸'}</span></div><div id="te-exp-body-${sid}" style="display:${expOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-exp-inner-${sid}" style="padding:8px 11px">${_teBuildExpensesInner(sid)}</div><div style="display:flex;align-items:center;gap:5px;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addExpBtn}<div style="flex:1"></div>${allClaimed?`<button class="btn btn-ghost btn-sm" style="color:var(--text3);cursor:default">✓ Claimed</button>`:`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllClaimed('${sid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark all claimed</button>`}</div></div></div>`;
 }
 function _teRenderBody(){

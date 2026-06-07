@@ -1164,44 +1164,24 @@ body {
   border-left: 3px solid var(--accent);
   --card-accent: rgba(207,102,64,.09);
 }
-/* Mobile: note cards get extra bottom margin and a subtle divider feel */
+/* Mobile: note cards get a subtle shadow for visual separation */
 @media(max-width:720px){
-  .note-card {
-    margin-bottom: 10px;
-    box-shadow: 0 1px 4px rgba(90,70,50,.07);
-  }
-  /* Collapsed note footer — hidden by default on mobile */
-  .note-card .card-action-footer.note-footer-collapsed {
-    display: none !important;
-  }
-  /* Tap-to-expand indicator on mobile */
+  .note-card { margin-bottom: 10px; box-shadow: 0 1px 4px rgba(90,70,50,.07); }
+  .note-card .card-action-footer.note-footer-collapsed { display: none !important; }
   .note-card-tap-hint {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    margin-top: 7px;
-    padding-top: 6px;
+    display: flex; align-items: center; gap: 5px;
+    margin-top: 7px; padding-top: 6px;
     border-top: 1px dashed var(--border);
-    font-size: 10.5px;
-    color: var(--text3);
-    font-family: var(--mono);
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
+    font-size: 10.5px; color: var(--text3); font-family: var(--mono);
+    cursor: pointer; -webkit-tap-highlight-color: transparent; user-select: none;
   }
   .note-card-tap-hint:active { color: var(--accent); }
-  /* When footer is expanded */
   .note-card.note-actions-open .note-card-tap-hint { display: none; }
-  .note-card.note-actions-open .card-action-footer.note-footer-collapsed {
-    display: grid !important;
-  }
+  .note-card.note-actions-open .card-action-footer.note-footer-collapsed { display: grid !important; }
 }
-/* Desktop: never show the tap hint */
 @media(min-width:721px){
   .note-card-tap-hint { display: none !important; }
-  .note-card .card-action-footer.note-footer-collapsed {
-    display: grid !important;
-  }
+  .note-card .card-action-footer.note-footer-collapsed { display: grid !important; }
 }
 .note-card.note-done    { border-left-color: var(--done);     opacity: .6; --card-accent: rgba(22,163,74,.08); }
 .note-card.note-pass    { border-left-color: var(--text3);    opacity: .5; --card-accent: rgba(154,140,126,.09); }
@@ -1841,6 +1821,7 @@ let state = {
   notes:[],
   travelEntries:[],   // [{id,type,storyId,storySec,data:{},remarks:[{id,text,ts}],created,updated}]
   travelDismissed:[], // storyIds hidden from travel accordion
+  travelAutoResolved:[], // storyIds auto-moved to resolved when fully paid+claimed
   employees:['Employee 1','Employee 2','Employee 3','Employee 4','Employee 5'],
   staffNames:{
     correspondents:[],
@@ -2076,6 +2057,7 @@ function loadLocal(){
   if(!state.notes)           state.notes=[];
   if(!state.travelEntries)   state.travelEntries=[];
   if(!state.travelDismissed) state.travelDismissed=[];
+  if(!state.travelAutoResolved) state.travelAutoResolved=[];
   if(!state.travelGroupDismissed) state.travelGroupDismissed=[];
   if(!state.travelRestored)  state.travelRestored=[];
   if(!state.deletedIds)      state.deletedIds={};
@@ -5179,7 +5161,7 @@ function renderNotesView(){
             <span>${created}${statusLabel}</span>
             ${nd.deadline_date?`<span>📅 ${fmtDate(nd.deadline_date)}</span>`:''}
           </div>
-          ${isLive?`<div class="note-card-tap-hint">✦ Tap to show actions</div><div class="card-action-footer note-footer-collapsed" style="margin:8px -12px -12px;border-radius:0 0 6px 6px" onclick="event.stopPropagation()">
+          ${isLive?`<div class="card-action-footer" style="margin:8px -12px -12px;border-radius:0 0 6px 6px">
             ${nd.status!=='done'?`<button class="btn btn-done-active btn-sm" onclick="setNoteStatus('${nd.id}','done')">✅ Done</button>`:''}
             ${nd.status==='active'?`<button class="btn btn-ghost btn-sm" style="color:var(--text3)" onclick="setNoteStatus('${nd.id}','pass')">↪ Pass</button>`:''}
             ${nd.status!=='active'?`<button class="btn btn-ghost btn-sm" onclick="updateNote('${nd.id}',{status:'active',resolvedOn:null});renderKeepRemarks()">↩ Restore</button>`:''}
@@ -5296,7 +5278,6 @@ function renderAccordion(sec,archKey){
   // Build info strip — logic differs per section type
   const _accStrip=(()=>{
     if(!activeStories.length){
-      // On mobile, show a hint in the collapsed info strip for requests
       if(sec.key==='requests') return `<div class="acc-info-strip"><span style="font-size:10px;color:var(--text3);font-style:italic;font-family:var(--font)">No requests yet</span></div>`;
       return '';
     }
@@ -7703,7 +7684,7 @@ function renderRemarksAccordion(){
         }
         const isOverdueNote=n.deadline_date&&Math.round((new Date(n.deadline_date+'T00:00:00').getTime()-todayMs)/86400000)<0;
         const carriedChip=n.carriedForward&&!isOverdueNote?`<span class="carry-badge">↻ +${n.carriedDays||1}d</span>`:'';
-        body+=`<div class="note-card${n.carriedForward?' note-carried':''}" data-id="${n.id}" onclick="(function(card){if(window.innerWidth<=720){card.classList.toggle('note-actions-open')}})(this)">
+        body+=`<div class="note-card${n.carriedForward?' note-carried':''}" data-id="${n.id}" onclick="(function(card){if(window.innerWidth<=720)card.classList.toggle('note-actions-open')})(this)">
           ${n.headline?`<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px;font-family:var(--font)">${esc(n.headline)}</div>`:''}
           ${n.text?`<div class="note-text">${esc(n.text)}</div>`:''}
           <div class="note-meta">
@@ -7735,7 +7716,7 @@ function renderRemarksAccordion(){
     body+=`<div id="notes-res-body" style="display:${isResOpen?'block':'none'}">`;
     resolvedSorted.forEach(n=>{
       const created=new Date(n.created).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-      body+=`<div class="note-card ${n.status==='done'?'note-done':'note-pass'}" data-id="${n.id}" onclick="(function(card){if(window.innerWidth<=720){card.classList.toggle('note-actions-open')}})(this)">
+      body+=`<div class="note-card ${n.status==='done'?'note-done':'note-pass'}" data-id="${n.id}" onclick="(function(card){if(window.innerWidth<=720)card.classList.toggle('note-actions-open')})(this)">
         ${n.headline?`<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px;font-family:var(--font);text-decoration:${n.status==='done'?'line-through':''}">${esc(n.headline)}</div>`:''}
         ${n.text?`<div class="note-text" style="text-decoration:${n.status==='done'?'line-through':''}">${esc(n.text)}</div>`:''}
         <div class="note-meta">
@@ -8140,17 +8121,26 @@ function _teAdd(entry){
   if(!state.travelEntries) state.travelEntries=[];
   state.travelEntries.push({...entry,id:genId(),created:Date.now(),updated:Date.now()});
   _teSave();
+  if(entry.storyId) setTimeout(()=>_teCheckAutoResolve(entry.storyId),0);
 }
 function _teUpdate(id,entry){
   const i=(state.travelEntries||[]).findIndex(e=>e.id===id);
-  if(i>=0){ state.travelEntries[i]={...state.travelEntries[i],...entry,updated:Date.now()}; _teSave(); }
+  if(i>=0){
+    state.travelEntries[i]={...state.travelEntries[i],...entry,updated:Date.now()};
+    _teSave();
+    const sid=state.travelEntries[i]?.storyId||entry?.storyId;
+    if(sid) setTimeout(()=>_teCheckAutoResolve(sid),0);
+  }
 }
 function _teDelete(id){
+  const entry=(state.travelEntries||[]).find(e=>e.id===id);
+  const sid=entry?.storyId;
   state.travelEntries=(state.travelEntries||[]).filter(e=>e.id!==id);
   if(!state.deletedIds) state.deletedIds={};
   if(!state.deletedIds.travelEntries) state.deletedIds.travelEntries=[];
   if(!state.deletedIds.travelEntries.includes(id)) state.deletedIds.travelEntries.push(id);
   _teSave();
+  if(sid) setTimeout(()=>_teCheckAutoResolve(sid),0);
 }
 /** Dismiss (hide) a general group from the active list */
 function _teDismissGroup(gid){
@@ -8199,25 +8189,54 @@ function _teRenameGroup(gid, newLabel){
 function _teDismissGeneral(){ _teDismissGroup('__default'); }
 function _teRestoreGeneral(){ _teRestoreGroup('__default'); }
 function _teDeleteGeneral(){ _teDeleteGroup('__default'); }
+
+/** Check if a story's T&E is fully settled: all bookings paid AND all expenses claimed */
+function _teIsFullyResolved(sid){
+  const entries=(state.travelEntries||[]).filter(e=>e.storyId===sid&&!e._deleted);
+  if(!entries.length) return false;
+  const bookings=entries.filter(e=>['cab','flight','hotel','fixer','other'].includes(e.type));
+  const expenses=entries.filter(e=>e.type==='expense');
+  const allBookPaid=bookings.length===0||bookings.every(e=>e.type==='fixer'?_teGetClaimed(e)==='yes':e.data?.payment!=='unpaid');
+  const allClaimed=expenses.length===0||expenses.every(e=>_teGetClaimed(e)==='yes');
+  return allBookPaid&&allClaimed;
+}
+/** After any payment/claim change, check if story should auto-resolve or un-resolve */
+function _teCheckAutoResolve(sid){
+  if(!sid) return;
+  if(!state.travelAutoResolved) state.travelAutoResolved=[];
+  const fullyDone=_teIsFullyResolved(sid);
+  const alreadyResolved=state.travelAutoResolved.includes(sid);
+  if(fullyDone&&!alreadyResolved){
+    state.travelAutoResolved.push(sid);
+    saveLocal();
+    toast('✅ All paid & claimed — moved to Resolved');
+  } else if(!fullyDone&&alreadyResolved){
+    state.travelAutoResolved=state.travelAutoResolved.filter(x=>x!==sid);
+    saveLocal();
+  }
+}
+
 function _teDismissStory(sid){
   if(!state.travelDismissed) state.travelDismissed=[];
   if(!state.travelDismissed.includes(sid)) state.travelDismissed.push(sid);
+  state.travelAutoResolved=(state.travelAutoResolved||[]).filter(x=>x!==sid);
   _teSave();
 }
 function _teRestoreStory(sid){
   state.travelDismissed=(state.travelDismissed||[]).filter(x=>x!==sid);
+  state.travelAutoResolved=(state.travelAutoResolved||[]).filter(x=>x!==sid);
   _teSave();
 }
 function _teDeleteStory(sid){
-  // Remove story from travelDismissed (if hidden) and delete all its T&E entries
+  // Remove story from both dismissed lists and delete all its T&E entries
   state.travelDismissed=(state.travelDismissed||[]).filter(x=>x!==sid);
+  state.travelAutoResolved=(state.travelAutoResolved||[]).filter(x=>x!==sid);
   const toDelete=(state.travelEntries||[]).filter(e=>e.storyId===sid).map(e=>e.id);
   toDelete.forEach(id=>{
     state.travelEntries=(state.travelEntries||[]).filter(e=>e.id!==id);
     if(!state.deletedIds.travelEntries) state.deletedIds.travelEntries=[];
     if(!state.deletedIds.travelEntries.includes(id)) state.deletedIds.travelEntries.push(id);
   });
-  // Also remove from travelDismissed persistent list
   _teSave();
   toast(toDelete.length?`🗑 Story removed with ${toDelete.length} entr${toDelete.length===1?'y':'ies'}`:'🗑 Story removed from Travel & Expenses');
   _teRefresh();
@@ -8247,7 +8266,7 @@ function _teRefresh(){
   }
 
   const today=todayStr();
-  const stories=_teGetStories().filter(({s})=>!(state.travelDismissed||[]).includes(s.id));
+  const stories=_teGetStories().filter(({s})=>!(state.travelDismissed||[]).includes(s.id)&&!(state.travelAutoResolved||[]).includes(s.id));
   const summary=stories.length?esc((stories[0].s.title||'').slice(0,32)):'';
   const sumEl=document.getElementById('acc-travel-summary');
   if(sumEl) sumEl.textContent=stories.length?(stories[0].s.title||'').slice(0,32):'';
@@ -8274,13 +8293,10 @@ function _teOpenForm(opts){
   window._lastFormOpenTs=Date.now();
   const tb=document.getElementById('acc-body-travel');
   if(tb&&tb.classList.contains('open')){
-    // Accordion already open — update body in-place
     tb.innerHTML=_teRenderBody();
   } else {
-    // Accordion closed — open it and let render() populate the body via renderTravelSection
     ui.openSections.add('travel');
     render();
-    // Scroll into view after render
     setTimeout(()=>{ document.getElementById('acc-travel')?.scrollIntoView({behavior:'smooth',block:'start'}); },80);
   }
   setTimeout(()=>{
@@ -8288,6 +8304,74 @@ function _teOpenForm(opts){
     const btn=document.getElementById('te-submit-btn');
     if(btn){ btn.disabled=true; btn.style.opacity='.5'; setTimeout(()=>{ btn.disabled=false; btn.style.opacity=''; },600); }
   },80);
+}
+
+/** Quick re-link modal: pick any known story and attach this entry to it */
+function _teRelinkEntry(entryId){
+  const entry=(state.travelEntries||[]).find(e=>e.id===entryId);
+  if(!entry){ toast('Entry not found'); return; }
+
+  // Collect all stories from live sections + archive
+  const storyMap=new Map(); // id → {sec, s}
+  ['ibu','other','requests'].forEach(sec=>{
+    (state.sections[sec]||[]).filter(s=>!s._deleted&&s.title).forEach(s=>{
+      if(!storyMap.has(s.id)) storyMap.set(s.id,{sec,s});
+    });
+  });
+  // Add archive stories
+  Object.keys(state.archive||{}).sort().reverse().forEach(key=>{
+    ['ibu','other','requests'].forEach(sec=>{
+      ((state.archive[key]?.sections||{})[sec]||[]).filter(s=>!s._deleted&&s.title).forEach(s=>{
+        if(!storyMap.has(s.id)) storyMap.set(s.id,{sec,s});
+      });
+    });
+  });
+
+  const stories=[...storyMap.values()];
+  const secLabel={ibu:'Stories',other:'Other Stories',requests:'Requests'};
+  const opts=stories.map(({sec,s})=>
+    `<option value="${s.id}"${entry.storyId===s.id?' selected':''}>${esc((s.title||'').slice(0,50))} · ${secLabel[sec]||sec}${s.field_location?' · '+esc(s.field_location.slice(0,20)):''} [${s.status||'active'}]</option>`
+  ).join('');
+
+  const modal=document.createElement('div');
+  modal.className='modal-bg';
+  modal.innerHTML=`<div class="modal" style="max-width:480px;padding:20px 20px 24px">
+    <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">🔗 Re-link Entry to Story</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Entry: ${esc(entry.data?.fixerName||entry.data?.what||entry.data?.from||entry.type)}</div>
+    <div class="fgroup full" style="margin-bottom:12px">
+      <label class="flabel">Select story</label>
+      <select class="fselect" id="relink-story-select" style="font-size:14px">
+        <option value="">— General / Unlinked —</option>
+        ${opts}
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-accent btn-sm" onclick="(function(){
+        const sid=document.getElementById('relink-story-select')?.value||null;
+        let ssec=null;
+        if(sid){
+          for(const sec of ['ibu','other','requests']){
+            if((state.sections[sec]||[]).find(s=>s.id===sid)){ ssec=sec; break; }
+          }
+          if(!ssec){
+            for(const key of Object.keys(state.archive||{}).sort().reverse()){
+              for(const sec of ['ibu','other','requests']){
+                if(((state.archive[key]?.sections||{})[sec]||[]).find(s=>s.id===sid)){ ssec=sec; break; }
+              }
+              if(ssec) break;
+            }
+          }
+        }
+        _teUpdate('${entryId}',{storyId:sid,storySec:ssec,groupId:sid?null:(entry.groupId||'__default'),groupLabel:sid?null:(entry.groupLabel||'General')});
+        document.querySelector('.modal-bg')?.remove();
+        toast(sid?'✅ Entry linked to story':'Entry moved to General');
+      })()">Save</button>
+      <button class="btn btn-ghost btn-sm" onclick="this.closest('.modal-bg').remove()">Cancel</button>
+    </div>
+  </div>`;
+  modal.addEventListener('click',e=>{ if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+  setTimeout(()=>document.getElementById('relink-story-select')?.focus(),60);
 }
 function _teCloseForm(){
   _te={open:false,type:'cab',storyId:null,storySec:null,editId:null,groupId:null,groupLabel:null};
@@ -8361,21 +8445,14 @@ function _teSubmit(){
     }
   }
 
-  // FIX: When editing an entry that was linked to a story, preserve the original
-  // storyId/storySec even if the story is now inactive (completed/not-done/shelved)
-  // and therefore no longer appears in the form's story dropdown.
-  let finalStoryId=storyId;
-  let finalStorySec=storySec;
-  let finalGroupId=groupId;
-  let finalGroupLabel=groupLabel;
+  // FIX: When editing an entry linked to a story, preserve the original storyId/storySec
+  // even if the story is now inactive and no longer appears in the form dropdown.
+  let finalStoryId=storyId,finalStorySec=storySec,finalGroupId=groupId,finalGroupLabel=groupLabel;
   if(_te.editId){
     const origEntry=(state.travelEntries||[]).find(e=>e.id===_te.editId);
-    if(origEntry?.storyId && !storyId){
-      // The dropdown returned empty — story is probably inactive; keep original link
-      finalStoryId=origEntry.storyId;
-      finalStorySec=origEntry.storySec;
-      finalGroupId=null;
-      finalGroupLabel=null;
+    if(origEntry?.storyId&&!storyId){
+      finalStoryId=origEntry.storyId; finalStorySec=origEntry.storySec;
+      finalGroupId=null; finalGroupLabel=null;
     }
   }
   const entry={type,storyId:finalStoryId,storySec:finalStorySec,data,groupId:finalGroupId,groupLabel:finalGroupLabel};
@@ -8422,8 +8499,7 @@ function _teBuildForm(){
   const ed=editEntry?.data||{};
   const curStory=_te.storyId||editEntry?.storyId||'';
 
-  // Form dropdown: active live-board stories + the currently-linked story (even if inactive)
-  // so editing never loses the link silently.
+  // Form dropdown: active live-board stories + the currently-linked story (even if inactive/archived)
   const _INACTIVE_TRAVEL_STATUSES=new Set(['shelved','completed','not-done']);
   const allStories=[];
   const seenStoryIds=new Set();
@@ -8432,12 +8508,28 @@ function _teBuildForm(){
       allStories.push({sec,s}); seenStoryIds.add(s.id);
     });
   });
-  // Always include the currently-linked story (even if inactive) so the link isn't lost
+  // Also add any story that _teGetStories() knows about (pulled from archive for existing T&E entries)
+  // This ensures stories like completed/archived Firozabad trips always appear.
+  _teGetStories().forEach(({sec,s})=>{
+    if(!seenStoryIds.has(s.id)&&s.title&&!s._deleted){ allStories.push({sec,s}); seenStoryIds.add(s.id); }
+  });
+  // Always include currently-linked story even if inactive so link is never silently lost.
+  // Search: (1) all sections including inactive, (2) archive — newest first.
   if(curStory&&!seenStoryIds.has(curStory)){
-    ['ibu','other','requests'].forEach(sec=>{
-      const found=(state.sections[sec]||[]).find(s=>s.id===curStory);
-      if(found&&!found._deleted){ allStories.unshift({sec,s:found}); seenStoryIds.add(found.id); }
-    });
+    let foundLinked=false;
+    for(const sec of ['ibu','other','requests']){
+      const found=(state.sections[sec]||[]).find(s=>s.id===curStory&&!s._deleted);
+      if(found){ allStories.unshift({sec,s:found}); seenStoryIds.add(found.id); foundLinked=true; break; }
+    }
+    if(!foundLinked){
+      const archKeys=Object.keys(state.archive||{}).sort().reverse();
+      outer: for(const key of archKeys){
+        for(const sec of ['ibu','other','requests']){
+          const found=((state.archive[key]?.sections||{})[sec]||[]).find(s=>s.id===curStory&&!s._deleted);
+          if(found){ allStories.unshift({sec,s:found}); seenStoryIds.add(found.id); foundLinked=true; break outer; }
+        }
+      }
+    }
   }
   const secLabel={ibu:'Stories',other:'Other Stories',requests:'Requests'};
   const storyOpts=allStories.map(({sec,s})=>`<option value="${s.id}"${curStory===s.id?' selected':''}>${esc((s.title||'').slice(0,45))} · ${secLabel[sec]||sec}${s.field_location?' · '+esc(s.field_location):''}</option>`).join('');
@@ -8465,6 +8557,15 @@ function _teBuildForm(){
 
   const typBtn=(t,ico,lbl)=>`<button type="button" onclick="_teSetType('${t}')" style="flex:1;padding:8px 4px;border:1px solid ${type===t?'var(--accent)':'var(--border)'};border-radius:7px;background:${type===t?'var(--accent)':'transparent'};color:${type===t?'#fff':'var(--text2)'};font-size:12px;cursor:pointer;font-family:var(--font)">${ico} ${lbl}</button>`;
 
+  const curStoryInDropdown=seenStoryIds.has(curStory);
+  const curStoryLabel=curStory&&!curStoryInDropdown
+    ? (()=>{
+        // Try to get the title from _teGetStories to show in the warning
+        const s=_teGetStories().find(({s})=>s.id===curStory);
+        return s?esc(s.s.title||''):'(story not available locally)';
+      })()
+    : '';
+
   return`<div class="note-add-form" style="border-color:var(--accent);margin-bottom:16px" onclick="event.stopPropagation()">
     <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:14px">${_te.editId?'Edit':'New'} Travel / Expense Entry</div>
     <datalist id="${groupDatalistId}">${groupDatalistOpts}</datalist>
@@ -8473,7 +8574,9 @@ function _teBuildForm(){
       <select class="fselect" id="te-story" onchange="_teOnStoryChange(this.value)">
         <option value="">— General / Unlinked —</option>
         ${storyOpts}
+        ${curStory&&!curStoryInDropdown?`<option value="${curStory}" selected>⚠ ${curStoryLabel} (linked, not in archive locally)</option>`:''}
       </select>
+      ${curStory&&!curStoryInDropdown?`<div style="font-size:11px;color:var(--progress);background:rgba(217,119,6,.08);padding:5px 10px;border-radius:6px;margin-top:5px">⚠ The linked story isn't in your local archive. The link will be preserved — sync or reopen the app after the story has loaded to see it in the dropdown.</div>`:''}
     </div>
     <div class="fgroup full" id="te-group-row" style="margin-bottom:12px;${curStory?'display:none':''}">
       <label class="flabel">Group / trip name <span style="font-size:10px;color:var(--text3)">(optional — groups related unlinked entries)</span></label>
@@ -8620,6 +8723,7 @@ function _teRenderEntry(e){
       ${det}
       ${remHTML}
       <div style="display:flex;gap:7px;justify-content:flex-end;margin-top:10px;padding-top:8px;border-top:1px dashed var(--border);flex-wrap:wrap">
+        ${!e.storyId?`<button class="btn btn-ghost btn-sm" onclick="_teRelinkEntry('${e.id}');event.stopPropagation()" style="color:var(--week);border-color:rgba(79,70,229,.3)" title="Link this entry to a story">🔗 Re-link</button>`:''}
         ${e.type==='fixer'&&_teGetClaimed(e)!=='yes'?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),claimed:'yes'}});event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark paid</button>`:''}
         ${e.type==='fixer'&&_teGetClaimed(e)==='yes'?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),claimed:'no'}});event.stopPropagation()" style="color:var(--text3)">↩ Undo paid</button>`:''}
         ${e.type==='expense'&&_teGetClaimed(e)!=='yes'?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),claimed:'yes'}});event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark claimed</button>`:''}
@@ -8647,17 +8751,6 @@ function _teToggleExpenses(sid){ui_teExpensesOpen[sid]=!ui_teExpensesOpen[sid];c
 function _teShowMoreBookings(sid){ui_teBookingsPage[sid]=(ui_teBookingsPage[sid]||1)+1;const b=document.getElementById('te-book-inner-'+sid);if(b)b.innerHTML=_teBuildBookingsInner(sid);}
 function _teShowMoreExpenses(sid){ui_teExpensesPage[sid]=(ui_teExpensesPage[sid]||1)+1;const b=document.getElementById('te-exp-inner-'+sid);if(b)b.innerHTML=_teBuildExpensesInner(sid);}
 function _teMarkAllClaimed(sid){const isGen=(!sid||sid==='gen');(state.travelEntries||[]).filter(e=>isGen?!e.storyId:e.storyId===sid).filter(e=>e.type==='expense').forEach(e=>_teUpdate(e.id,{data:{...e.data,claimed:'yes'}}));toast('✅ All expenses marked claimed');}
-function _teMarkAllPaid(sid){
-  const isGen=(!sid||sid==='gen');
-  (state.travelEntries||[]).filter(e=>isGen?!e.storyId:e.storyId===sid).filter(e=>['cab','flight','hotel','other'].includes(e.type)&&e.data?.payment==='unpaid').forEach(e=>_teUpdate(e.id,{data:{...e.data,payment:'cash'}}));
-  (state.travelEntries||[]).filter(e=>isGen?!e.storyId:e.storyId===sid).filter(e=>e.type==='fixer'&&_teGetClaimed(e)!=='yes').forEach(e=>_teUpdate(e.id,{data:{...e.data,claimed:'yes'}}));
-  toast('✅ All bookings marked paid');
-}
-function _teMarkAllPaidGroup(gid){
-  _teEntriesForGroup(gid).filter(e=>['cab','flight','hotel','other'].includes(e.type)&&e.data?.payment==='unpaid').forEach(e=>_teUpdate(e.id,{data:{...e.data,payment:'cash'}}));
-  _teEntriesForGroup(gid).filter(e=>e.type==='fixer'&&_teGetClaimed(e)!=='yes').forEach(e=>_teUpdate(e.id,{data:{...e.data,claimed:'yes'}}));
-  toast('✅ All bookings marked paid');
-}
 function _teBuildBookingsInner(sid, gid){
   const isGrp=sid&&sid.startsWith('grp:');
   const isGen=(!sid||sid==='gen')&&!isGrp;
@@ -8704,7 +8797,7 @@ function _teSubAccordionForGroup(gid){
   })();
   const addBookBtns=`<button class="ttb-add-btn ttb-cab" onclick="_teOpenForm({type:'cab'})">🚕 <span class="ttb-lbl">Cab</span></button><button class="ttb-add-btn ttb-flight" onclick="_teOpenForm({type:'flight'})">✈️ <span class="ttb-lbl">Flight</span></button><button class="ttb-add-btn ttb-hotel" onclick="_teOpenForm({type:'hotel'})">🏨 <span class="ttb-lbl">Hotel</span></button><button class="ttb-add-btn ttb-fixer" onclick="_teOpenForm({type:'fixer'})">🤝 <span class="ttb-lbl">Fixer</span></button><button class="ttb-add-btn ttb-other" onclick="_teOpenForm({type:'other'})">📦 <span class="ttb-lbl">Other</span></button>`;
   const addExpBtn=`<button class="btn btn-ghost btn-sm" onclick="_teOpenForm({type:'expense'})">💳 Add expense</button>`;
-  return `<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleBookings('${sid}')"><span style="font-size:14px">🗓</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Bookings</span>${bookBadges}<span id="te-book-chev-${sid}" style="font-size:11px;color:var(--text3)">${bookOpen?'▾':'▸'}</span></div><div id="te-book-body-${sid}" style="display:${bookOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-book-inner-${sid}" style="padding:8px 11px">${_teBuildBookingsInner(sid,gid)}</div><div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addBookBtns}<div style="flex:1"></div>${allBookPaid?'':`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllPaidGroup('${gid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark all paid</button>`}</div></div></div>
+  return `<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleBookings('${sid}')"><span style="font-size:14px">🗓</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Bookings</span>${bookBadges}<span id="te-book-chev-${sid}" style="font-size:11px;color:var(--text3)">${bookOpen?'▾':'▸'}</span></div><div id="te-book-body-${sid}" style="display:${bookOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-book-inner-${sid}" style="padding:8px 11px">${_teBuildBookingsInner(sid,gid)}</div><div style="display:flex;gap:5px;flex-wrap:wrap;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addBookBtns}</div></div></div>
     <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleExpenses('${sid}')"><span style="font-size:14px">💳</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Expenses</span>${allClaimed?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:expenses.filter(e=>_teGetClaimed(e)!=='yes').length?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${expenses.filter(e=>_teGetClaimed(e)!=='yes').length} unclaimed</span>`:''}${expTotal?`<span class="sbadge" style="background:rgba(13,148,136,.07);color:#0D9488;border:0.5px solid rgba(13,148,136,.25);font-weight:600;font-size:11px">${expTotal}</span>`:''}<span id="te-exp-chev-${sid}" style="font-size:11px;color:var(--text3)">${expOpen?'▾':'▸'}</span></div><div id="te-exp-body-${sid}" style="display:${expOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-exp-inner-${sid}" style="padding:8px 11px">${_teBuildExpensesInner(sid,gid)}</div><div style="display:flex;align-items:center;gap:5px;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addExpBtn}<div style="flex:1"></div>${allClaimed?`<button class="btn btn-ghost btn-sm" style="color:var(--text3);cursor:default">✓ Claimed</button>`:`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllClaimedGroup('${gid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark all claimed</button>`}</div></div></div>`;
 }
 function _teMarkAllClaimedGroup(gid){
@@ -8736,13 +8829,15 @@ function _teSubAccordion(sid,sec){
   })();
   const addBookBtns=isGen?`<button class="ttb-add-btn ttb-cab" onclick="_teOpenForm({type:'cab'})">🚕 <span class="ttb-lbl">Cab</span></button><button class="ttb-add-btn ttb-flight" onclick="_teOpenForm({type:'flight'})">✈️ <span class="ttb-lbl">Flight</span></button><button class="ttb-add-btn ttb-hotel" onclick="_teOpenForm({type:'hotel'})">🏨 <span class="ttb-lbl">Hotel</span></button><button class="ttb-add-btn ttb-fixer" onclick="_teOpenForm({type:'fixer'})">🤝 <span class="ttb-lbl">Fixer</span></button><button class="ttb-add-btn ttb-other" onclick="_teOpenForm({type:'other'})">📦 <span class="ttb-lbl">Other</span></button>`:`<button class="ttb-add-btn ttb-cab" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'cab'})">🚕 <span class="ttb-lbl">Cab</span></button><button class="ttb-add-btn ttb-flight" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'flight'})">✈️ <span class="ttb-lbl">Flight</span></button><button class="ttb-add-btn ttb-hotel" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'hotel'})">🏨 <span class="ttb-lbl">Hotel</span></button><button class="ttb-add-btn ttb-fixer" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'fixer'})">🤝 <span class="ttb-lbl">Fixer</span></button><button class="ttb-add-btn ttb-other" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'other'})">📦 <span class="ttb-lbl">Other</span></button>`;
   const addExpBtn=isGen?`<button class="btn btn-ghost btn-sm" onclick="_teOpenForm({type:'expense'})">💳 Add expense</button>`:`<button class="btn btn-ghost btn-sm" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'expense'})">💳 Add expense</button>`;
-  return `<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleBookings('${sid}')"><span style="font-size:14px">🗓</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Bookings</span>${bookBadges}<span id="te-book-chev-${sid}" style="font-size:11px;color:var(--text3)">${bookOpen?'▾':'▸'}</span></div><div id="te-book-body-${sid}" style="display:${bookOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-book-inner-${sid}" style="padding:8px 11px">${_teBuildBookingsInner(sid)}</div><div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addBookBtns}<div style="flex:1"></div>${allBookPaid?'':`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllPaid('${sid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark all paid</button>`}</div></div></div>
+  return `<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleBookings('${sid}')"><span style="font-size:14px">🗓</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Bookings</span>${bookBadges}<span id="te-book-chev-${sid}" style="font-size:11px;color:var(--text3)">${bookOpen?'▾':'▸'}</span></div><div id="te-book-body-${sid}" style="display:${bookOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-book-inner-${sid}" style="padding:8px 11px">${_teBuildBookingsInner(sid)}</div><div style="display:flex;gap:5px;flex-wrap:wrap;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addBookBtns}</div></div></div>
     <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleExpenses('${sid}')"><span style="font-size:14px">💳</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Expenses</span>${allClaimed?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:expenses.filter(e=>_teGetClaimed(e)!=='yes').length?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${expenses.filter(e=>_teGetClaimed(e)!=='yes').length} unclaimed</span>`:''}${expTotal?`<span class="sbadge" style="background:rgba(13,148,136,.07);color:#0D9488;border:0.5px solid rgba(13,148,136,.25);font-weight:600;font-size:11px">${expTotal}</span>`:''}<span id="te-exp-chev-${sid}" style="font-size:11px;color:var(--text3)">${expOpen?'▾':'▸'}</span></div><div id="te-exp-body-${sid}" style="display:${expOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-exp-inner-${sid}" style="padding:8px 11px">${_teBuildExpensesInner(sid)}</div><div style="display:flex;align-items:center;gap:5px;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addExpBtn}<div style="flex:1"></div>${allClaimed?`<button class="btn btn-ghost btn-sm" style="color:var(--text3);cursor:default">✓ Claimed</button>`:`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllClaimed('${sid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark all claimed</button>`}</div></div></div>`;
 }
 function _teRenderBody(){
   const today=todayStr();
   const dismissed=state.travelDismissed||[];
-  const stories=_teGetStories().filter(({s})=>!dismissed.includes(s.id)).sort((a,b)=>{const da=a.s.deadline_date||'9999-99-99',db=b.s.deadline_date||'9999-99-99';if(da<today&&db<today)return da.localeCompare(db);if(da<today)return -1;if(db<today)return 1;return da.localeCompare(db);});
+  const autoResolved=state.travelAutoResolved||[];
+  // Active: not manually dismissed AND not auto-resolved
+  const stories=_teGetStories().filter(({s})=>!dismissed.includes(s.id)&&!autoResolved.includes(s.id)).sort((a,b)=>{const da=a.s.deadline_date||'9999-99-99',db=b.s.deadline_date||'9999-99-99';if(da<today&&db<today)return da.localeCompare(db);if(da<today)return -1;if(db<today)return 1;return da.localeCompare(db);});
   let html=`<div style="display:flex;gap:6px;align-items:center;margin-bottom:12px"><div style="flex:1"></div><button onclick="doEmailTravel()" class="btn btn-ghost btn-sm btn-icon-mobile" title="Email">✉<span class="bim-text"> Email</span></button><button onclick="doExportTravelTxt()" class="btn btn-ghost btn-sm btn-icon-mobile" title="Export">↓<span class="bim-text"> Export</span></button><button onclick="_teOpenForm({})" class="btn btn-accent btn-sm btn-icon-mobile" title="Add">+<span class="bim-text"> Add</span></button></div>`;
   if(_te.open) html+=_teBuildForm();
   stories.forEach(({sec,s})=>{
@@ -8755,7 +8850,6 @@ function _teRenderBody(){
     const bookPayBadge=allBookPaid?`<span class="sbadge sb-in-progress">All paid</span>`:bookUnpaid?`<span class="sbadge sb-in-progress">${bookUnpaid} unpaid</span>`:'';
     const deadlineStr=s.deadline_date?(()=>{const diff=Math.round((new Date(s.deadline_date+'T00:00:00')-new Date(today+'T00:00:00'))/86400000);const lbl=diff<0?'Overdue '+Math.abs(diff)+'d':diff===0?'Due today':diff===1?'Due tomorrow':'Due '+_fmtDShort(s.deadline_date);const col=diff<0?'#B91C1C':diff<=2?'#B45309':'var(--text3)';return `<span style="font-size:10.5px;color:${col};flex-shrink:0">⏰ ${lbl}</span>`;})():'';
     const claimBadge=allClaimed?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:unclaimed?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${unclaimed} unclaimed</span>`:'';
-    const secLabel={ibu:'Stories',other:'Other Stories',requests:'Requests'}[sec]||sec;
     html+=`<div style="margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden"><div style="display:flex;align-items:center;gap:7px;padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap"><span style="font-size:13px">📡</span><span style="font-size:13px;font-weight:600;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:80px">${esc(s.title||'Untitled')}</span>${deadlineStr}${bookPayBadge}${claimBadge}<button onclick="_teDismissStory('${s.id}')" style="padding:2px 7px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--text3);cursor:pointer;flex-shrink:0;margin-left:auto" title="Hide from this list">✕ Hide</button></div><div style="padding:10px 13px;display:flex;flex-direction:column;gap:8px">${_teSubAccordion(s.id,sec)}</div></div>`;
   });
   // Safety net: any entries linked to a story not found by _teGetStories()
@@ -8817,17 +8911,25 @@ function _teRenderBody(){
     });
   }
   if(stories.length===0&&_teEntriesGeneral().length===0&&!_te.open) html+=`<div style="text-align:center;padding:22px 16px;color:var(--text3);font-size:13px">No travel or expenses yet. Use <strong style="color:var(--accent)">+ Add</strong> to log a cab, flight, hotel or expense.</div>`;
+
+  // ── Resolved section: auto-resolved (all paid+claimed) + manually dismissed ──
+  const autoResolvedStories=_teGetStories().filter(({s})=>autoResolved.includes(s.id));
   const dismissedStories=_teGetStories().filter(({s})=>dismissed.includes(s.id));
   const dismissedGrps=allGroups.filter(g=>dismissedGroups.has(g.groupId));
-  const totalResolved=dismissedStories.length+dismissedGrps.length;
+  const totalResolved=autoResolvedStories.length+dismissedStories.length+dismissedGrps.length;
   if(totalResolved>0){
-    html+=`<div style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--border)">
-      <div style="display:flex;align-items:center;gap:6px;padding:4px 0;cursor:pointer;user-select:none" onclick="(function(el){const items=el.nextElementSibling;const open=items.style.display==='none'||!items.style.display;items.style.display=open?'block':'none';el.querySelector('.te-res-chev').textContent=open?'▾':'▸';})(this)">
-        <span style="font-size:11px;font-weight:500;color:var(--text3);font-family:var(--font)">${totalResolved} resolved</span>
-        <span class="te-res-chev" style="font-size:10px;color:var(--text3);margin-left:auto">▸</span>
+    const resId='te-resolved-body-'+Date.now().toString(36);
+    html+=`<div style="margin-top:10px;border:1px solid rgba(22,163,74,.2);border-radius:10px;overflow:hidden;background:rgba(22,163,74,.04)">
+      <div style="display:flex;align-items:center;gap:7px;padding:9px 13px;cursor:pointer;user-select:none;background:rgba(22,163,74,.07);border-bottom:1px solid rgba(22,163,74,.15)" onclick="(function(el){const b=el.nextElementSibling;const open=b.style.display==='none'||!b.style.display;b.style.display=open?'block':'none';el.querySelector('.te-res-chev').textContent=open?'▾':'▸';})(this)">
+        <span style="font-size:14px">✅</span>
+        <span style="font-size:12px;font-weight:600;color:#15803D;font-family:var(--font)">${totalResolved} resolved</span>
+        <span style="font-size:11px;color:#15803D;opacity:.7;font-family:var(--font)">&nbsp;· all paid &amp; claimed</span>
+        <span class="te-res-chev" style="font-size:11px;color:#15803D;margin-left:auto">▸</span>
       </div>
-      <div style="display:none">`;
-    dismissedStories.forEach(({s,sec})=>{
+      <div style="display:none;padding:10px 13px;display:flex;flex-direction:column;gap:8px">`;
+
+    // Helper: render a resolved story card
+    const _renderResolvedStory=(s,sec,isAuto)=>{
       const entries=_teEntriesForStory(s.id);
       const expenses=entries.filter(e=>e.type==='expense');
       const bookings=entries.filter(e=>['cab','flight','hotel','fixer','other'].includes(e.type));
@@ -8835,23 +8937,29 @@ function _teRenderBody(){
       const allClaimed=expenses.length>0&&unclaimed===0;
       const bookUnpaid=bookings.filter(e=>e.type==='fixer'?_teGetClaimed(e)!=='yes':e.data?.payment==='unpaid').length;
       const allBookPaid=bookings.length>0&&bookUnpaid===0;
-      const bookPayBadge=allBookPaid?`<span class="sbadge sb-in-progress">All paid</span>`:bookUnpaid?`<span class="sbadge sb-in-progress">${bookUnpaid} unpaid</span>`:'';
+      const bookPayBadge=allBookPaid?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>All paid</span>`:bookUnpaid?`<span class="sbadge sb-in-progress">${bookUnpaid} unpaid</span>`:'';
       const claimBadge=allClaimed?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:unclaimed?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${unclaimed} unclaimed</span>`:'';
-      // Render all entries flat (not inside collapsible sub-accordions)
       const allEntriesHtml=entries.map(e=>_teRenderEntry(e)).join('');
-      html+=`<div style="margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;opacity:.9">
-        <div style="display:flex;align-items:center;gap:7px;padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap">
+      const restoreBtn=`<button onclick="_teRestoreStory('${s.id}')" style="padding:2px 8px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--accent);cursor:pointer;flex-shrink:0" title="Restore to active list">↩ Reopen</button>`;
+      const deleteBtn=`<button onclick="if(confirm('Permanently delete this story and all its entries?'))_teDeleteStory('${s.id}')" style="padding:2px 7px;font-size:10px;border:1px solid rgba(220,38,38,.3);border-radius:5px;background:transparent;color:#DC2626;cursor:pointer;flex-shrink:0">🗑</button>`;
+      return `<div style="background:var(--surface);border:1px solid rgba(22,163,74,.2);border-radius:8px;overflow:hidden;opacity:.92">
+        <div style="display:flex;align-items:center;gap:7px;padding:8px 13px;background:rgba(22,163,74,.05);border-bottom:1px solid rgba(22,163,74,.12);flex-wrap:wrap">
           <span style="font-size:13px">📡</span>
           <span style="font-size:13px;font-weight:600;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:80px">${esc(s.title||'Untitled')}</span>
           ${bookPayBadge}${claimBadge}
-          <button onclick="_teRestoreStory('${s.id}')" style="padding:2px 8px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--accent);cursor:pointer;flex-shrink:0" title="Restore to active list">↩ Restore</button>
-          <button onclick="if(confirm('Permanently delete this story and all its entries?'))_teDeleteStory('${s.id}')" style="padding:2px 7px;font-size:10px;border:1px solid rgba(220,38,38,.3);border-radius:5px;background:transparent;color:#DC2626;cursor:pointer;flex-shrink:0">🗑</button>
+          ${restoreBtn}${deleteBtn}
         </div>
         <div style="padding:10px 13px;display:flex;flex-direction:column;gap:6px">
           ${allEntriesHtml||`<div style="font-size:12px;color:var(--text3);padding:4px 0">No entries</div>`}
         </div>
       </div>`;
-    });
+    };
+
+    // Auto-resolved first (fully paid+claimed), then manually dismissed
+    autoResolvedStories.forEach(({s,sec})=>{ html+=_renderResolvedStory(s,sec,true); });
+    dismissedStories.forEach(({s,sec})=>{ html+=_renderResolvedStory(s,sec,false); });
+
+    // Dismissed groups
     dismissedGrps.forEach(({groupId:gid,groupLabel:glbl})=>{
       const grpEntries2=_teEntriesForGroup(gid);
       const grpExp2=grpEntries2.filter(e=>e.type==='expense');
@@ -8859,12 +8967,12 @@ function _teRenderBody(){
       const grpBadge2=grpUnclaimed2?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${grpUnclaimed2} unclaimed</span>`:(grpExp2.length?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:'');
       const grpAllEntriesHtml=grpEntries2.map(e=>_teRenderEntry(e)).join('');
       const grpIcon2=gid==='__default'?'📋':'🗂';
-      html+=`<div style="margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;opacity:.9">
-        <div style="display:flex;align-items:center;gap:7px;padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border)">
+      html+=`<div style="background:var(--surface);border:1px solid rgba(22,163,74,.2);border-radius:8px;overflow:hidden;opacity:.92">
+        <div style="display:flex;align-items:center;gap:7px;padding:8px 13px;background:rgba(22,163,74,.05);border-bottom:1px solid rgba(22,163,74,.12);flex-wrap:wrap">
           <span style="font-size:13px">${grpIcon2}</span>
           <span style="font-size:13px;font-weight:600;color:var(--text);flex:1">${esc(glbl)}</span>
           ${grpBadge2}
-          <button onclick="_teRestoreGroup('${gid}')" style="padding:2px 8px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--accent);cursor:pointer;flex-shrink:0">↩ Restore</button>
+          <button onclick="_teRestoreGroup('${gid}')" style="padding:2px 8px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--accent);cursor:pointer;flex-shrink:0">↩ Reopen</button>
           <button onclick="_teConfirmDeleteGroup(this)" data-gid="${esc(gid)}" data-glbl="${esc(glbl)}" style="padding:2px 7px;font-size:10px;border:1px solid rgba(220,38,38,.3);border-radius:5px;background:transparent;color:#DC2626;cursor:pointer;flex-shrink:0">🗑</button>
         </div>
         <div style="padding:10px 13px;display:flex;flex-direction:column;gap:6px">

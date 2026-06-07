@@ -1164,10 +1164,10 @@ body {
   border-left: 3px solid var(--accent);
   --card-accent: rgba(207,102,64,.09);
 }
-/* Mobile: note cards get a subtle shadow for visual separation */
+/* Mobile: note card footer hidden by default — tap card to show */
 @media(max-width:720px){
   .note-card { margin-bottom: 10px; box-shadow: 0 1px 4px rgba(90,70,50,.07); }
-  .note-card .card-action-footer.note-footer-collapsed { display: none !important; }
+  .note-card .card-action-footer.note-footer-mobile-collapse { display: none !important; }
   .note-card-tap-hint {
     display: flex; align-items: center; gap: 5px;
     margin-top: 7px; padding-top: 6px;
@@ -1177,11 +1177,12 @@ body {
   }
   .note-card-tap-hint:active { color: var(--accent); }
   .note-card.note-actions-open .note-card-tap-hint { display: none; }
-  .note-card.note-actions-open .card-action-footer.note-footer-collapsed { display: grid !important; }
+  .note-card.note-actions-open .card-action-footer.note-footer-mobile-collapse { display: grid !important; }
 }
+/* Desktop: always show note footer — no collapse behaviour */
 @media(min-width:721px){
   .note-card-tap-hint { display: none !important; }
-  .note-card .card-action-footer.note-footer-collapsed { display: grid !important; }
+  .note-card .card-action-footer.note-footer-mobile-collapse { display: flex !important; }
 }
 .note-card.note-done    { border-left-color: var(--done);     opacity: .6; --card-accent: rgba(22,163,74,.08); }
 .note-card.note-pass    { border-left-color: var(--text3);    opacity: .5; --card-accent: rgba(154,140,126,.09); }
@@ -1562,7 +1563,7 @@ button.tasks-tab-btn {
 .travel-segment.ts-flight{border-left:3px solid #8b5cf6;}
 .travel-segment.ts-hotel{border-left:3px solid #10b981;}
 .travel-segment.ts-expense{border-left:3px solid #f59e0b;}
-.travel-segment.ts-fixer{border-left:3px solid #0D9488;}
+.travel-segment.ts-freelancer{border-left:3px solid #0D9488;}
 .travel-segment.ts-other{border-left:3px solid #F97316;}
 .travel-seg-head{display:flex;align-items:center;gap:8px;cursor:pointer;}
 .travel-type-badge{font-size:11px;font-family:var(--font);font-weight:500;padding:3px 9px;border-radius:20px;flex-shrink:0;}
@@ -1574,7 +1575,7 @@ button.tasks-tab-btn {
 .ttb-add-btn.ttb-cab{background:rgba(14,165,233,.07);color:#0369a1;border-color:rgba(14,165,233,.3);}
 .ttb-add-btn.ttb-flight{background:rgba(139,92,246,.07);color:#7c3aed;border-color:rgba(139,92,246,.3);}
 .ttb-add-btn.ttb-hotel{background:rgba(16,185,129,.07);color:#047857;border-color:rgba(16,185,129,.3);}
-.ttb-add-btn.ttb-fixer{background:rgba(13,148,136,.07);color:#0D9488;border-color:rgba(13,148,136,.35);}
+.ttb-add-btn.ttb-freelancer{background:rgba(13,148,136,.07);color:#0D9488;border-color:rgba(13,148,136,.35);}
 .ttb-other{background:rgba(249,115,22,.09);color:#C2410C;border:0.5px solid rgba(249,115,22,.3);}
 .ttb-add-btn.ttb-other{background:rgba(249,115,22,.07);color:#C2410C;border-color:rgba(249,115,22,.3);}
 .ttb-add-btn .ttb-lbl{display:inline;}
@@ -2059,6 +2060,7 @@ function loadLocal(){
   if(!state.travelDismissed) state.travelDismissed=[];
   if(!state.travelAutoResolved) state.travelAutoResolved=[];
   if(!state.travelGroupDismissed) state.travelGroupDismissed=[];
+  if(!state.travelGroupAutoResolved) state.travelGroupAutoResolved=[];
   if(!state.travelRestored)  state.travelRestored=[];
   if(!state.deletedIds)      state.deletedIds={};
   if(!state.staffNames)      state.staffNames={correspondents:[],producers:[],shootEdit:[]};
@@ -3582,13 +3584,13 @@ function storyToText(s){
     ln.push('  Travel:');
     storyTravel.forEach(e=>{
       const d=e.data||{};
-      const icons={cab:'🚕',flight:'✈️',hotel:'🏨',expense:'💳',fixer:'🤝'};
+      const icons={cab:'🚕',flight:'✈️',hotel:'🏨',expense:'💳',freelancer:'🧑‍💼'};
       ln.push('    '+(icons[e.type]||'')+' '+(_typeName[e.type]||e.type).toUpperCase());
       if(e.type==='cab'&&d.from) ln.push('      '+(d.from||'')+(d.to?' → '+d.to:'')+(d.when?' @ '+_fmtDT(d.when):'')+(d.driver?' Driver: '+d.driver+(d.phone?' '+d.phone:''):''));
       if(e.type==='flight') ln.push('      '+(d.direction||'outbound')+' '+(d.from||'')+(d.to?' → '+d.to:'')+(d.when?' @ '+_fmtDT(d.when):''));
       if(e.type==='hotel') ln.push('      '+(d.hotelName||'')+(d.where?', '+d.where:'')+(d.checkIn?' In:'+_fmtD(d.checkIn):'')+(d.checkOut?' Out:'+_fmtD(d.checkOut):''));
       if(e.type==='expense') ln.push('      '+(d.what||'')+(d.amount?' '+d.amount:'')+(d.paidBy?' by '+d.paidBy:''));
-      if(e.type==='fixer') ln.push('      '+(d.fixerName||'')+(d.where?', '+d.where:'')+(d.startDate?' '+_fmtD(d.startDate):'')+(d.endDate?' – '+_fmtD(d.endDate):'')+(d.fixerTotal?' Total:'+d.fixerTotal:'')+(d.paidBy?' by '+d.paidBy:''));
+      if(e.type==='freelancer') ln.push('      '+(d.fixerName||'')+(d.where?', '+d.where:'')+(d.startDate?' '+_fmtD(d.startDate):'')+(d.endDate?' – '+_fmtD(d.endDate):'')+(d.fixerTotal?' Total:'+d.fixerTotal:'')+(d.paidBy?' by '+d.paidBy:''));
     });
   }
   return ln.join('\n');
@@ -6711,7 +6713,7 @@ function renderCombinedAccordion(archKey){
     <div class="acc-header" onclick="toggleAccordion('ibu')">
       <span class="acc-icon">📡</span>
       <span class="acc-name">Stories</span>
-      <span class="acc-summary">${(()=>{ if(!allActive.length)return ''; const c=[...allActive].filter(s=>!['completed','not-done','on-hold','shelved'].includes(s.status)); if(!c.length)return ''; c.sort((a,b)=>(b.created||0)-(a.created||0)); return esc(c[0].title||''); })()}</span>
+      <span class="acc-summary">${(()=>{ if(!allActive.length)return 'No active entries'; const c=[...allActive].filter(s=>!['completed','not-done','on-hold','shelved'].includes(s.status)); if(!c.length)return 'No active entries'; c.sort((a,b)=>(b.created||0)-(a.created||0)); return esc(c[0].title||''); })()}</span>
       <div class="acc-meta">${_urgentBadge}${_progressBadge}${_carryBadge}${_filterChip}</div>
       <span class="acc-chevron${isOpen?' open':''}" id="acc-chev-ibu">▾</span>
     </div>
@@ -7694,7 +7696,7 @@ function renderRemarksAccordion(){
             ${carriedChip}
           </div>
           <div class="note-card-tap-hint">✦ Tap to show actions</div>
-          <div class="card-action-footer note-footer-collapsed" style="margin:8px -12px -12px;border-radius:0 0 6px 6px" onclick="event.stopPropagation()">
+          <div class="card-action-footer note-footer-mobile-collapse" style="margin:8px -12px -12px;border-radius:0 0 6px 6px" onclick="event.stopPropagation()">
             <button class="btn btn-done-active btn-sm" onclick="setNoteStatus('${n.id}','done');event.stopPropagation()">✅ Done</button>
             <button class="btn btn-ghost btn-sm" style="color:var(--text3)" onclick="setNoteStatus('${n.id}','pass');event.stopPropagation()">↪ Pass</button>
             <button class="btn btn-ghost btn-sm" onclick="editNote('${n.id}');event.stopPropagation()">✏ Edit</button>
@@ -7725,7 +7727,7 @@ function renderRemarksAccordion(){
           <span style="color:${n.status==='done'?'var(--done)':'var(--text3)'}">${n.status==='done'?'✅ Done':'↪ Passed'}</span>
         </div>
         <div class="note-card-tap-hint">✦ Tap to show actions</div>
-        <div class="card-action-footer note-footer-collapsed" style="margin:8px -12px -12px;border-radius:0 0 6px 6px" onclick="event.stopPropagation()">
+        <div class="card-action-footer note-footer-mobile-collapse" style="margin:8px -12px -12px;border-radius:0 0 6px 6px" onclick="event.stopPropagation()">
           <button class="btn btn-ghost btn-sm" onclick="updateNote('${n.id}',{status:'active',resolvedOn:null});renderKeepRemarks()">↩ Restore</button>
           <button class="btn btn-ghost btn-sm" onclick="editNote('${n.id}')">✏ Edit</button>
           <span class="caf-spacer"></span>
@@ -8044,9 +8046,9 @@ let _teDismissed=null; // mirror of state.travelDismissed for quick access
 
 // ── Helpers ───────────────────────────────────────────────
 const _payLabel=v=>({account:'Account','bbc-direct':'Office Direct',card:'Card',cash:'Cash',unpaid:'Unpaid',upi:'UPI'}[v]||v||'—');
-const _typeIco={cab:'🚕',flight:'✈️',hotel:'🏨',expense:'💳',fixer:'🤝',other:'📦'};
-const _typeName={cab:'Cab',flight:'Flight',hotel:'Hotel',expense:'Expense',fixer:'Fixer',other:'Other'};
-const _typeCol={cab:'#D97706',flight:'#2563EB',hotel:'#7C3AED',expense:'#DC2626',fixer:'#0D9488',other:'#F97316'};
+const _typeIco={cab:'🚕',flight:'✈️',hotel:'🏨',expense:'💳',freelancer:'🧑‍💼',other:'📦'};
+const _typeName={cab:'Cab',flight:'Flight',hotel:'Hotel',expense:'Expense',freelancer:'Freelancer',other:'Other'};
+const _typeCol={cab:'#D97706',flight:'#2563EB',hotel:'#7C3AED',expense:'#DC2626',freelancer:'#0D9488',other:'#F97316'};
 const _fmtDT=v=>{ if(!v) return ''; try{ const d=new Date(v); if(isNaN(d)) return v; return d.toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(e){return v;} };
 const _fmtD=v=>{ if(!v) return ''; try{ const d=new Date(v+'T00:00:00'); if(isNaN(d)) return v; return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'}); }catch(e){return v;} };
 const _fmtDShort=v=>{ if(!v) return ''; try{ const d=new Date(v+'T00:00:00'); if(isNaN(d)) return v; return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}); }catch(e){return v;} };
@@ -8123,36 +8125,45 @@ function _teAdd(entry){
   state.travelEntries.push({...entry,id:genId(),created:Date.now(),updated:Date.now()});
   _teSave();
   if(entry.storyId) setTimeout(()=>_teCheckAutoResolve(entry.storyId),0);
+  else setTimeout(()=>_teCheckGroupAutoResolve(entry.groupId||'__default'),0);
 }
 function _teUpdate(id,entry){
   const i=(state.travelEntries||[]).findIndex(e=>e.id===id);
   if(i>=0){
     state.travelEntries[i]={...state.travelEntries[i],...entry,updated:Date.now()};
     _teSave();
-    const sid=state.travelEntries[i]?.storyId||entry?.storyId;
+    const upd=state.travelEntries[i];
+    const sid=upd?.storyId||entry?.storyId;
+    const gid=upd?.groupId||entry?.groupId||'__default';
     if(sid) setTimeout(()=>_teCheckAutoResolve(sid),0);
+    else setTimeout(()=>_teCheckGroupAutoResolve(gid),0);
   }
 }
 function _teDelete(id){
   const entry=(state.travelEntries||[]).find(e=>e.id===id);
   const sid=entry?.storyId;
+  const gid=entry?.groupId||'__default';
   state.travelEntries=(state.travelEntries||[]).filter(e=>e.id!==id);
   if(!state.deletedIds) state.deletedIds={};
   if(!state.deletedIds.travelEntries) state.deletedIds.travelEntries=[];
   if(!state.deletedIds.travelEntries.includes(id)) state.deletedIds.travelEntries.push(id);
   _teSave();
   if(sid) setTimeout(()=>_teCheckAutoResolve(sid),0);
+  else setTimeout(()=>_teCheckGroupAutoResolve(gid),0);
 }
 /** Dismiss (hide) a general group from the active list */
 function _teDismissGroup(gid){
   if(!state.travelGroupDismissed) state.travelGroupDismissed=[];
   if(!state.travelGroupDismissed.includes(gid)) state.travelGroupDismissed.push(gid);
+  // Clear from auto-resolved if manually dismissed
+  state.travelGroupAutoResolved=(state.travelGroupAutoResolved||[]).filter(x=>x!==gid);
   // Legacy: if dismissing __default group, also set old flag for backward compat
   if(gid==='__default') state.travelGeneralDismissed=true;
   _teSave(); _teRefresh();
 }
 function _teRestoreGroup(gid){
   state.travelGroupDismissed=(state.travelGroupDismissed||[]).filter(x=>x!==gid);
+  state.travelGroupAutoResolved=(state.travelGroupAutoResolved||[]).filter(x=>x!==gid);
   if(gid==='__default') state.travelGeneralDismissed=false;
   _teSave(); _teRefresh();
 }
@@ -8195,12 +8206,10 @@ function _teDeleteGeneral(){ _teDeleteGroup('__default'); }
 function _teIsFullyResolved(sid){
   const entries=(state.travelEntries||[]).filter(e=>e.storyId===sid&&!e._deleted);
   if(!entries.length) return false; // no entries = nothing to resolve
-  const bookings=entries.filter(e=>['cab','flight','hotel','fixer','other'].includes(e.type));
+  const bookings=entries.filter(e=>['cab','flight','hotel','freelancer','other'].includes(e.type));
   const expenses=entries.filter(e=>e.type==='expense');
-  // All bookings paid: fixer uses claimed field; cab/flight/hotel/other use payment field
-  const allBookPaid=bookings.length===0||bookings.every(e=>
-    e.type==='fixer' ? _teGetClaimed(e)==='yes' : (e.data?.payment||'')!=='unpaid'
-  );
+  // All bookings paid: all booking types (cab/flight/hotel/freelancer/other) use payment field
+  const allBookPaid=bookings.length===0||bookings.every(e=>(e.data?.payment||'')!=='unpaid');
   // All expenses claimed
   const allClaimed=expenses.length===0||expenses.every(e=>_teGetClaimed(e)==='yes');
   // Need at least one booking or one expense to auto-resolve (not just empty entries)
@@ -8215,12 +8224,12 @@ function _teCheckAutoResolve(sid){
   const alreadyResolved=state.travelAutoResolved.includes(sid);
   if(fullyDone&&!alreadyResolved){
     state.travelAutoResolved.push(sid);
-    saveLocal();
+    saveAndPush();
     toast('✅ All paid & claimed — moved to Resolved');
     _teRefresh();
   } else if(!fullyDone&&alreadyResolved){
     state.travelAutoResolved=state.travelAutoResolved.filter(x=>x!==sid);
-    saveLocal();
+    saveAndPush();
     _teRefresh();
   }
 }
@@ -8228,6 +8237,37 @@ function _teCheckAutoResolve(sid){
 function _teCheckAutoResolveAll(){
   const storyIds=new Set((state.travelEntries||[]).filter(e=>e.storyId&&!e._deleted).map(e=>e.storyId));
   storyIds.forEach(sid=>_teCheckAutoResolve(sid));
+  // Also check all active general groups
+  _teGetGeneralGroups().forEach(({groupId:gid})=>_teCheckGroupAutoResolve(gid));
+}
+
+/** Check if a general group's entries are fully settled */
+function _teIsGroupFullyResolved(gid){
+  const entries=_teEntriesForGroup(gid).filter(e=>!e._deleted);
+  if(!entries.length) return false;
+  const bookings=entries.filter(e=>['cab','flight','hotel','freelancer','other'].includes(e.type));
+  const expenses=entries.filter(e=>e.type==='expense');
+  const allBookPaid=bookings.length===0||bookings.every(e=>(e.data?.payment||'')!=='unpaid');
+  const allClaimed=expenses.length===0||expenses.every(e=>_teGetClaimed(e)==='yes');
+  const hasContent=bookings.length>0||expenses.length>0;
+  return hasContent&&allBookPaid&&allClaimed;
+}
+/** After any payment/claim change on a general group, check if it should auto-resolve */
+function _teCheckGroupAutoResolve(gid){
+  if(!gid) return;
+  if(!state.travelGroupAutoResolved) state.travelGroupAutoResolved=[];
+  const fullyDone=_teIsGroupFullyResolved(gid);
+  const alreadyResolved=state.travelGroupAutoResolved.includes(gid);
+  if(fullyDone&&!alreadyResolved){
+    state.travelGroupAutoResolved.push(gid);
+    saveAndPush();
+    toast('✅ All paid & claimed — group moved to Resolved');
+    _teRefresh();
+  } else if(!fullyDone&&alreadyResolved){
+    state.travelGroupAutoResolved=state.travelGroupAutoResolved.filter(x=>x!==gid);
+    saveAndPush();
+    _teRefresh();
+  }
 }
 
 function _teDismissStory(sid){
@@ -8248,6 +8288,7 @@ function _teDeleteStory(sid){
   const toDelete=(state.travelEntries||[]).filter(e=>e.storyId===sid).map(e=>e.id);
   toDelete.forEach(id=>{
     state.travelEntries=(state.travelEntries||[]).filter(e=>e.id!==id);
+    if(!state.deletedIds) state.deletedIds={};
     if(!state.deletedIds.travelEntries) state.deletedIds.travelEntries=[];
     if(!state.deletedIds.travelEntries.includes(id)) state.deletedIds.travelEntries.push(id);
   });
@@ -8266,8 +8307,8 @@ function _teRefresh(){
   const allExp=allEntries.filter(e=>e.type==='expense');
   const notClaimedCount=allExp.filter(e=>_teGetClaimed(e)!=='yes').length;
   const allClaimed=allExp.length>0&&notClaimedCount===0;
-  const allBookings=allEntries.filter(e=>['cab','flight','hotel','fixer','other'].includes(e.type));
-  const allBookUnpaid=allBookings.filter(e=>e.type==='fixer'?_teGetClaimed(e)!=='yes':e.data?.payment==='unpaid').length;
+  const allBookings=allEntries.filter(e=>['cab','flight','hotel','freelancer','other'].includes(e.type));
+  const allBookUnpaid=allBookings.filter(e=>e.data?.payment==='unpaid').length;
   const allBookPaid=allBookings.length>0&&allBookUnpaid===0;
 
   const metaEl=document.getElementById('acc-travel-meta');
@@ -8282,7 +8323,13 @@ function _teRefresh(){
   const today=todayStr();
   const stories=_teGetStories().filter(({s})=>!(state.travelDismissed||[]).includes(s.id)&&!(state.travelAutoResolved||[]).includes(s.id));
   const hasAnyEntries=(state.travelEntries||[]).some(e=>!e._deleted);
-  const allResolved=hasAnyEntries&&stories.length===0;
+  // allResolved: no active story cards AND no active general groups
+  const allGroups2=_teGetGeneralGroups();
+  const dismissedGroups2=new Set(state.travelGroupDismissed||[]);
+  if(state.travelGeneralDismissed) dismissedGroups2.add('__default');
+  const grpAutoRes2=new Set(state.travelGroupAutoResolved||[]);
+  const activeGroups2=allGroups2.filter(g=>!dismissedGroups2.has(g.groupId)&&!grpAutoRes2.has(g.groupId)&&_teEntriesForGroup(g.groupId).length>0);
+  const allResolved=hasAnyEntries&&stories.length===0&&activeGroups2.length===0;
   const sumEl=document.getElementById('acc-travel-summary');
   if(sumEl) sumEl.textContent=allResolved?'All resolved':stories.length?(stories[0].s.title||'').slice(0,32):'';
 
@@ -8298,9 +8345,18 @@ function _teRefresh(){
   }
   const stripEl=document.getElementById('acc-travel-strip');
   if(stripEl){
-    const stripSummary=allResolved?'All resolved':stories.length?(stories[0].s.title||'').slice(0,32):'';
-    const stripMeta=allResolved?`<span style="font-size:10px;color:var(--done);font-family:var(--font);flex-shrink:0;margin-left:4px">✅</span>`:meta;
-    stripEl.innerHTML=stripSummary?`<div class="acc-info-strip"><span style="width:5px;height:5px;border-radius:50%;background:${dotCol};flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:${allResolved?'var(--done)':'var(--text2)'};font-style:italic;font-family:var(--font);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:5px">${stripSummary}</span>${stripMeta}</div>`:'';
+    if(allResolved){
+      stripEl.innerHTML=`<div class="acc-info-strip"><span style="font-size:10px;color:var(--text3);font-style:italic;font-family:var(--font);flex:1">All resolved</span></div>`;
+    } else {
+      const firstS=stories[0]?.s;
+      const stripTitle=firstS?(firstS.title||'').slice(0,32):'';
+      if(stripTitle){
+        const dotCol2=notClaimedCount?'#D97706':allClaimed?'#16A34A':'#94a3b8';
+        stripEl.innerHTML=`<div class="acc-info-strip"><span style="width:5px;height:5px;border-radius:50%;background:${dotCol2};flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:var(--text2);font-style:italic;font-family:var(--font);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:5px">${esc(stripTitle)}</span>${meta}</div>`;
+      } else {
+        stripEl.innerHTML='';
+      }
+    }
   }
 }
 
@@ -8442,8 +8498,8 @@ function _teSubmit(){
   else if(type==='flight') data={direction:g('direction'),airline:g('airline'),flightNum:g('flightnum'),from:g('from'),to:g('to'),flightDate:g('flightdate'),flightTime:g('flighttime'),payment:g('payment'),paidBy:g('paidby'),flightNotes:(document.getElementById('te-flightnotes')?.value||'').trim()};
   else if(type==='hotel') data={hotelName:g('hotel'),where:g('where'),checkIn:g('checkin'),checkOut:g('checkout'),priceDay:g('priceday'),priceTotal:g('pricetotal'),payment:g('payment'),paidBy:g('paidby'),hotelNotes:(document.getElementById('te-hotelnotes')?.value||'').trim()};
   else if(type==='expense') data={what:g('what'),when:g('when'),where:g('where'),amount:g('amount'),paidBy:g('paidby'),payment:g('payment'),claimed:g('claimed'),expenseNotes:(document.getElementById('te-expensenotes')?.value||'').trim()};
-  else if(type==='fixer') data={fixerName:g('fixername'),where:g('where'),phone:g('phone'),email:g('email'),startDate:g('startdate'),endDate:g('enddate'),fixerDays:g('fixerdays'),rateDay:g('rateday'),fixerTotal:g('fixertotal'),payment:g('payment'),paidBy:g('paidby'),claimed:g('claimed'),status:g('status'),fixerNotes:(document.getElementById('te-fixernotes')?.value||'').trim()};
-  else if(type==='other') data={what:g('what'),when:g('when'),amount:g('amount'),paidBy:g('paidby'),otherNotes:(document.getElementById('te-othernotes')?.value||'').trim()};
+  else if(type==='freelancer') data={fixerName:g('fixername'),where:g('where'),phone:g('phone'),email:g('email'),startDate:g('startdate'),endDate:g('enddate'),fixerDays:g('fixerdays'),rateDay:g('rateday'),fixerTotal:g('fixertotal'),payment:g('payment'),paidBy:g('paidby'),status:g('status'),fixerNotes:(document.getElementById('te-fixernotes')?.value||'').trim()};
+  else if(type==='other') data={what:g('what'),when:g('when'),amount:g('amount'),paidBy:g('paidby'),payment:g('payment')||'unpaid',otherNotes:(document.getElementById('te-othernotes')?.value||'').trim()};
 
   // Capture any in-progress form state before reading values
   _teCaptureFormState();
@@ -8516,40 +8572,38 @@ function _teBuildForm(){
   const ed=editEntry?.data||{};
   const curStory=_te.storyId||editEntry?.storyId||'';
 
-  // Form dropdown: active live-board stories + the currently-linked story (even if inactive/archived)
-  const _INACTIVE_TRAVEL_STATUSES=new Set(['shelved','completed','not-done']);
+  // Form dropdown: ALL stories — live board (any status) + archive — newest first.
+  // No filtering by status so user can always re-link to completed/shelved/old stories.
   const allStories=[];
   const seenStoryIds=new Set();
+  const secLabel={ibu:'Stories',other:'Other Stories',requests:'Requests'};
+  const _statusIcon={urgent:'🔴',completed:'✅','not-done':'⚫',postponed:'🔵','on-hold':'🟣',shelved:'🗄','in-progress':'🟡','not-started':'⚪'};
+
+  // 1. Live board — all sections, all statuses, sorted newest first
   ['ibu','other','requests'].forEach(sec=>{
-    (state.sections[sec]||[]).filter(s=>!s._deleted&&s.title&&!_INACTIVE_TRAVEL_STATUSES.has(s.status)).forEach(s=>{
-      allStories.push({sec,s}); seenStoryIds.add(s.id);
+    (state.sections[sec]||[]).filter(s=>!s._deleted&&s.title).sort((a,b)=>(b.updated||b.created||0)-(a.updated||a.created||0)).forEach(s=>{
+      if(!seenStoryIds.has(s.id)){ allStories.push({sec,s}); seenStoryIds.add(s.id); }
     });
   });
-  // Also add any story that _teGetStories() knows about (pulled from archive for existing T&E entries)
-  // This ensures stories like completed/archived Firozabad trips always appear.
+  // 2. Stories from _teGetStories() (archive-linked to existing T&E entries)
   _teGetStories().forEach(({sec,s})=>{
     if(!seenStoryIds.has(s.id)&&s.title&&!s._deleted){ allStories.push({sec,s}); seenStoryIds.add(s.id); }
   });
-  // Always include currently-linked story even if inactive so link is never silently lost.
-  // Search: (1) all sections including inactive, (2) archive — newest first.
-  if(curStory&&!seenStoryIds.has(curStory)){
-    let foundLinked=false;
-    for(const sec of ['ibu','other','requests']){
-      const found=(state.sections[sec]||[]).find(s=>s.id===curStory&&!s._deleted);
-      if(found){ allStories.unshift({sec,s:found}); seenStoryIds.add(found.id); foundLinked=true; break; }
-    }
-    if(!foundLinked){
-      const archKeys=Object.keys(state.archive||{}).sort().reverse();
-      outer: for(const key of archKeys){
-        for(const sec of ['ibu','other','requests']){
-          const found=((state.archive[key]?.sections||{})[sec]||[]).find(s=>s.id===curStory&&!s._deleted);
-          if(found){ allStories.unshift({sec,s:found}); seenStoryIds.add(found.id); foundLinked=true; break outer; }
-        }
-      }
-    }
-  }
-  const secLabel={ibu:'Stories',other:'Other Stories',requests:'Requests'};
-  const storyOpts=allStories.map(({sec,s})=>`<option value="${s.id}"${curStory===s.id?' selected':''}>${esc((s.title||'').slice(0,45))} · ${secLabel[sec]||sec}${s.field_location?' · '+esc(s.field_location):''}</option>`).join('');
+  // 3. Full archive scan — pick up any story not yet seen (newest dates first)
+  Object.keys(state.archive||{}).sort().reverse().forEach(dateKey=>{
+    ['ibu','other','requests'].forEach(sec=>{
+      ((state.archive[dateKey]?.sections||{})[sec]||[]).filter(s=>!s._deleted&&s.title).forEach(s=>{
+        if(!seenStoryIds.has(s.id)){ allStories.push({sec,s}); seenStoryIds.add(s.id); }
+      });
+    });
+  });
+  // If curStory still not found, add a placeholder so the link is preserved
+  const curStoryInDropdown=seenStoryIds.has(curStory);
+  const storyOpts=allStories.map(({sec,s})=>{
+    const icon=_statusIcon[s.status]||'';
+    const loc=s.field_location?` · ${s.field_location.slice(0,20)}`:'';
+    return `<option value="${s.id}"${curStory===s.id?' selected':''}>${icon?icon+' ':''}${esc((s.title||'').slice(0,45))} · ${secLabel[sec]||sec}${loc}</option>`;
+  }).join('');
 
   // Group picker — only shown when no story is linked (General entries)
   const existingGroups=_teGetGeneralGroups();
@@ -8568,13 +8622,12 @@ function _teBuildForm(){
   else if(type==='flight') fields=fs('direction','Direction',`<option value="outbound"${(ed.direction||'outbound')==='outbound'?' selected':''}>Outbound</option><option value="inbound"${ed.direction==='inbound'?' selected':''}>Inbound / Return</option>`)+fi('airline','Airline',ed.airline,'','e.g. Air India')+fi('flightnum','Flight number',ed.flightNum,'','e.g. AI202')+fi('from','From',ed.from,'','Departure airport')+fi('to','To',ed.to,'','Arrival airport')+fi('flightdate','Date',ed.flightDate||ed.when?.slice(0,10),'date','')+fi('flighttime','Time',ed.flightTime||ed.when?.slice(11,16),'time','')+fs('payment','Payment mode',payOpts(ed.payment))+fi('paidby','Paid by',ed.paidBy,'','Employee name')+`<div class="fgroup full"><label class="flabel">Remarks</label><textarea class="ftextarea" id="te-flightnotes" placeholder="Baggage, PNR, seat, any notes…" style="min-height:54px;white-space:pre-wrap">${esc(ed.flightNotes||'')}</textarea></div>`;
   else if(type==='hotel') fields=fi('hotel','Hotel name',ed.hotelName,'','')+fi('where','Location',ed.where,'','City / address')+fi('checkin','Check-in',ed.checkIn,'date','','onchange="_teUpdateHotelTotal()"')+fi('checkout','Check-out',ed.checkOut,'date','','onchange="_teUpdateHotelTotal()"')+fi('priceday','Price per day',ed.priceDay,'','₹ or £','oninput="_teUpdateHotelTotal()"')+`<div class="fgroup"><label class="flabel">Price total <span style="font-size:10px;color:var(--text3)">(auto)</span></label><input class="finput" id="te-pricetotal" value="${esc(ed.priceTotal||'')}" placeholder="₹ or £" oninput="this._edited=true"></div>`+fs('payment','Payment mode',payOpts(ed.payment))+fi('paidby','Paid by',ed.paidBy,'','Employee name')+`<div class="fgroup full"><label class="flabel">Remarks</label><textarea class="ftextarea" id="te-hotelnotes" placeholder="Confirmation number, room type, any notes…" style="min-height:54px;white-space:pre-wrap">${esc(ed.hotelNotes||'')}</textarea></div>`;
   else if(type==='expense') fields=fi('what','What',ed.what,'','Description of expense')+fi('when','Date',ed.when,'date','')+fi('where','Location / vendor',ed.where,'','Where was this spent?')+fi('amount','Amount',ed.amount,'','₹ or £')+fi('paidby','Paid by',ed.paidBy,'','Employee name')+fs('payment','Payment mode',payOpts(ed.payment))+fs('claimed','Expense claimed',`<option value="no"${(_teGetClaimed(editEntry||{}))!=='yes'?' selected':''}>Not claimed</option><option value="yes"${_teGetClaimed(editEntry||{})==='yes'?' selected':''}>Claimed</option>`)+`<div class="fgroup full"><div style="font-size:11px;color:var(--progress);background:rgba(217,119,6,.08);padding:5px 10px;border-radius:6px">⏳ "Not claimed" adds to unclaimed count in accordion header</div></div>`+`<div class="fgroup full"><label class="flabel">Remarks</label><textarea class="ftextarea" id="te-expensenotes" placeholder="Receipt reference, vendor details, any notes…" style="min-height:54px;white-space:pre-wrap">${esc(ed.expenseNotes||'')}</textarea></div>`;
-  else if(type==='fixer') fields=fi('fixername','Name',ed.fixerName,'','Full name')+fi('where','Location / city',ed.where,'','City or area')+fi('phone','Phone',ed.phone,'','Phone number')+fi('email','Email',ed.email,'','email@ (optional)')+fi('startdate','Start date',ed.startDate,'date','')+fi('enddate','End date',ed.endDate,'date','','oninput="_teUpdateFixerTotal()"')+`<div class="fgroup"><label class="flabel">Days <span style="font-size:10px;color:var(--text3)">(auto)</span></label><input class="finput" id="te-fixerdays" value="${esc(ed.fixerDays||'')}" placeholder="—" readonly style="color:var(--text3)"></div>`+fi('rateday','Rate per day',ed.rateDay,'','e.g. 150 INR','oninput="_teUpdateFixerTotal()"')+`<div class="fgroup"><label class="flabel">Total <span style="font-size:10px;color:var(--text3)">(auto)</span></label><input class="finput" id="te-fixertotal" value="${esc(ed.fixerTotal||'')}" placeholder="—" oninput="this._edited=true"></div>`+fs('payment','Payment mode',payOpts(ed.payment))+fi('paidby','Paid by',ed.paidBy,'','Employee name')+fs('claimed','Payment status',`<option value="no"${(_teGetClaimed(editEntry||{}))!=='yes'?' selected':''}>Unpaid / pending</option><option value="yes"${_teGetClaimed(editEntry||{})==='yes'?' selected':''}>Paid</option>`)+`<div class="fgroup full"><div style="font-size:11px;color:var(--progress);background:rgba(217,119,6,.08);padding:5px 10px;border-radius:6px">⏳ "Unpaid / pending" adds to unclaimed count in accordion header</div></div>`+fi('status','Status',ed.status,'','Active / Pending / Completed')+`<div class="fgroup full"><label class="flabel">Notes / other relevant details</label><textarea class="ftextarea" id="te-fixernotes" placeholder="Languages, specialisation, previous assignments, local contacts, security info…" style="min-height:72px;white-space:pre-wrap">${esc(ed.fixerNotes||'')}</textarea></div>`;
+  else if(type==='freelancer') fields=fi('fixername','Name',ed.fixerName,'','Full name')+fi('where','Location / city',ed.where,'','City or area')+fi('phone','Phone',ed.phone,'','Phone number')+fi('email','Email',ed.email,'','email@ (optional)')+fi('startdate','Start date',ed.startDate,'date','')+fi('enddate','End date',ed.endDate,'date','','oninput="_teUpdateFixerTotal()"')+`<div class="fgroup"><label class="flabel">Days <span style="font-size:10px;color:var(--text3)">(auto)</span></label><input class="finput" id="te-fixerdays" value="${esc(ed.fixerDays||'')}" placeholder="—" readonly style="color:var(--text3)"></div>`+fi('rateday','Rate per day',ed.rateDay,'','e.g. 150 INR','oninput="_teUpdateFixerTotal()"')+`<div class="fgroup"><label class="flabel">Total <span style="font-size:10px;color:var(--text3)">(auto)</span></label><input class="finput" id="te-fixertotal" value="${esc(ed.fixerTotal||'')}" placeholder="—" oninput="this._edited=true"></div>`+fs('payment','Payment mode',payOpts(ed.payment))+fi('paidby','Paid by',ed.paidBy,'','Employee name')+fi('status','Status',ed.status,'','Active / Pending / Completed')+`<div class="fgroup full"><label class="flabel">Notes / other relevant details</label><textarea class="ftextarea" id="te-fixernotes" placeholder="Languages, specialisation, previous assignments, local contacts, security info…" style="min-height:72px;white-space:pre-wrap">${esc(ed.fixerNotes||'')}</textarea></div>`;
 
-  else if(type==='other') fields=fi('what','Description',ed.what,'','e.g. Satellite uplink, equipment hire…')+fi('when','Date',ed.when,'date','')+fi('amount','Amount',ed.amount,'','₹ / £ / $')+fi('paidby','Paid by',ed.paidBy,'','Name or petty cash')+`<div class="fgroup full"><label class="flabel">Remarks</label><textarea class="ftextarea" id="te-othernotes" placeholder="Invoice reference, contact details, follow-up actions…" style="min-height:64px;white-space:pre-wrap">${esc(ed.otherNotes||'')}</textarea></div>`;
+  else if(type==='other') fields=fi('what','Description',ed.what,'','e.g. Satellite uplink, equipment hire…')+fi('when','Date',ed.when,'date','')+fi('amount','Amount',ed.amount,'','₹ / £ / $')+fi('paidby','Paid by',ed.paidBy,'','Name or petty cash')+fs('payment','Payment mode',payOpts(ed.payment))+`<div class="fgroup full"><label class="flabel">Remarks</label><textarea class="ftextarea" id="te-othernotes" placeholder="Invoice reference, contact details, follow-up actions…" style="min-height:64px;white-space:pre-wrap">${esc(ed.otherNotes||'')}</textarea></div>`;
 
   const typBtn=(t,ico,lbl)=>`<button type="button" onclick="_teSetType('${t}')" style="flex:1;padding:8px 4px;border:1px solid ${type===t?'var(--accent)':'var(--border)'};border-radius:7px;background:${type===t?'var(--accent)':'transparent'};color:${type===t?'#fff':'var(--text2)'};font-size:12px;cursor:pointer;font-family:var(--font)">${ico} ${lbl}</button>`;
 
-  const curStoryInDropdown=seenStoryIds.has(curStory);
   const curStoryLabel=curStory&&!curStoryInDropdown
     ? (()=>{
         // Try to get the title from _teGetStories to show in the warning
@@ -8602,7 +8655,7 @@ function _teBuildForm(){
     <div class="fgroup full" style="margin-bottom:14px">
       <label class="flabel">Type</label>
       <div style="display:flex;gap:7px;margin-top:4px">
-        ${typBtn('cab','🚕','Cab')}${typBtn('flight','✈️','Flight')}${typBtn('hotel','🏨','Hotel')}${typBtn('expense','💳','Expense')}${typBtn('fixer','🤝','Fixer')}${typBtn('other','📦','Other')}
+        ${typBtn('cab','🚕','Cab')}${typBtn('flight','✈️','Flight')}${typBtn('hotel','🏨','Hotel')}${typBtn('expense','💳','Expense')}${typBtn('freelancer','🧑‍💼','Freelancer')}${typBtn('other','📦','Other')}
       </div>
     </div>
     <div style="border-top:1px solid var(--border);margin:4px 0 12px"></div>
@@ -8705,8 +8758,8 @@ function _teRenderEntry(e){
   }
   else if(e.type==='hotel') sum=esc(d.hotelName||d.where||'')+( d.checkIn?' · '+_fmtDShort(d.checkIn):'')+( d.checkOut?' – '+_fmtDShort(d.checkOut):'');
   else if(e.type==='expense') sum=esc(d.what||'')+( d.amount?' · '+esc(d.amount):'')+(_teGetClaimed(e)==='yes'?' · ✅':' · ⏳');
-  else if(e.type==='fixer') sum=esc(d.fixerName||d.where||'')+(d.where&&d.fixerName?' · '+esc(d.where):'')+(d.startDate?' · '+_fmtDShort(d.startDate):'')+( d.endDate?' – '+_fmtDShort(d.endDate):'')+(d.fixerTotal?' · '+esc(d.fixerTotal):'')+(_teGetClaimed(e)==='yes'?' · ✅':' · ⏳');
-  else if(e.type==='other') sum=esc(d.what||'')+(d.amount?' · '+esc(d.amount):'')+(d.when?' · '+_fmtDShort(d.when):'');
+  else if(e.type==='freelancer') sum=esc(d.fixerName||d.where||'')+(d.where&&d.fixerName?' · '+esc(d.where):'')+(d.startDate?' · '+_fmtDShort(d.startDate):'')+( d.endDate?' – '+_fmtDShort(d.endDate):'')+(d.fixerTotal?' · '+esc(d.fixerTotal):'')+(d.payment&&d.payment!=='unpaid'?' · ✅':' · ⏳');
+  else if(e.type==='other') sum=esc(d.what||'')+(d.amount?' · '+esc(d.amount):'')+(d.when?' · '+_fmtDShort(d.when):'')+(d.payment&&d.payment!=='unpaid'?' · ✅':' · ⏳');
 
   // Detail block (expanded)
   const fld=(l,v)=>v?`<div style="display:grid;grid-template-columns:110px 1fr;gap:4px;margin-bottom:3px"><span style="font-size:11.5px;color:var(--text3)">${l}</span><span style="font-size:12px;color:var(--text)">${esc(String(v))}</span></div>`:'';
@@ -8722,8 +8775,8 @@ function _teRenderEntry(e){
   }
   else if(e.type==='hotel') det=fld('Hotel',d.hotelName)+fld('Location',d.where)+fld('Check-in',_fmtD(d.checkIn))+fld('Check-out',_fmtD(d.checkOut))+fld('Price/day',d.priceDay)+fld('Total',d.priceTotal)+fld('Payment',_payLabel(d.payment))+fld('Paid by',d.paidBy)+(d.hotelNotes?fld('Remarks',d.hotelNotes):'');
   else if(e.type==='expense') det=fld('What',d.what)+fld('Date',_fmtD(d.when))+fld('Location',d.where)+fld('Amount',d.amount)+fld('Paid by',d.paidBy)+fld('Payment',_payLabel(d.payment))+fld('Claimed',_teGetClaimed(e)==='yes'?'✅ Yes':'⏳ Not yet')+(d.expenseNotes?fld('Remarks',d.expenseNotes):'');
-  else if(e.type==='fixer') det=fld('Name',d.fixerName)+fld('Location',d.where)+fld('Phone',d.phone)+fld('Email',d.email)+fld('Start date',_fmtD(d.startDate))+fld('End date',_fmtD(d.endDate))+fld('Days',d.fixerDays)+fld('Rate / day',d.rateDay)+fld('Total',d.fixerTotal)+fld('Payment',_payLabel(d.payment))+fld('Paid by',d.paidBy)+fld('Status',d.status)+fld('Payment status',_teGetClaimed(e)==='yes'?'✅ Paid':'⏳ Unpaid / pending')+(d.fixerNotes?fld('Notes',d.fixerNotes):'');
-  else if(e.type==='other') det=fld('Description',d.what)+fld('Date',_fmtD(d.when))+fld('Amount',d.amount)+fld('Paid by',d.paidBy)+(d.otherNotes?fld('Remarks',d.otherNotes):'');
+  else if(e.type==='freelancer') det=fld('Name',d.fixerName)+fld('Location',d.where)+fld('Phone',d.phone)+fld('Email',d.email)+fld('Start date',_fmtD(d.startDate))+fld('End date',_fmtD(d.endDate))+fld('Days',d.fixerDays)+fld('Rate / day',d.rateDay)+fld('Total',d.fixerTotal)+fld('Payment',_payLabel(d.payment))+fld('Paid by',d.paidBy)+fld('Status',d.status)+fld('Payment',_payLabel(d.payment))+(d.fixerNotes?fld('Notes',d.fixerNotes):'');
+  else if(e.type==='other') det=fld('Description',d.what)+fld('Date',_fmtD(d.when))+fld('Amount',d.amount)+fld('Paid by',d.paidBy)+fld('Payment',_payLabel(d.payment))+(d.otherNotes?fld('Remarks',d.otherNotes):'');
 
   // Remarks — full inline CRUD panel
   const remHTML=_teBuildEntryRemarksHTML(e);
@@ -8741,10 +8794,11 @@ function _teRenderEntry(e){
       ${remHTML}
       <div style="display:flex;gap:7px;justify-content:flex-end;margin-top:10px;padding-top:8px;border-top:1px dashed var(--border);flex-wrap:wrap">
         ${!e.storyId?`<button class="btn btn-ghost btn-sm" onclick="_teRelinkEntry('${e.id}');event.stopPropagation()" style="color:var(--week);border-color:rgba(79,70,229,.3)" title="Link this entry to a story">🔗 Re-link</button>`:''}
-        ${e.type==='fixer'&&_teGetClaimed(e)!=='yes'?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),claimed:'yes'}});event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark paid</button>`:''}
-        ${e.type==='fixer'&&_teGetClaimed(e)==='yes'?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),claimed:'no'}});event.stopPropagation()" style="color:var(--text3)">↩ Undo paid</button>`:''}
+        ${e.type==='freelancer'&&d.payment==='unpaid'?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),payment:'cash'}});event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark paid</button>`:''}
+        ${e.type==='freelancer'&&d.payment!=='unpaid'&&d.payment?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),payment:'unpaid'}});event.stopPropagation()" style="color:var(--text3)">↩ Undo paid</button>`:''}
         ${e.type==='expense'&&_teGetClaimed(e)!=='yes'?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),claimed:'yes'}});event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark claimed</button>`:''}
-        ${['cab','flight','hotel','other'].includes(e.type)&&d.payment==='unpaid'?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),payment:'cash'}});event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark paid</button>`:''}
+        ${e.type==='other'&&d.payment==='unpaid'?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),payment:'cash'}});event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark paid</button>`:''}
+        ${['cab','flight','hotel','freelancer','other'].includes(e.type)&&d.payment==='unpaid'?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),payment:'cash'}});event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark paid</button>`:''}
         <button class="btn btn-ghost btn-sm" onclick="_teOpenForm({type:'${e.type}',storyId:${e.storyId?`'${e.storyId}'`:'null'},storySec:${e.storySec?`'${e.storySec}'`:'null'},editId:'${e.id}'});event.stopPropagation()">✏ Edit</button>
         <button class="btn btn-ghost btn-sm btn-danger" onclick="_teDelete('${e.id}');event.stopPropagation()">🗑 Delete</button>
       </div>
@@ -8780,14 +8834,11 @@ function _teMarkAllClaimed(sid){
 }
 function _teMarkAllPaid(sid){
   const isGen=(!sid||sid==='gen');
-  (state.travelEntries||[]).filter(e=>isGen?!e.storyId:e.storyId===sid).filter(e=>['cab','flight','hotel','other'].includes(e.type)&&e.data?.payment==='unpaid').forEach(e=>{
+  (state.travelEntries||[]).filter(e=>isGen?!e.storyId:e.storyId===sid).filter(e=>['cab','flight','hotel','freelancer','other'].includes(e.type)&&e.data?.payment==='unpaid').forEach(e=>{
     const i=(state.travelEntries||[]).findIndex(x=>x.id===e.id);
     if(i>=0) state.travelEntries[i]={...state.travelEntries[i],data:{...e.data,payment:'cash'},updated:Date.now()};
   });
-  (state.travelEntries||[]).filter(e=>isGen?!e.storyId:e.storyId===sid).filter(e=>e.type==='fixer'&&_teGetClaimed(e)!=='yes').forEach(e=>{
-    const i=(state.travelEntries||[]).findIndex(x=>x.id===e.id);
-    if(i>=0) state.travelEntries[i]={...state.travelEntries[i],data:{...e.data,claimed:'yes'},updated:Date.now()};
-  });
+  // freelancer and other now use the payment field (same as cab/hotel/flight) — handled in the filter above
   saveAndPush();
   toast('✅ All bookings marked paid');
   if(!isGen) setTimeout(()=>_teCheckAutoResolve(sid),0);
@@ -8800,28 +8851,53 @@ function _teMarkAllClaimedGroup(gid){
   });
   saveAndPush();
   toast('✅ All expenses marked claimed');
+  setTimeout(()=>_teCheckGroupAutoResolve(gid),0);
   _teRefresh();
 }
 function _teMarkAllPaidGroup(gid){
-  _teEntriesForGroup(gid).filter(e=>['cab','flight','hotel','other'].includes(e.type)&&e.data?.payment==='unpaid').forEach(e=>{
+  _teEntriesForGroup(gid).filter(e=>['cab','flight','hotel','freelancer','other'].includes(e.type)&&e.data?.payment==='unpaid').forEach(e=>{
     const i=(state.travelEntries||[]).findIndex(x=>x.id===e.id);
     if(i>=0) state.travelEntries[i]={...state.travelEntries[i],data:{...e.data,payment:'cash'},updated:Date.now()};
   });
-  _teEntriesForGroup(gid).filter(e=>e.type==='fixer'&&_teGetClaimed(e)!=='yes').forEach(e=>{
-    const i=(state.travelEntries||[]).findIndex(x=>x.id===e.id);
-    if(i>=0) state.travelEntries[i]={...state.travelEntries[i],data:{...e.data,claimed:'yes'},updated:Date.now()};
-  });
+  // freelancer and other now use the payment field — already handled in the loop above
   saveAndPush();
   toast('✅ All bookings marked paid');
+  setTimeout(()=>_teCheckGroupAutoResolve(gid),0);
   _teRefresh();
-}function _teBuildBookingsInner(sid, gid){
+}
+/** Calculate total cost of a set of booking entries */
+function _teBookingTotal(entries){
+  return entries.reduce((sum,e)=>{
+    const d=e.data||{};
+    let amt=0;
+    if(e.type==='hotel'){
+      const rate=parseFloat(String(d.priceDay||'').replace(/[^\d.]/g,''))||0;
+      const ci=d.checkIn?new Date(d.checkIn):null;
+      const co=d.checkOut?new Date(d.checkOut):null;
+      const nights=(ci&&co)?Math.max(0,Math.round((co-ci)/86400000)):1;
+      amt=rate*nights;
+    } else if(e.type==='freelancer'){
+      // Use fixerTotal if computed, else rateDay × fixerDays
+      amt=parseFloat(String(d.fixerTotal||'').replace(/[^\d.]/g,''))||
+          (parseFloat(String(d.rateDay||'').replace(/[^\d.]/g,''))||0)*(parseFloat(d.fixerDays)||1);
+    } else {
+      // cab, flight, other — use amount field if present
+      const m=String(d.amount||'').match(/[0-9]+(?:\.[0-9]+)?/);
+      amt=m?parseFloat(m[0]):0;
+    }
+    return sum+(isNaN(amt)?0:amt);
+  },0);
+}
+function _teBuildBookingsInner(sid, gid){
   const isGrp=sid&&sid.startsWith('grp:');
   const isGen=(!sid||sid==='gen')&&!isGrp;
-  const entries=(isGrp?_teEntriesForGroup(gid||sid.slice(4)):isGen?_teEntriesGeneral():_teEntriesForStory(sid)).filter(e=>['cab','flight','hotel','fixer','other'].includes(e.type));
+  const entries=(isGrp?_teEntriesForGroup(gid||sid.slice(4)):isGen?_teEntriesGeneral():_teEntriesForStory(sid)).filter(e=>['cab','flight','hotel','freelancer','freelancer','other'].includes(e.type));
   if(!entries.length) return '<div style="font-size:12px;color:var(--text3);padding:6px 2px">No bookings yet.</div>';
   const page=ui_teBookingsPage[sid]||1,limit=page*10,visible=entries.slice(0,limit),remaining=entries.length-limit;
   let h=visible.map(e=>_teRenderEntry(e)).join('');
   if(remaining>0) h+=`<div style="text-align:center;padding:7px 0;border-top:1px solid var(--border)"><button class="btn btn-ghost btn-sm" onclick="_teShowMoreBookings('${sid}');event.stopPropagation()" style="color:var(--accent);border-color:rgba(207,102,64,.3);font-size:11.5px">Show ${Math.min(remaining,10)} more <span style="opacity:.6;font-size:11px">(${remaining} remaining)</span></button></div>`;
+  const total=_teBookingTotal(entries);
+  if(total>0) h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 11px;background:rgba(79,70,229,.04);border-top:1px solid rgba(79,70,229,.15);margin-top:2px"><span style="font-size:12px;font-weight:600;color:var(--week)">Total bookings</span><span style="font-size:14px;font-weight:700;color:var(--week)">Rs ${total.toLocaleString('en-IN')}</span></div>`;
   return h;
 }
 function _teBuildExpensesInner(sid, gid){
@@ -8844,13 +8920,13 @@ function _teSubAccordionForGroup(gid){
   const sid='grp:'+gid;
   const sec=null;
   const entries=_teEntriesForGroup(gid);
-  const bookings=entries.filter(e=>['cab','flight','hotel','fixer','other'].includes(e.type));
+  const bookings=entries.filter(e=>['cab','flight','hotel','freelancer','other'].includes(e.type));
   const expenses=entries.filter(e=>e.type==='expense');
   const allClaimed=expenses.length>0&&expenses.every(e=>_teGetClaimed(e)==='yes');
   const expTotal=(()=>{const t=expenses.reduce((s,e)=>{const _m=String(e.data?.amount||'').match(/[0-9]+(?:\.[0-9]+)?/);const n=_m?parseFloat(_m[0]):0;return s+(isNaN(n)?0:n);},0);return t>0?'Rs '+t.toLocaleString('en-IN'):'';})();
   const bookOpen=ui_teBookingsOpen[sid]===true;
   const expOpen=ui_teExpensesOpen[sid]===true;
-  const allBookUnpaid=bookings.filter(e=>e.type==='fixer'?_teGetClaimed(e)!=='yes':e.data?.payment==='unpaid').length;
+  const allBookUnpaid=bookings.filter(e=>e.data?.payment==='unpaid').length;
   const allBookPaid=bookings.length>0&&allBookUnpaid===0;
   const bookBadges=(()=>{
     if(!bookings.length) return '';
@@ -8858,7 +8934,7 @@ function _teSubAccordionForGroup(gid){
     return (allBookUnpaid?`<span class="sbadge" style="background:rgba(186,117,23,.09);color:#854F0B;border:0.5px solid rgba(186,117,23,.3);font-size:11px"><span class="badge-dot" style="background:#BA7517"></span>${allBookUnpaid} unpaid</span>`:'')+
       `<span class="sbadge" style="background:rgba(37,99,235,.07);color:#1d4ed8;border:0.5px solid rgba(37,99,235,.25);font-size:11px">${bookings.length} entr${bookings.length===1?'y':'ies'}</span>`;
   })();
-  const addBookBtns=`<button class="ttb-add-btn ttb-cab" onclick="_teOpenForm({type:'cab'})">🚕 <span class="ttb-lbl">Cab</span></button><button class="ttb-add-btn ttb-flight" onclick="_teOpenForm({type:'flight'})">✈️ <span class="ttb-lbl">Flight</span></button><button class="ttb-add-btn ttb-hotel" onclick="_teOpenForm({type:'hotel'})">🏨 <span class="ttb-lbl">Hotel</span></button><button class="ttb-add-btn ttb-fixer" onclick="_teOpenForm({type:'fixer'})">🤝 <span class="ttb-lbl">Fixer</span></button><button class="ttb-add-btn ttb-other" onclick="_teOpenForm({type:'other'})">📦 <span class="ttb-lbl">Other</span></button>`;
+  const addBookBtns=`<button class="ttb-add-btn ttb-cab" onclick="_teOpenForm({type:'cab'})">🚕 <span class="ttb-lbl">Cab</span></button><button class="ttb-add-btn ttb-flight" onclick="_teOpenForm({type:'flight'})">✈️ <span class="ttb-lbl">Flight</span></button><button class="ttb-add-btn ttb-hotel" onclick="_teOpenForm({type:'hotel'})">🏨 <span class="ttb-lbl">Hotel</span></button><button class="ttb-add-btn ttb-freelancer" onclick="_teOpenForm({type:'freelancer'})">🧑‍💼 <span class="ttb-lbl">Freelancer</span></button><button class="ttb-add-btn ttb-other" onclick="_teOpenForm({type:'other'})">📦 <span class="ttb-lbl">Other</span></button>`;
   const addExpBtn=`<button class="btn btn-ghost btn-sm" onclick="_teOpenForm({type:'expense'})">💳 Add expense</button>`;
   return `<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleBookings('${sid}')"><span style="font-size:14px">🗓</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Bookings</span>${bookBadges}<span id="te-book-chev-${sid}" style="font-size:11px;color:var(--text3)">${bookOpen?'▾':'▸'}</span></div><div id="te-book-body-${sid}" style="display:${bookOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-book-inner-${sid}" style="padding:8px 11px">${_teBuildBookingsInner(sid,gid)}</div><div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addBookBtns}<div style='flex:1'></div>${allBookPaid?'':`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllPaidGroup('${gid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark all paid</button>`}</div></div></div>
     <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleExpenses('${sid}')"><span style="font-size:14px">💳</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Expenses</span>${allClaimed?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:expenses.filter(e=>_teGetClaimed(e)!=='yes').length?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${expenses.filter(e=>_teGetClaimed(e)!=='yes').length} unclaimed</span>`:''}${expTotal?`<span class="sbadge" style="background:rgba(13,148,136,.07);color:#0D9488;border:0.5px solid rgba(13,148,136,.25);font-weight:600;font-size:11px">${expTotal}</span>`:''}<span id="te-exp-chev-${sid}" style="font-size:11px;color:var(--text3)">${expOpen?'▾':'▸'}</span></div><div id="te-exp-body-${sid}" style="display:${expOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-exp-inner-${sid}" style="padding:8px 11px">${_teBuildExpensesInner(sid,gid)}</div><div style="display:flex;align-items:center;gap:5px;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addExpBtn}<div style="flex:1"></div>${allClaimed?`<button class="btn btn-ghost btn-sm" style="color:var(--text3);cursor:default">✓ Claimed</button>`:`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllClaimedGroup('${gid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark all claimed</button>`}</div></div></div>`;
@@ -8867,7 +8943,7 @@ function _teSubAccordionForGroup(gid){
 function _teSubAccordion(sid,sec){
   const isGen=(!sid||sid==='gen');
   const entries=isGen?_teEntriesGeneral():_teEntriesForStory(sid);
-  const bookings=entries.filter(e=>['cab','flight','hotel','fixer','other'].includes(e.type));
+  const bookings=entries.filter(e=>['cab','flight','hotel','freelancer','other'].includes(e.type));
   const expenses=entries.filter(e=>e.type==='expense');
   const allClaimed=expenses.length>0&&expenses.every(e=>_teGetClaimed(e)==='yes');
   const expTotal=(()=>{const t=expenses.reduce((s,e)=>{const _m=String(e.data?.amount||'').match(/[0-9]+(?:\.[0-9]+)?/);const n=_m?parseFloat(_m[0]):0;return s+(isNaN(n)?0:n);},0);return t>0?'Rs '+t.toLocaleString('en-IN'):'';})();
@@ -8875,9 +8951,9 @@ function _teSubAccordion(sid,sec){
   const expOpen=ui_teExpensesOpen[sid]===true;
   // Booking payment badges: unpaid count + entry count (only when unpaid) or "All paid"
   // Cab/flight/hotel: unpaid = data.payment === 'unpaid'
-  // Fixer: unpaid = _teGetClaimed(e) !== 'yes' (uses claimed field, same as expenses)
+  // All booking types use payment field — freelancer/other included
   const bookUnpaid=bookings.filter(e=>
-    e.type==='fixer' ? _teGetClaimed(e)!=='yes' : e.data?.payment==='unpaid'
+    e.data?.payment==='unpaid'
   ).length;
   const allBookPaid=bookings.length>0&&bookUnpaid===0;
   const bookBadges=(()=>{
@@ -8886,7 +8962,7 @@ function _teSubAccordion(sid,sec){
     return (bookUnpaid?`<span class="sbadge" style="background:rgba(186,117,23,.09);color:#854F0B;border:0.5px solid rgba(186,117,23,.3);font-size:11px"><span class="badge-dot" style="background:#BA7517"></span>${bookUnpaid} unpaid</span>`:'')
       +`<span class="sbadge" style="background:rgba(37,99,235,.07);color:#1d4ed8;border:0.5px solid rgba(37,99,235,.25);font-size:11px">${bookings.length} entr${bookings.length===1?'y':'ies'}</span>`;
   })();
-  const addBookBtns=isGen?`<button class="ttb-add-btn ttb-cab" onclick="_teOpenForm({type:'cab'})">🚕 <span class="ttb-lbl">Cab</span></button><button class="ttb-add-btn ttb-flight" onclick="_teOpenForm({type:'flight'})">✈️ <span class="ttb-lbl">Flight</span></button><button class="ttb-add-btn ttb-hotel" onclick="_teOpenForm({type:'hotel'})">🏨 <span class="ttb-lbl">Hotel</span></button><button class="ttb-add-btn ttb-fixer" onclick="_teOpenForm({type:'fixer'})">🤝 <span class="ttb-lbl">Fixer</span></button><button class="ttb-add-btn ttb-other" onclick="_teOpenForm({type:'other'})">📦 <span class="ttb-lbl">Other</span></button>`:`<button class="ttb-add-btn ttb-cab" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'cab'})">🚕 <span class="ttb-lbl">Cab</span></button><button class="ttb-add-btn ttb-flight" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'flight'})">✈️ <span class="ttb-lbl">Flight</span></button><button class="ttb-add-btn ttb-hotel" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'hotel'})">🏨 <span class="ttb-lbl">Hotel</span></button><button class="ttb-add-btn ttb-fixer" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'fixer'})">🤝 <span class="ttb-lbl">Fixer</span></button><button class="ttb-add-btn ttb-other" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'other'})">📦 <span class="ttb-lbl">Other</span></button>`;
+  const addBookBtns=isGen?`<button class="ttb-add-btn ttb-cab" onclick="_teOpenForm({type:'cab'})">🚕 <span class="ttb-lbl">Cab</span></button><button class="ttb-add-btn ttb-flight" onclick="_teOpenForm({type:'flight'})">✈️ <span class="ttb-lbl">Flight</span></button><button class="ttb-add-btn ttb-hotel" onclick="_teOpenForm({type:'hotel'})">🏨 <span class="ttb-lbl">Hotel</span></button><button class="ttb-add-btn ttb-freelancer" onclick="_teOpenForm({type:'freelancer'})">🧑‍💼 <span class="ttb-lbl">Freelancer</span></button><button class="ttb-add-btn ttb-other" onclick="_teOpenForm({type:'other'})">📦 <span class="ttb-lbl">Other</span></button>`:`<button class="ttb-add-btn ttb-cab" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'cab'})">🚕 <span class="ttb-lbl">Cab</span></button><button class="ttb-add-btn ttb-flight" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'flight'})">✈️ <span class="ttb-lbl">Flight</span></button><button class="ttb-add-btn ttb-hotel" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'hotel'})">🏨 <span class="ttb-lbl">Hotel</span></button><button class="ttb-add-btn ttb-freelancer" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'freelancer'})">🧑‍💼 <span class="ttb-lbl">Freelancer</span></button><button class="ttb-add-btn ttb-other" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'other'})">📦 <span class="ttb-lbl">Other</span></button>`;
   const addExpBtn=isGen?`<button class="btn btn-ghost btn-sm" onclick="_teOpenForm({type:'expense'})">💳 Add expense</button>`:`<button class="btn btn-ghost btn-sm" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'expense'})">💳 Add expense</button>`;
   return `<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleBookings('${sid}')"><span style="font-size:14px">🗓</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Bookings</span>${bookBadges}<span id="te-book-chev-${sid}" style="font-size:11px;color:var(--text3)">${bookOpen?'▾':'▸'}</span></div><div id="te-book-body-${sid}" style="display:${bookOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-book-inner-${sid}" style="padding:8px 11px">${_teBuildBookingsInner(sid)}</div><div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addBookBtns}<div style='flex:1'></div>${allBookPaid?'':`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllPaid('${sid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark all paid</button>`}</div></div></div>
     <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleExpenses('${sid}')"><span style="font-size:14px">💳</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Expenses</span>${allClaimed?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:expenses.filter(e=>_teGetClaimed(e)!=='yes').length?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${expenses.filter(e=>_teGetClaimed(e)!=='yes').length} unclaimed</span>`:''}${expTotal?`<span class="sbadge" style="background:rgba(13,148,136,.07);color:#0D9488;border:0.5px solid rgba(13,148,136,.25);font-weight:600;font-size:11px">${expTotal}</span>`:''}<span id="te-exp-chev-${sid}" style="font-size:11px;color:var(--text3)">${expOpen?'▾':'▸'}</span></div><div id="te-exp-body-${sid}" style="display:${expOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-exp-inner-${sid}" style="padding:8px 11px">${_teBuildExpensesInner(sid)}</div><div style="display:flex;align-items:center;gap:5px;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addExpBtn}<div style="flex:1"></div>${allClaimed?`<button class="btn btn-ghost btn-sm" style="color:var(--text3);cursor:default">✓ Claimed</button>`:`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllClaimed('${sid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark all claimed</button>`}</div></div></div>`;
@@ -8901,9 +8977,9 @@ function _teRenderBody(){
   if(_te.open) html+=_teBuildForm();
   stories.forEach(({sec,s})=>{
     const entries=_teEntriesForStory(s.id),expenses=entries.filter(e=>e.type==='expense'),unclaimed=expenses.filter(e=>_teGetClaimed(e)!=='yes').length,allClaimed=expenses.length>0&&unclaimed===0;
-    const bookingsAll=entries.filter(e=>['cab','flight','hotel','fixer','other'].includes(e.type));
+    const bookingsAll=entries.filter(e=>['cab','flight','hotel','freelancer','other'].includes(e.type));
     const bookUnpaid=bookingsAll.filter(e=>
-      e.type==='fixer' ? _teGetClaimed(e)!=='yes' : e.data?.payment==='unpaid'
+      e.data?.payment==='unpaid'
     ).length;
     const allBookPaid=bookingsAll.length>0&&bookUnpaid===0;
     const bookPayBadge=allBookPaid?`<span class="sbadge sb-in-progress">All paid</span>`:bookUnpaid?`<span class="sbadge sb-in-progress">${bookUnpaid} unpaid</span>`:'';
@@ -8952,7 +9028,8 @@ function _teRenderBody(){
   const dismissedGroups=new Set(state.travelGroupDismissed||[]);
   // Legacy: honour the old travelGeneralDismissed flag for the __default group
   if(state.travelGeneralDismissed) dismissedGroups.add('__default');
-  const activeGroups=allGroups.filter(g=>!dismissedGroups.has(g.groupId));
+  const groupAutoResolved=new Set(state.travelGroupAutoResolved||[]);
+  const activeGroups=allGroups.filter(g=>!dismissedGroups.has(g.groupId)&&!groupAutoResolved.has(g.groupId));
   if(activeGroups.length||stories.length===0){
     activeGroups.forEach(({groupId:gid,groupLabel:glbl})=>{
       const grpEntries=_teEntriesForGroup(gid);
@@ -8984,8 +9061,9 @@ function _teRenderBody(){
   // Also catch resolved orphan storyIds not in _teGetStories
   const orphanResolvedIds=autoResolved.filter(sid=>!_teGetStories().some(({s})=>s.id===sid));
   const dismissedStories=_teGetStories().filter(({s})=>dismissed.includes(s.id));
-  const dismissedGrps=allGroups.filter(g=>dismissedGroups.has(g.groupId));
-  const totalResolved=autoResolvedStories.length+orphanResolvedIds.length+dismissedStories.length+dismissedGrps.length;
+  const dismissedGrps=allGroups.filter(g=>dismissedGroups.has(g.groupId)&&!groupAutoResolved.has(g.groupId));
+  const autoResolvedGrps=allGroups.filter(g=>groupAutoResolved.has(g.groupId));
+  const totalResolved=autoResolvedStories.length+orphanResolvedIds.length+dismissedStories.length+dismissedGrps.length+autoResolvedGrps.length;
   if(totalResolved>0){
     // Use task-section-divider pattern to match Stories/Tasks/Notes resolved sections
     html+=`<div class="task-section-divider" style="color:var(--done);border-bottom-color:rgba(22,163,74,.2);margin-top:8px" onclick="ui_teResolvedOpen=!ui_teResolvedOpen;const b=document.getElementById('te-resolved-body');if(b)b.style.display=ui_teResolvedOpen?'block':'none';this.querySelector('.te-res-chev').textContent=ui_teResolvedOpen?'▾':'▸'">✅ ${totalResolved} resolved <span style="font-size:10px;font-weight:400;opacity:.7;font-family:var(--font)">· all paid &amp; claimed</span><span class="te-res-chev tsd-chev">${ui_teResolvedOpen?'▾':'▸'}</span></div>`;
@@ -8995,7 +9073,11 @@ function _teRenderBody(){
     const _renderResolvedStory=(s,sec)=>{
       const entries=_teEntriesForStory(s.id);
       const expenses=entries.filter(e=>e.type==='expense');
-      const bookings=entries.filter(e=>['cab','flight','hotel','fixer','other'].includes(e.type));
+      const bookings=entries.filter(e=>['cab','flight','hotel','freelancer','other'].includes(e.type));
+      const bookTotal=_teBookingTotal(bookings);
+      const expTotal=expenses.reduce((sum,e)=>{const m=String(e.data?.amount||'').match(/[0-9]+(?:\.[0-9]+)?/);return sum+(m?parseFloat(m[0]):0);},0);
+      const bookTotalBadge=bookTotal>0?`<span class="sbadge" style="background:rgba(79,70,229,.07);color:var(--week);border:0.5px solid rgba(79,70,229,.25);font-weight:600;font-size:11px">Rs ${bookTotal.toLocaleString('en-IN')}</span>`:'';
+      const expTotalBadge=expTotal>0?`<span class="sbadge" style="background:rgba(13,148,136,.07);color:#0D9488;border:0.5px solid rgba(13,148,136,.25);font-weight:600;font-size:11px">Rs ${expTotal.toLocaleString('en-IN')}</span>`:'';
       const bookPayBadge=`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>All paid</span>`;
       const claimBadge=expenses.length?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:'';
       const knownTitle=teStoryTitleMap.get(s.id)||s.title||'Untitled';
@@ -9003,7 +9085,7 @@ function _teRenderBody(){
         <div style="display:flex;align-items:center;gap:7px;padding:8px 13px;background:rgba(22,163,74,.05);border-bottom:1px solid rgba(22,163,74,.12);flex-wrap:wrap">
           <span style="font-size:13px">📡</span>
           <span style="font-size:13px;font-weight:600;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:80px">${esc(knownTitle)}</span>
-          ${bookPayBadge}${claimBadge}
+          ${bookPayBadge}${claimBadge}${bookTotalBadge}${expTotalBadge}
           <button onclick="_teRestoreStory('${s.id}')" style="padding:2px 8px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--accent);cursor:pointer;flex-shrink:0" title="Reopen to active list">↩ Reopen</button>
           <button onclick="if(confirm('Delete this story and all its entries?'))_teDeleteStory('${s.id}')" style="padding:2px 7px;font-size:10px;border:1px solid rgba(220,38,38,.3);border-radius:5px;background:transparent;color:#DC2626;cursor:pointer;flex-shrink:0">🗑</button>
         </div>
@@ -9061,6 +9143,31 @@ function _teRenderBody(){
         </div>
       </div>`;
     });
+    // Auto-resolved general groups (all paid+claimed)
+    autoResolvedGrps.forEach(({groupId:gid,groupLabel:glbl})=>{
+      const grpEntries=_teEntriesForGroup(gid);
+      const grpExp=grpEntries.filter(e=>e.type==='expense');
+      const grpBook=grpEntries.filter(e=>['cab','flight','hotel','freelancer','other'].includes(e.type));
+      const bookTotal=_teBookingTotal(grpBook);
+      const expTotal=grpExp.reduce((sum,e)=>{const m=String(e.data?.amount||'').match(/[0-9]+(?:\.[0-9]+)?/);return sum+(m?parseFloat(m[0]):0);},0);
+      const bookTotalBadge=bookTotal>0?`<span class="sbadge" style="background:rgba(79,70,229,.07);color:var(--week);border:0.5px solid rgba(79,70,229,.25);font-weight:600;font-size:11px">Rs ${bookTotal.toLocaleString('en-IN')}</span>`:'';
+      const expTotalBadge=expTotal>0?`<span class="sbadge" style="background:rgba(13,148,136,.07);color:#0D9488;border:0.5px solid rgba(13,148,136,.25);font-weight:600;font-size:11px">Rs ${expTotal.toLocaleString('en-IN')}</span>`:'';
+      const grpIcon=gid==='__default'?'📋':'🗂';
+      html+=`<div style="margin-bottom:10px;background:var(--surface);border:1px solid rgba(22,163,74,.2);border-radius:10px;overflow:hidden;opacity:.88">
+        <div style="display:flex;align-items:center;gap:7px;padding:8px 13px;background:rgba(22,163,74,.05);border-bottom:1px solid rgba(22,163,74,.12);flex-wrap:wrap">
+          <span style="font-size:13px">${grpIcon}</span>
+          <span style="font-size:13px;font-weight:600;color:var(--text2);flex:1">${esc(glbl)}</span>
+          <span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>All paid</span>
+          <span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>
+          ${bookTotalBadge}${expTotalBadge}
+          <button onclick="_teRestoreGroup('${gid}')" style="padding:2px 8px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--accent);cursor:pointer;flex-shrink:0">↩ Reopen</button>
+          <button onclick="_teConfirmDeleteGroup(this)" data-gid="${esc(gid)}" data-glbl="${esc(glbl)}" style="padding:2px 7px;font-size:10px;border:1px solid rgba(220,38,38,.3);border-radius:5px;background:transparent;color:#DC2626;cursor:pointer;flex-shrink:0">🗑</button>
+        </div>
+        <div style="padding:10px 13px;display:flex;flex-direction:column;gap:6px;opacity:.75">
+          ${grpEntries.map(e=>_teRenderEntry(e)).join('')||`<div style="font-size:12px;color:var(--text3)">No entries</div>`}
+        </div>
+      </div>`;
+    });
     html+=`</div>`; // close te-resolved-body
   }
   return html;
@@ -9074,9 +9181,9 @@ function renderTravelSection(){
   const allExp=allEntries.filter(e=>e.type==='expense');
   const notClaimedCount=allExp.filter(e=>_teGetClaimed(e)!=='yes').length;
   const allClaimed=allExp.length>0&&notClaimedCount===0;
-  const allBookings=allEntries.filter(e=>['cab','flight','hotel','fixer','other'].includes(e.type));
+  const allBookings=allEntries.filter(e=>['cab','flight','hotel','freelancer','other'].includes(e.type));
   const allBookUnpaid=allBookings.filter(e=>
-    e.type==='fixer' ? _teGetClaimed(e)!=='yes' : e.data?.payment==='unpaid'
+    e.data?.payment==='unpaid'
   ).length;
   const allBookPaid=allBookings.length>0&&allBookUnpaid===0;
 
@@ -9091,13 +9198,20 @@ function renderTravelSection(){
     return da.localeCompare(db);
   });
   const hasAnyEntries=(state.travelEntries||[]).some(e=>!e._deleted);
-  const allResolved=hasAnyEntries&&stories.length===0;
+  // allResolved: no active story-linked cards AND no active general groups
+  const _allGrps=_teGetGeneralGroups();
+  const _dismissedGrps2=new Set(state.travelGroupDismissed||[]);
+  if(state.travelGeneralDismissed) _dismissedGrps2.add('__default');
+  const _grpAutoRes=new Set(state.travelGroupAutoResolved||[]);
+  const _activeGrps=_allGrps.filter(g=>!_dismissedGrps2.has(g.groupId)&&!_grpAutoRes.has(g.groupId)&&_teEntriesForGroup(g.groupId).length>0);
+  const allResolved=hasAnyEntries&&stories.length===0&&_activeGrps.length===0;
   const summary=allResolved?'All resolved':stories.length?esc((stories[0].s.title||'').slice(0,32)):'';
 
   const travelStrip=(()=>{
-    if(!summary) return '';
-    const dotCol=allResolved?'#16A34A':notClaimedCount?'#D97706':allClaimed?'#16A34A':'#94a3b8';
-    if(allResolved) return `<div class="acc-info-strip"><span style="width:5px;height:5px;border-radius:50%;background:#16A34A;flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:var(--done);font-style:italic;font-family:var(--font);flex:1;margin-left:5px">All paid &amp; claimed ✅</span></div>`;
+    if(!hasAnyEntries) return '';
+    if(allResolved) return `<div class="acc-info-strip"><span style="font-size:10px;color:var(--text3);font-style:italic;font-family:var(--font);flex:1">All resolved</span></div>`;
+    if(!stories.length) return '';
+    const dotCol=notClaimedCount?'#D97706':allClaimed?'#16A34A':'#94a3b8';
     const firstStory=stories[0]?.s;
     let meta='';
     if(firstStory?.deadline_date){
@@ -9109,24 +9223,23 @@ function renderTravelSection(){
     } else if(stories.length>1){
       meta=`<span style="font-size:10px;color:#888;font-family:var(--font);flex-shrink:0;margin-left:4px">+${stories.length-1} more</span>`;
     }
-    return `<div class="acc-info-strip"><span style="width:5px;height:5px;border-radius:50%;background:${dotCol};flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:var(--text2);font-style:italic;font-family:var(--font);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:5px">${summary}</span>${meta}</div>`;
+    return `<div class="acc-info-strip"><span style="width:5px;height:5px;border-radius:50%;background:${dotCol};flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:var(--text2);font-style:italic;font-family:var(--font);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:5px">${esc((firstStory?.title||'').slice(0,32))}</span>${meta}</div>`;
   })();
 
   return`<div class="accordion${isOpen?' acc-open':''}" id="acc-travel">
     <div class="acc-header" onclick="toggleAccordion('travel')">
       <span class="acc-icon">🗺</span>
       <span class="acc-name">Travel &amp; Expenses</span>
-      <span class="acc-summary" id="acc-travel-summary">${summary}</span>
+      <span class="acc-summary" id="acc-travel-summary">${allResolved?'All resolved':stories.length?esc((stories[0].s.title||'').slice(0,32)):''}</span>
       <div class="acc-meta" id="acc-travel-meta">
-        ${allResolved?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>All resolved</span>`:''}
         ${!allResolved&&allBookUnpaid?`<span class="sbadge sb-in-progress">${allBookUnpaid} unpaid</span>`:''}
-        ${!allResolved&&allBookPaid&&allEntries.filter(e=>['cab','flight','hotel','fixer','other'].includes(e.type)).length?`<span class="sbadge sb-in-progress">All paid</span>`:''}
+        ${!allResolved&&allBookPaid&&allEntries.filter(e=>['cab','flight','hotel','freelancer','other'].includes(e.type)).length?`<span class="sbadge sb-in-progress">All paid</span>`:''}
         ${!allResolved&&notClaimedCount?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${notClaimedCount} unclaimed</span>`:''}
         ${!allResolved&&allClaimed&&allExp.length?`<span class="sbadge sb-in-progress">All claimed</span>`:''}
       </div>
       <span class="acc-chevron${isOpen?' open':''}" id="acc-chev-travel">▾</span>
     </div>
-    <div id="acc-travel-strip">${travelStrip}</div>
+    <div id="acc-travel-strip" class="acc-info-strip" style="padding:0">${travelStrip}</div>
     <div class="acc-body${isOpen?' open':''}" id="acc-body-travel">
       ${isOpen?_teRenderBody():''}
     </div>
@@ -9162,7 +9275,8 @@ function doExportTravelTxt(){
       else if(e.type==='flight'){ lines.push(pad('  Direction',d.direction==='inbound'?'Inbound / Return':'Outbound')); if(d.airline) lines.push(pad('  Airline',d.airline)); if(d.flightNum) lines.push(pad('  Flight no.',d.flightNum)); if(d.from||d.to) lines.push(pad('  Route',[d.from,d.to].filter(Boolean).join(' → '))); if(d.when) lines.push(pad('  When',_fmtDT(d.when))); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); }
       else if(e.type==='hotel'){ if(d.hotelName) lines.push(pad('  Hotel',d.hotelName)); if(d.where) lines.push(pad('  Location',d.where)); if(d.checkIn) lines.push(pad('  Check-in',_fmtD(d.checkIn))); if(d.checkOut) lines.push(pad('  Check-out',_fmtD(d.checkOut))); if(d.priceDay) lines.push(pad('  Price/day',d.priceDay)); if(d.priceTotal) lines.push(pad('  Total',d.priceTotal)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); }
       else if(e.type==='expense'){ if(d.what) lines.push(pad('  What',d.what)); if(d.when) lines.push(pad('  Date',_fmtD(d.when))); if(d.where) lines.push(pad('  Location',d.where)); if(d.amount) lines.push(pad('  Amount',d.amount)); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); lines.push(pad('  Claimed',_teGetClaimed(e)==='yes'?'Yes':'No')); }
-      else if(e.type==='fixer'){ if(d.fixerName) lines.push(pad('  Name',d.fixerName)); if(d.where) lines.push(pad('  Location',d.where)); if(d.phone) lines.push(pad('  Phone',d.phone)); if(d.startDate) lines.push(pad('  Start',_fmtD(d.startDate))); if(d.endDate) lines.push(pad('  End',_fmtD(d.endDate))); if(d.fixerDays) lines.push(pad('  Days',d.fixerDays)); if(d.rateDay) lines.push(pad('  Rate/day',d.rateDay)); if(d.fixerTotal) lines.push(pad('  Total',d.fixerTotal)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); lines.push(pad('  Paid',_teGetClaimed(e)==='yes'?'Yes':'No')); if(d.fixerNotes) lines.push(pad('  Notes',d.fixerNotes)); }
+      else if(e.type==='freelancer'){ if(d.fixerName) lines.push(pad('  Name',d.fixerName)); if(d.where) lines.push(pad('  Location',d.where)); if(d.phone) lines.push(pad('  Phone',d.phone)); if(d.startDate) lines.push(pad('  Start',_fmtD(d.startDate))); if(d.endDate) lines.push(pad('  End',_fmtD(d.endDate))); if(d.fixerDays) lines.push(pad('  Days',d.fixerDays)); if(d.rateDay) lines.push(pad('  Rate/day',d.rateDay)); if(d.fixerTotal) lines.push(pad('  Total',d.fixerTotal)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); if(d.fixerNotes) lines.push(pad('  Notes',d.fixerNotes)); }
+      else if(e.type==='other'){ if(d.what) lines.push(pad('  Description',d.what)); if(d.when) lines.push(pad('  Date',_fmtD(d.when))); if(d.amount) lines.push(pad('  Amount',d.amount)); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); if(d.otherNotes) lines.push(pad('  Notes',d.otherNotes)); }
       (e.remarks||[]).forEach(r=>lines.push(pad('  Note',r.text)));
     });
   });
@@ -9186,7 +9300,7 @@ function doEmailTravel(){
   _teGetStories().forEach(({s})=>{
     const grp=byStory[s.id]; if(!grp) return;
     lines.push((s.title||'Untitled').toUpperCase());
-    grp.forEach(e=>{ const d=e.data||{}; let line='  '+(_typeIco[e.type]||''); if(e.type==='cab') line+=' '+[d.from,d.to].filter(Boolean).join(' → ')+(d.when?' · '+_fmtDShort(d.when.slice(0,10)):''); else if(e.type==='flight') line+=' '+(d.direction==='inbound'?'↩':' →')+' '+(d.from||'')+(d.to?' → '+d.to:''); else if(e.type==='hotel') line+=' '+(d.hotelName||d.where||'')+(d.checkIn?' · '+_fmtDShort(d.checkIn):''); else if(e.type==='expense') line+=' '+(d.what||'')+(d.amount?' · '+d.amount:'')+(_teGetClaimed(e)==='yes'?' · ✅':' · ⏳'); else if(e.type==='fixer') line+=' '+(d.fixerName||'')+(d.where?' · '+d.where:'')+(d.fixerTotal?' · '+d.fixerTotal:'')+(_teGetClaimed(e)==='yes'?' · ✅':' · ⏳'); else if(e.type==='other') line+=' '+(d.what||'')+(d.amount?' · '+d.amount:'')+(d.when?' · '+_fmtDShort(d.when):''); lines.push(line); });
+    grp.forEach(e=>{ const d=e.data||{}; let line='  '+(_typeIco[e.type]||''); if(e.type==='cab') line+=' '+[d.from,d.to].filter(Boolean).join(' → ')+(d.when?' · '+_fmtDShort(d.when.slice(0,10)):''); else if(e.type==='flight') line+=' '+(d.direction==='inbound'?'↩':' →')+' '+(d.from||'')+(d.to?' → '+d.to:''); else if(e.type==='hotel') line+=' '+(d.hotelName||d.where||'')+(d.checkIn?' · '+_fmtDShort(d.checkIn):''); else if(e.type==='expense') line+=' '+(d.what||'')+(d.amount?' · '+d.amount:'')+(_teGetClaimed(e)==='yes'?' · ✅':' · ⏳'); else if(e.type==='freelancer') line+=' '+(d.fixerName||'')+(d.where?' · '+d.where:'')+(d.fixerTotal?' · '+d.fixerTotal:'')+((d.payment&&d.payment!=='unpaid')?' · ✅':' · ⏳'); else if(e.type==='other') line+=' '+(d.what||'')+(d.amount?' · '+d.amount:'')+(d.when?' · '+_fmtDShort(d.when):''); lines.push(line); });
     lines.push('');
   });
   const gen=byStory['__general']; if(gen){ lines.push('GENERAL'); gen.forEach(e=>{ const d=e.data||{}; lines.push('  '+(_typeIco[e.type]||'')+' '+(d.what||d.from||d.hotelName||'')); }); }

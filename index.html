@@ -5710,6 +5710,7 @@ let ui_teBookingsOpen={};
 let ui_teExpensesOpen={};
 let ui_teBookingsPage={};
 let ui_teExpensesPage={};
+let ui_teResolvedOpen=false; // resolved section open/closed state — persists across refreshes
 
 function addTask(data){
   if(!state.tasks) state.tasks=[];
@@ -8280,11 +8281,12 @@ function _teRefresh(){
 
   const today=todayStr();
   const stories=_teGetStories().filter(({s})=>!(state.travelDismissed||[]).includes(s.id)&&!(state.travelAutoResolved||[]).includes(s.id));
-  const summary=stories.length?esc((stories[0].s.title||'').slice(0,32)):'';
+  const hasAnyEntries=(state.travelEntries||[]).some(e=>!e._deleted);
+  const allResolved=hasAnyEntries&&stories.length===0;
   const sumEl=document.getElementById('acc-travel-summary');
-  if(sumEl) sumEl.textContent=stories.length?(stories[0].s.title||'').slice(0,32):'';
+  if(sumEl) sumEl.textContent=allResolved?'All resolved':stories.length?(stories[0].s.title||'').slice(0,32):'';
 
-  const dotCol=notClaimedCount?'#D97706':allClaimed?'#16A34A':'#94a3b8';
+  const dotCol=allResolved?'#16A34A':notClaimedCount?'#D97706':allClaimed?'#16A34A':'#94a3b8';
   const firstStory=stories[0]?.s;
   let meta='';
   if(firstStory?.deadline_date){
@@ -8296,7 +8298,9 @@ function _teRefresh(){
   }
   const stripEl=document.getElementById('acc-travel-strip');
   if(stripEl){
-    stripEl.innerHTML=summary?`<div class="acc-info-strip"><span style="width:5px;height:5px;border-radius:50%;background:${dotCol};flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:var(--text2);font-style:italic;font-family:var(--font);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:5px">${summary}</span>${meta}</div>`:'';
+    const stripSummary=allResolved?'All resolved':stories.length?(stories[0].s.title||'').slice(0,32):'';
+    const stripMeta=allResolved?`<span style="font-size:10px;color:var(--done);font-family:var(--font);flex-shrink:0;margin-left:4px">✅</span>`:meta;
+    stripEl.innerHTML=stripSummary?`<div class="acc-info-strip"><span style="width:5px;height:5px;border-radius:50%;background:${dotCol};flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:${allResolved?'var(--done)':'var(--text2)'};font-style:italic;font-family:var(--font);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:5px">${stripSummary}</span>${stripMeta}</div>`:'';
   }
 }
 
@@ -8975,73 +8979,89 @@ function _teRenderBody(){
   if(stories.length===0&&_teEntriesGeneral().length===0&&!_te.open) html+=`<div style="text-align:center;padding:22px 16px;color:var(--text3);font-size:13px">No travel or expenses yet. Use <strong style="color:var(--accent)">+ Add</strong> to log a cab, flight, hotel or expense.</div>`;
 
   // ── Resolved section: auto-resolved (all paid+claimed) + manually dismissed ──
+  // Also include orphaned storyIds that are in autoResolved (story not in _teGetStories)
   const autoResolvedStories=_teGetStories().filter(({s})=>autoResolved.includes(s.id));
+  // Also catch resolved orphan storyIds not in _teGetStories
+  const orphanResolvedIds=autoResolved.filter(sid=>!_teGetStories().some(({s})=>s.id===sid));
   const dismissedStories=_teGetStories().filter(({s})=>dismissed.includes(s.id));
   const dismissedGrps=allGroups.filter(g=>dismissedGroups.has(g.groupId));
-  const totalResolved=autoResolvedStories.length+dismissedStories.length+dismissedGrps.length;
+  const totalResolved=autoResolvedStories.length+orphanResolvedIds.length+dismissedStories.length+dismissedGrps.length;
   if(totalResolved>0){
-    html+=`<div style="margin-top:10px;border:1px solid rgba(22,163,74,.2);border-radius:10px;overflow:hidden;background:rgba(22,163,74,.04)">
-      <div style="display:flex;align-items:center;gap:7px;padding:9px 13px;cursor:pointer;user-select:none;background:rgba(22,163,74,.07);border-bottom:1px solid rgba(22,163,74,.15)" onclick="(function(el){const b=el.nextElementSibling;const open=b.style.display==='none'||!b.style.display;b.style.display=open?'flex':'none';el.querySelector('.te-res-chev').textContent=open?'▾':'▸';})(this)">
-        <span style="font-size:14px">✅</span>
-        <span style="font-size:12px;font-weight:600;color:#15803D;font-family:var(--font)">${totalResolved} resolved</span>
-        <span style="font-size:11px;color:#15803D;opacity:.7;font-family:var(--font)">&nbsp;· all paid &amp; claimed</span>
-        <span class="te-res-chev" style="font-size:11px;color:#15803D;margin-left:auto">▸</span>
-      </div>
-      <div style="display:none;flex-direction:column;gap:8px;padding:10px 13px">`;
+    // Use task-section-divider pattern to match Stories/Tasks/Notes resolved sections
+    html+=`<div class="task-section-divider" style="color:var(--done);border-bottom-color:rgba(22,163,74,.2);margin-top:8px" onclick="ui_teResolvedOpen=!ui_teResolvedOpen;const b=document.getElementById('te-resolved-body');if(b)b.style.display=ui_teResolvedOpen?'block':'none';this.querySelector('.te-res-chev').textContent=ui_teResolvedOpen?'▾':'▸'">✅ ${totalResolved} resolved <span style="font-size:10px;font-weight:400;opacity:.7;font-family:var(--font)">· all paid &amp; claimed</span><span class="te-res-chev tsd-chev">${ui_teResolvedOpen?'▾':'▸'}</span></div>`;
+    html+=`<div id="te-resolved-body" style="display:${ui_teResolvedOpen?'block':'none'}">`;
 
-    // Helper: render a resolved story card
-    const _renderResolvedStory=(s,sec,isAuto)=>{
+    // Helper: render a resolved story card — uses _teSubAccordion so Reopen restores structure
+    const _renderResolvedStory=(s,sec)=>{
       const entries=_teEntriesForStory(s.id);
       const expenses=entries.filter(e=>e.type==='expense');
       const bookings=entries.filter(e=>['cab','flight','hotel','fixer','other'].includes(e.type));
-      const unclaimed=expenses.filter(e=>_teGetClaimed(e)!=='yes').length;
-      const allClaimed=expenses.length>0&&unclaimed===0;
-      const bookUnpaid=bookings.filter(e=>e.type==='fixer'?_teGetClaimed(e)!=='yes':e.data?.payment==='unpaid').length;
-      const allBookPaid=bookings.length>0&&bookUnpaid===0;
-      const bookPayBadge=allBookPaid?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>All paid</span>`:bookUnpaid?`<span class="sbadge sb-in-progress">${bookUnpaid} unpaid</span>`:'';
-      const claimBadge=allClaimed?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:unclaimed?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${unclaimed} unclaimed</span>`:'';
-      const allEntriesHtml=entries.map(e=>_teRenderEntry(e)).join('');
-      const restoreBtn=`<button onclick="_teRestoreStory('${s.id}')" style="padding:2px 8px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--accent);cursor:pointer;flex-shrink:0" title="Restore to active list">↩ Reopen</button>`;
-      const deleteBtn=`<button onclick="if(confirm('Permanently delete this story and all its entries?'))_teDeleteStory('${s.id}')" style="padding:2px 7px;font-size:10px;border:1px solid rgba(220,38,38,.3);border-radius:5px;background:transparent;color:#DC2626;cursor:pointer;flex-shrink:0">🗑</button>`;
-      return `<div style="background:var(--surface);border:1px solid rgba(22,163,74,.2);border-radius:8px;overflow:hidden;opacity:.92">
+      const bookPayBadge=`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>All paid</span>`;
+      const claimBadge=expenses.length?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:'';
+      const knownTitle=teStoryTitleMap.get(s.id)||s.title||'Untitled';
+      return `<div style="margin-bottom:10px;background:var(--surface);border:1px solid rgba(22,163,74,.2);border-radius:10px;overflow:hidden;opacity:.88">
         <div style="display:flex;align-items:center;gap:7px;padding:8px 13px;background:rgba(22,163,74,.05);border-bottom:1px solid rgba(22,163,74,.12);flex-wrap:wrap">
           <span style="font-size:13px">📡</span>
-          <span style="font-size:13px;font-weight:600;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:80px">${esc(s.title||'Untitled')}</span>
+          <span style="font-size:13px;font-weight:600;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:80px">${esc(knownTitle)}</span>
           ${bookPayBadge}${claimBadge}
-          ${restoreBtn}${deleteBtn}
+          <button onclick="_teRestoreStory('${s.id}')" style="padding:2px 8px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--accent);cursor:pointer;flex-shrink:0" title="Reopen to active list">↩ Reopen</button>
+          <button onclick="if(confirm('Delete this story and all its entries?'))_teDeleteStory('${s.id}')" style="padding:2px 7px;font-size:10px;border:1px solid rgba(220,38,38,.3);border-radius:5px;background:transparent;color:#DC2626;cursor:pointer;flex-shrink:0">🗑</button>
         </div>
-        <div style="padding:10px 13px;display:flex;flex-direction:column;gap:6px">
-          ${allEntriesHtml||`<div style="font-size:12px;color:var(--text3);padding:4px 0">No entries</div>`}
+        <div style="padding:10px 13px;display:flex;flex-direction:column;gap:6px;opacity:.75">
+          ${entries.map(e=>_teRenderEntry(e)).join('')||`<div style="font-size:12px;color:var(--text3)">No entries</div>`}
         </div>
       </div>`;
     };
 
-    // Auto-resolved first (fully paid+claimed), then manually dismissed
-    autoResolvedStories.forEach(({s,sec})=>{ html+=_renderResolvedStory(s,sec,true); });
-    dismissedStories.forEach(({s,sec})=>{ html+=_renderResolvedStory(s,sec,false); });
+    // Auto-resolved stories (known to _teGetStories)
+    autoResolvedStories.forEach(({s,sec})=>{ html+=_renderResolvedStory(s,sec); });
+
+    // Orphan resolved storyIds (not in _teGetStories but in autoResolved)
+    orphanResolvedIds.forEach(sid=>{
+      const entries=_teEntriesForStory(sid);
+      const knownTitle=teStoryTitleMap.get(sid)||'';
+      const titleHtml=knownTitle
+        ?`<span style="font-size:13px;font-weight:600;color:var(--text2);flex:1">${esc(knownTitle)}</span>`
+        :`<span style="font-size:13px;font-weight:600;color:var(--text2);flex:1">Story <span style="font-size:11px;font-weight:400;color:var(--text3)">(syncing…)</span></span>`;
+      html+=`<div style="margin-bottom:10px;background:var(--surface);border:1px solid rgba(22,163,74,.2);border-radius:10px;overflow:hidden;opacity:.88">
+        <div style="display:flex;align-items:center;gap:7px;padding:8px 13px;background:rgba(22,163,74,.05);border-bottom:1px solid rgba(22,163,74,.12);flex-wrap:wrap">
+          <span style="font-size:13px">📡</span>${titleHtml}
+          <span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>All paid</span>
+          <span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>
+          <button onclick="_teRestoreStory('${sid}')" style="padding:2px 8px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--accent);cursor:pointer;flex-shrink:0">↩ Reopen</button>
+        </div>
+        <div style="padding:10px 13px;display:flex;flex-direction:column;gap:6px;opacity:.75">
+          ${entries.map(e=>_teRenderEntry(e)).join('')||`<div style="font-size:12px;color:var(--text3)">No entries</div>`}
+        </div>
+      </div>`;
+    });
+
+    // Manually dismissed stories
+    dismissedStories.forEach(({s,sec})=>{ html+=_renderResolvedStory(s,sec); });
 
     // Dismissed groups
     dismissedGrps.forEach(({groupId:gid,groupLabel:glbl})=>{
       const grpEntries2=_teEntriesForGroup(gid);
       const grpExp2=grpEntries2.filter(e=>e.type==='expense');
       const grpUnclaimed2=grpExp2.filter(e=>_teGetClaimed(e)!=='yes').length;
-      const grpBadge2=grpUnclaimed2?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${grpUnclaimed2} unclaimed</span>`:(grpExp2.length?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:'');
-      const grpAllEntriesHtml=grpEntries2.map(e=>_teRenderEntry(e)).join('');
+      const grpBadge2=grpUnclaimed2
+        ?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${grpUnclaimed2} unclaimed</span>`
+        :(grpExp2.length?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:'');
       const grpIcon2=gid==='__default'?'📋':'🗂';
-      html+=`<div style="background:var(--surface);border:1px solid rgba(22,163,74,.2);border-radius:8px;overflow:hidden;opacity:.92">
-        <div style="display:flex;align-items:center;gap:7px;padding:8px 13px;background:rgba(22,163,74,.05);border-bottom:1px solid rgba(22,163,74,.12);flex-wrap:wrap">
+      html+=`<div style="margin-bottom:10px;background:var(--surface);border:1px solid rgba(22,163,74,.2);border-radius:10px;overflow:hidden;opacity:.88">
+        <div style="display:flex;align-items:center;gap:7px;padding:8px 13px;background:rgba(22,163,74,.05);border-bottom:1px solid rgba(22,163,74,.12)">
           <span style="font-size:13px">${grpIcon2}</span>
           <span style="font-size:13px;font-weight:600;color:var(--text);flex:1">${esc(glbl)}</span>
           ${grpBadge2}
           <button onclick="_teRestoreGroup('${gid}')" style="padding:2px 8px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--accent);cursor:pointer;flex-shrink:0">↩ Reopen</button>
           <button onclick="_teConfirmDeleteGroup(this)" data-gid="${esc(gid)}" data-glbl="${esc(glbl)}" style="padding:2px 7px;font-size:10px;border:1px solid rgba(220,38,38,.3);border-radius:5px;background:transparent;color:#DC2626;cursor:pointer;flex-shrink:0">🗑</button>
         </div>
-        <div style="padding:10px 13px;display:flex;flex-direction:column;gap:6px">
-          ${grpAllEntriesHtml||`<div style="font-size:12px;color:var(--text3);padding:4px 0">No entries</div>`}
+        <div style="padding:10px 13px;display:flex;flex-direction:column;gap:6px;opacity:.75">
+          ${grpEntries2.map(e=>_teRenderEntry(e)).join('')||`<div style="font-size:12px;color:var(--text3)">No entries</div>`}
         </div>
       </div>`;
     });
-    html+=`</div></div>`;
+    html+=`</div>`; // close te-resolved-body
   }
   return html;
 }
@@ -9060,18 +9080,24 @@ function renderTravelSection(){
   ).length;
   const allBookPaid=allBookings.length>0&&allBookUnpaid===0;
 
-  // Header summary: title of first story sorted by overdue→nearest future
-  const stories=_teGetStories().filter(({s})=>!(state.travelDismissed||[]).includes(s.id)).sort((a,b)=>{
+  // Header summary: title of first active (non-resolved, non-dismissed) story
+  const stories=_teGetStories().filter(({s})=>
+    !(state.travelDismissed||[]).includes(s.id)&&
+    !(state.travelAutoResolved||[]).includes(s.id)
+  ).sort((a,b)=>{
     const da=a.s.deadline_date||'9999-99-99',db=b.s.deadline_date||'9999-99-99';
     if(da<today&&db<today) return da.localeCompare(db);
     if(da<today) return -1; if(db<today) return 1;
     return da.localeCompare(db);
   });
-  const summary=stories.length?esc((stories[0].s.title||'').slice(0,32)):'';
+  const hasAnyEntries=(state.travelEntries||[]).some(e=>!e._deleted);
+  const allResolved=hasAnyEntries&&stories.length===0;
+  const summary=allResolved?'All resolved':stories.length?esc((stories[0].s.title||'').slice(0,32)):'';
 
   const travelStrip=(()=>{
     if(!summary) return '';
-    const dotCol=notClaimedCount?'#D97706':allClaimed?'#16A34A':'#94a3b8';
+    const dotCol=allResolved?'#16A34A':notClaimedCount?'#D97706':allClaimed?'#16A34A':'#94a3b8';
+    if(allResolved) return `<div class="acc-info-strip"><span style="width:5px;height:5px;border-radius:50%;background:#16A34A;flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:var(--done);font-style:italic;font-family:var(--font);flex:1;margin-left:5px">All paid &amp; claimed ✅</span></div>`;
     const firstStory=stories[0]?.s;
     let meta='';
     if(firstStory?.deadline_date){
@@ -9092,10 +9118,11 @@ function renderTravelSection(){
       <span class="acc-name">Travel &amp; Expenses</span>
       <span class="acc-summary" id="acc-travel-summary">${summary}</span>
       <div class="acc-meta" id="acc-travel-meta">
-        ${allBookUnpaid?`<span class="sbadge sb-in-progress">${allBookUnpaid} unpaid</span>`:''}
-        ${allBookPaid?`<span class="sbadge sb-in-progress">All paid</span>`:''}
-        ${notClaimedCount?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${notClaimedCount} unclaimed</span>`:''}
-        ${allClaimed?`<span class="sbadge sb-in-progress">All claimed</span>`:''}
+        ${allResolved?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>All resolved</span>`:''}
+        ${!allResolved&&allBookUnpaid?`<span class="sbadge sb-in-progress">${allBookUnpaid} unpaid</span>`:''}
+        ${!allResolved&&allBookPaid&&allEntries.filter(e=>['cab','flight','hotel','fixer','other'].includes(e.type)).length?`<span class="sbadge sb-in-progress">All paid</span>`:''}
+        ${!allResolved&&notClaimedCount?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${notClaimedCount} unclaimed</span>`:''}
+        ${!allResolved&&allClaimed&&allExp.length?`<span class="sbadge sb-in-progress">All claimed</span>`:''}
       </div>
       <span class="acc-chevron${isOpen?' open':''}" id="acc-chev-travel">▾</span>
     </div>

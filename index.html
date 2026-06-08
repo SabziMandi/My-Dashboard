@@ -6132,7 +6132,15 @@ function renderTasksSection(){
         const todayMs=new Date(today+'T00:00:00').getTime();
         const pending=(state.tasks||[]).filter(t=>t.taskStatus==='pending'||t.taskStatus==='postponed-to');
         if(!pending.length) return '';
+        const _DAYS3=['sun','mon','tue','wed','thu','fri','sat'];
+        const _todayDow=_DAYS3[new Date(today+'T00:00:00').getDay()];
         const key=t=>{
+          // Recurring tasks: check if today is an occurrence day before using raw deadline_date
+          if(t.isRecurring){
+            if(t.recurFreq==='daily') return 0;
+            if(t.recurFreq==='weekly'&&(t.recurDaysOfWeek||[]).includes(_todayDow)) return 0;
+            // For custom/monthly recurring: treat as today if deadline_date is today or in the past within recur window
+          }
           const d=t.deadline_date;
           if(!d) return 500000;
           const diff=Math.round((new Date(d+'T00:00:00').getTime()-todayMs)/86400000);
@@ -7846,9 +7854,9 @@ function getLeaveEmployeeOptions(){
 }
 
 const LEAVE_TYPES=[
-  {key:'earned',    label:'Earned Leave',     cls:'ltb-earned'},
-  {key:'sick',      label:'Sick Leave',       cls:'ltb-sick'},
-  {key:'casual',    label:'Casual / Comp',    cls:'ltb-casual'},
+  {key:'earned',    label:'Earned',            cls:'ltb-earned'},
+  {key:'sick',      label:'Sick',              cls:'ltb-sick'},
+  {key:'casual',    label:'Casual',            cls:'ltb-casual'},
   {key:'comp',      label:'Comp Off',         cls:'ltb-comp'},
   {key:'otherdept', label:'Other Department', cls:'ltb-otherdept'},
 ];
@@ -9476,7 +9484,7 @@ function renderLeavesByPerson(leaves,today){
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:7px">Leave history</div>
         <div style="display:grid;grid-template-columns:auto 1fr auto auto;width:100%">${rows}</div>
         <div style="font-size:10px;color:var(--text3);text-align:right;margin-top:7px;border-top:0.5px solid var(--border);padding-top:5px">
-          Total since Apr ${fyYear}: <strong style="color:var(--text2)">${totals.total}d</strong>
+          Total since Apr ${fyYear}: <strong style="color:var(--text2)">${totals.total}d</strong>${(()=>{const parts=[];if(totals.earned)parts.push(totals.earned+'d earned');if(totals.sick)parts.push(totals.sick+'d sick');if(totals.casual)parts.push(totals.casual+'d casual');if(totals.comp)parts.push(totals.comp+'d comp');return parts.length>1?` <span style="color:var(--text3);font-size:9.5px">(${parts.join(' · ')})</span>`:'';})()}
         </div>
       </div>`;
     }

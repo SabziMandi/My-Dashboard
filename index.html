@@ -2062,6 +2062,21 @@ function loadLocal(){
   if(!state.travelGroupDismissed) state.travelGroupDismissed=[];
   if(!state.travelGroupAutoResolved) state.travelGroupAutoResolved=[];
   if(!state.travelRestored)  state.travelRestored=[];
+  // One-time migration: freelancer/other entries that used claimed field now use payment field
+  // Also migrate legacy type:'fixer' entries to type:'freelancer'
+  if(!state._paymentMigrated){
+    (state.travelEntries||[]).forEach(e=>{
+      // Rename legacy 'fixer' type to 'freelancer'
+      if(e.type==='fixer') e.type='freelancer';
+      if((e.type==='freelancer'||e.type==='other')&&e.data){
+        if(!e.data.payment){
+          e.data.payment=e.data.claimed==='yes'?'cash':'unpaid';
+          delete e.data.claimed;
+        }
+      }
+    });
+    state._paymentMigrated=true;
+  }
   if(!state.deletedIds)      state.deletedIds={};
   if(!state.staffNames)      state.staffNames={correspondents:[],producers:[],shootEdit:[]};
   if(!state.staffNames.correspondents) state.staffNames.correspondents=[];
@@ -6610,10 +6625,6 @@ function renderTaskCard(t, today){
         : `<button class="btn btn-done-active btn-sm" onclick="setTaskStatus('${t.id}','done');event.stopPropagation()">✅ Mark Done</button>
            <button class="btn btn-not-done btn-sm" onclick="setTaskStatus('${t.id}','not-done');event.stopPropagation()">⚫ Not done</button>`
       }
-      ${t.taskStatus!=='done'&&t.taskStatus!=='not-done'&&t.taskStatus!=='transferred'
-        ? `<button class="btn btn-ghost btn-sm" onclick="openPostponeDialog('${t.id}');event.stopPropagation()">⏸ Postpone…</button>`
-        : ''
-      }
       <button class="btn btn-ghost btn-sm" onclick="editTask('${t.id}');event.stopPropagation()">✏ Edit</button>
       <span class="caf-spacer"></span>
       <button class="btn btn-ghost btn-sm btn-danger" onclick="event.stopPropagation();if(confirm('Delete this task?'))deleteTask('${t.id}')">🗑 <span class="del-label">Delete</span></button>
@@ -8046,9 +8057,9 @@ let _teDismissed=null; // mirror of state.travelDismissed for quick access
 
 // ── Helpers ───────────────────────────────────────────────
 const _payLabel=v=>({account:'Account','bbc-direct':'Office Direct',card:'Card',cash:'Cash',unpaid:'Unpaid',upi:'UPI'}[v]||v||'—');
-const _typeIco={cab:'🚕',flight:'✈️',hotel:'🏨',expense:'💳',freelancer:'🧑‍💼',other:'📦'};
-const _typeName={cab:'Cab',flight:'Flight',hotel:'Hotel',expense:'Expense',freelancer:'Freelancer',other:'Other'};
-const _typeCol={cab:'#D97706',flight:'#2563EB',hotel:'#7C3AED',expense:'#DC2626',freelancer:'#0D9488',other:'#F97316'};
+const _typeIco={cab:'🚕',flight:'✈️',hotel:'🏨',expense:'💳',freelancer:'🧑‍💼',fixer:'🧑‍💼',other:'📦'};
+const _typeName={cab:'Cab',flight:'Flight',hotel:'Hotel',expense:'Expense',freelancer:'Freelancer',fixer:'Freelancer',other:'Other'};
+const _typeCol={cab:'#D97706',flight:'#2563EB',hotel:'#7C3AED',expense:'#DC2626',freelancer:'#0D9488',fixer:'#0D9488',other:'#F97316'};
 const _fmtDT=v=>{ if(!v) return ''; try{ const d=new Date(v); if(isNaN(d)) return v; return d.toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(e){return v;} };
 const _fmtD=v=>{ if(!v) return ''; try{ const d=new Date(v+'T00:00:00'); if(isNaN(d)) return v; return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'}); }catch(e){return v;} };
 const _fmtDShort=v=>{ if(!v) return ''; try{ const d=new Date(v+'T00:00:00'); if(isNaN(d)) return v; return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}); }catch(e){return v;} };
@@ -8206,7 +8217,7 @@ function _teDeleteGeneral(){ _teDeleteGroup('__default'); }
 function _teIsFullyResolved(sid){
   const entries=(state.travelEntries||[]).filter(e=>e.storyId===sid&&!e._deleted);
   if(!entries.length) return false; // no entries = nothing to resolve
-  const bookings=entries.filter(e=>['cab','flight','hotel','freelancer','other'].includes(e.type));
+  const bookings=entries.filter(e=>['cab','flight','hotel','freelancer','fixer','other'].includes(e.type));
   const expenses=entries.filter(e=>e.type==='expense');
   // All bookings paid: all booking types (cab/flight/hotel/freelancer/other) use payment field
   const allBookPaid=bookings.length===0||bookings.every(e=>(e.data?.payment||'')!=='unpaid');
@@ -8245,7 +8256,7 @@ function _teCheckAutoResolveAll(){
 function _teIsGroupFullyResolved(gid){
   const entries=_teEntriesForGroup(gid).filter(e=>!e._deleted);
   if(!entries.length) return false;
-  const bookings=entries.filter(e=>['cab','flight','hotel','freelancer','other'].includes(e.type));
+  const bookings=entries.filter(e=>['cab','flight','hotel','freelancer','fixer','other'].includes(e.type));
   const expenses=entries.filter(e=>e.type==='expense');
   const allBookPaid=bookings.length===0||bookings.every(e=>(e.data?.payment||'')!=='unpaid');
   const allClaimed=expenses.length===0||expenses.every(e=>_teGetClaimed(e)==='yes');
@@ -8307,7 +8318,7 @@ function _teRefresh(){
   const allExp=allEntries.filter(e=>e.type==='expense');
   const notClaimedCount=allExp.filter(e=>_teGetClaimed(e)!=='yes').length;
   const allClaimed=allExp.length>0&&notClaimedCount===0;
-  const allBookings=allEntries.filter(e=>['cab','flight','hotel','freelancer','other'].includes(e.type));
+  const allBookings=allEntries.filter(e=>['cab','flight','hotel','freelancer','fixer','other'].includes(e.type));
   const allBookUnpaid=allBookings.filter(e=>e.data?.payment==='unpaid').length;
   const allBookPaid=allBookings.length>0&&allBookUnpaid===0;
 
@@ -8352,7 +8363,18 @@ function _teRefresh(){
       const stripTitle=firstS?(firstS.title||'').slice(0,32):'';
       if(stripTitle){
         const dotCol2=notClaimedCount?'#D97706':allClaimed?'#16A34A':'#94a3b8';
-        stripEl.innerHTML=`<div class="acc-info-strip"><span style="width:5px;height:5px;border-radius:50%;background:${dotCol2};flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:var(--text2);font-style:italic;font-family:var(--font);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:5px">${esc(stripTitle)}</span>${meta}</div>`;
+        // Deadline meta for _teRefresh strip
+        let stripMeta='';
+        if(firstS?.deadline_date){
+          const dl=firstS.deadline_date;
+          const diff=Math.round((new Date(dl+'T00:00:00')-new Date(today+'T00:00:00'))/86400000);
+          const dlColor=dl<today?'var(--urgent)':diff===0?'var(--accent)':diff<=2?'var(--progress)':'var(--text3)';
+          const dlLabel=dl<today?'Overdue':diff===0?'Due today':diff===1?'Due tomorrow':('Due '+_stripDateWord(dl,today));
+          stripMeta=`<span style="font-size:10px;color:${dlColor};font-family:var(--font);flex-shrink:0;margin-left:auto;padding-left:6px">${dlLabel}</span>`;
+        } else if(stories.length>1){
+          stripMeta=`<span style="font-size:10px;color:var(--text3);font-family:var(--font);flex-shrink:0;margin-left:auto">+${stories.length-1} more</span>`;
+        }
+        stripEl.innerHTML=`<div class="acc-info-strip"><span style="width:5px;height:5px;border-radius:50%;background:${dotCol2};flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:var(--text2);font-style:italic;font-family:var(--font);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:5px">${esc(stripTitle)}</span>${stripMeta}</div>`;
       } else {
         stripEl.innerHTML='';
       }
@@ -8783,13 +8805,13 @@ function _teRenderEntry(e){
 
   return`<div style="border:1px solid var(--border);border-left:3px solid ${col};border-radius:7px;margin-bottom:6px">
     <div style="display:flex;align-items:center;gap:9px;padding:9px 12px;cursor:pointer;${isOpen?'background:var(--surface2)':''}" onclick="_teToggle('${e.id}');event.stopPropagation()">
-      <span style="font-size:16px;flex-shrink:0;width:22px;text-align:center">${_typeIco[e.type]}</span>
+      <span style="font-size:16px;flex-shrink:0;width:22px;text-align:center">${_typeIco[e.type]||'📦'}</span>
       <span style="font-size:12px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${sum||'(no details)'}</span>
       ${d.payment==='unpaid'?`<span style="font-size:10px;font-weight:600;color:#B91C1C;flex-shrink:0">UNPAID</span>`:''}
       <span id="te-chev-${e.id}" style="font-size:11px;color:var(--text3);flex-shrink:0">${isOpen?'▲':'▼'}</span>
     </div>
     <div id="te-det-${e.id}" style="display:${isOpen?'block':'none'};padding:10px 13px;border-top:1px solid var(--border)">
-      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px">${_typeName[e.type]}</div>
+      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px">${_typeName[e.type]||e.type}</div>
       ${det}
       ${remHTML}
       <div style="display:flex;gap:7px;justify-content:flex-end;margin-top:10px;padding-top:8px;border-top:1px dashed var(--border);flex-wrap:wrap">
@@ -8798,7 +8820,7 @@ function _teRenderEntry(e){
         ${e.type==='freelancer'&&d.payment!=='unpaid'&&d.payment?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),payment:'unpaid'}});event.stopPropagation()" style="color:var(--text3)">↩ Undo paid</button>`:''}
         ${e.type==='expense'&&_teGetClaimed(e)!=='yes'?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),claimed:'yes'}});event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark claimed</button>`:''}
         ${e.type==='other'&&d.payment==='unpaid'?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),payment:'cash'}});event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark paid</button>`:''}
-        ${['cab','flight','hotel','freelancer','other'].includes(e.type)&&d.payment==='unpaid'?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),payment:'cash'}});event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark paid</button>`:''}
+        ${['cab','flight','hotel','freelancer','fixer','other'].includes(e.type)&&d.payment==='unpaid'?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),payment:'cash'}});event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark paid</button>`:''}
         <button class="btn btn-ghost btn-sm" onclick="_teOpenForm({type:'${e.type}',storyId:${e.storyId?`'${e.storyId}'`:'null'},storySec:${e.storySec?`'${e.storySec}'`:'null'},editId:'${e.id}'});event.stopPropagation()">✏ Edit</button>
         <button class="btn btn-ghost btn-sm btn-danger" onclick="_teDelete('${e.id}');event.stopPropagation()">🗑 Delete</button>
       </div>
@@ -8834,7 +8856,7 @@ function _teMarkAllClaimed(sid){
 }
 function _teMarkAllPaid(sid){
   const isGen=(!sid||sid==='gen');
-  (state.travelEntries||[]).filter(e=>isGen?!e.storyId:e.storyId===sid).filter(e=>['cab','flight','hotel','freelancer','other'].includes(e.type)&&e.data?.payment==='unpaid').forEach(e=>{
+  (state.travelEntries||[]).filter(e=>isGen?!e.storyId:e.storyId===sid).filter(e=>['cab','flight','hotel','freelancer','fixer','other'].includes(e.type)&&e.data?.payment==='unpaid').forEach(e=>{
     const i=(state.travelEntries||[]).findIndex(x=>x.id===e.id);
     if(i>=0) state.travelEntries[i]={...state.travelEntries[i],data:{...e.data,payment:'cash'},updated:Date.now()};
   });
@@ -8855,7 +8877,7 @@ function _teMarkAllClaimedGroup(gid){
   _teRefresh();
 }
 function _teMarkAllPaidGroup(gid){
-  _teEntriesForGroup(gid).filter(e=>['cab','flight','hotel','freelancer','other'].includes(e.type)&&e.data?.payment==='unpaid').forEach(e=>{
+  _teEntriesForGroup(gid).filter(e=>['cab','flight','hotel','freelancer','fixer','other'].includes(e.type)&&e.data?.payment==='unpaid').forEach(e=>{
     const i=(state.travelEntries||[]).findIndex(x=>x.id===e.id);
     if(i>=0) state.travelEntries[i]={...state.travelEntries[i],data:{...e.data,payment:'cash'},updated:Date.now()};
   });
@@ -8891,11 +8913,11 @@ function _teBookingTotal(entries){
 function _teBuildBookingsInner(sid, gid){
   const isGrp=sid&&sid.startsWith('grp:');
   const isGen=(!sid||sid==='gen')&&!isGrp;
-  const entries=(isGrp?_teEntriesForGroup(gid||sid.slice(4)):isGen?_teEntriesGeneral():_teEntriesForStory(sid)).filter(e=>['cab','flight','hotel','freelancer','freelancer','other'].includes(e.type));
+  const entries=(isGrp?_teEntriesForGroup(gid||sid.slice(4)):isGen?_teEntriesGeneral():_teEntriesForStory(sid)).filter(e=>['cab','flight','hotel','freelancer','fixer','other'].includes(e.type));
   if(!entries.length) return '<div style="font-size:12px;color:var(--text3);padding:6px 2px">No bookings yet.</div>';
   const page=ui_teBookingsPage[sid]||1,limit=page*10,visible=entries.slice(0,limit),remaining=entries.length-limit;
   let h=visible.map(e=>_teRenderEntry(e)).join('');
-  if(remaining>0) h+=`<div style="text-align:center;padding:7px 0;border-top:1px solid var(--border)"><button class="btn btn-ghost btn-sm" onclick="_teShowMoreBookings('${sid}');event.stopPropagation()" style="color:var(--accent);border-color:rgba(207,102,64,.3);font-size:11.5px">Show ${Math.min(remaining,10)} more <span style="opacity:.6;font-size:11px">(${remaining} remaining)</span></button></div>`;
+  if(remaining>0) h+=`<div class="task-section-divider tsd-nodeadline" style="margin:2px 0 0;cursor:pointer" onclick="_teShowMoreBookings('${sid}');event.stopPropagation()">Show ${Math.min(remaining,10)} more <span class="tsd-count">(${remaining} remaining)</span></div>`;
   const total=_teBookingTotal(entries);
   if(total>0) h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 11px;background:rgba(79,70,229,.04);border-top:1px solid rgba(79,70,229,.15);margin-top:2px"><span style="font-size:12px;font-weight:600;color:var(--week)">Total bookings</span><span style="font-size:14px;font-weight:700;color:var(--week)">Rs ${total.toLocaleString('en-IN')}</span></div>`;
   return h;
@@ -8907,7 +8929,7 @@ function _teBuildExpensesInner(sid, gid){
   if(!allExp.length) return '<div style="font-size:12px;color:var(--text3);padding:6px 2px">No expenses yet.</div>';
   const page=ui_teExpensesPage[sid]||1,limit=page*10,visible=allExp.slice(0,limit),remaining=allExp.length-limit;
   let h=visible.map(e=>_teRenderEntry(e)).join('');
-  if(remaining>0) h+=`<div style="text-align:center;padding:7px 0;border-top:1px solid var(--border)"><button class="btn btn-ghost btn-sm" onclick="_teShowMoreExpenses('${sid}');event.stopPropagation()" style="color:var(--accent);border-color:rgba(207,102,64,.3);font-size:11.5px">Show ${Math.min(remaining,10)} more <span style="opacity:.6;font-size:11px">(${remaining} remaining)</span></button></div>`;
+  if(remaining>0) h+=`<div class="task-section-divider tsd-nodeadline" style="margin:2px 0 0;cursor:pointer" onclick="_teShowMoreExpenses('${sid}');event.stopPropagation()">Show ${Math.min(remaining,10)} more <span class="tsd-count">(${remaining} remaining)</span></div>`;
   const total=allExp.reduce((s,e)=>{const _m=String(e.data?.amount||'').match(/[0-9]+(?:\.[0-9]+)?/);const n=_m?parseFloat(_m[0]):0;return s+(isNaN(n)?0:n);},0);
   if(total>0) h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 11px;background:rgba(13,148,136,.05);border-top:1px solid rgba(13,148,136,.2);margin-top:2px"><span style="font-size:12px;font-weight:600;color:var(--working)">Total</span><span style="font-size:14px;font-weight:700;color:var(--working)">Rs ${total.toLocaleString('en-IN')}</span></div>`;
   return h;
@@ -8920,7 +8942,7 @@ function _teSubAccordionForGroup(gid){
   const sid='grp:'+gid;
   const sec=null;
   const entries=_teEntriesForGroup(gid);
-  const bookings=entries.filter(e=>['cab','flight','hotel','freelancer','other'].includes(e.type));
+  const bookings=entries.filter(e=>['cab','flight','hotel','freelancer','fixer','other'].includes(e.type));
   const expenses=entries.filter(e=>e.type==='expense');
   const allClaimed=expenses.length>0&&expenses.every(e=>_teGetClaimed(e)==='yes');
   const expTotal=(()=>{const t=expenses.reduce((s,e)=>{const _m=String(e.data?.amount||'').match(/[0-9]+(?:\.[0-9]+)?/);const n=_m?parseFloat(_m[0]):0;return s+(isNaN(n)?0:n);},0);return t>0?'Rs '+t.toLocaleString('en-IN'):'';})();
@@ -8930,20 +8952,19 @@ function _teSubAccordionForGroup(gid){
   const allBookPaid=bookings.length>0&&allBookUnpaid===0;
   const bookBadges=(()=>{
     if(!bookings.length) return '';
-    if(allBookPaid) return `<span class="sbadge sb-in-progress">All paid</span>`;
-    return (allBookUnpaid?`<span class="sbadge" style="background:rgba(186,117,23,.09);color:#854F0B;border:0.5px solid rgba(186,117,23,.3);font-size:11px"><span class="badge-dot" style="background:#BA7517"></span>${allBookUnpaid} unpaid</span>`:'')+
-      `<span class="sbadge" style="background:rgba(37,99,235,.07);color:#1d4ed8;border:0.5px solid rgba(37,99,235,.25);font-size:11px">${bookings.length} entr${bookings.length===1?'y':'ies'}</span>`;
+    const _bkTotalP=_teBookingTotal(bookings); if(allBookPaid) return _bkTotalP>0?`<span class="sbadge" style="background:rgba(79,70,229,.07);color:var(--week);border:0.5px solid rgba(79,70,229,.25);font-weight:600;font-size:11px">Rs ${_bkTotalP.toLocaleString('en-IN')}</span>`:''; // amount only when paid
+    const _bkTotal=_teBookingTotal(bookings); return (allBookUnpaid?`<span class="sbadge" style="background:rgba(186,117,23,.09);color:#854F0B;border:0.5px solid rgba(186,117,23,.3);font-size:11px"><span class="badge-dot" style="background:#BA7517"></span>${allBookUnpaid} unpaid</span>`:'')+(_bkTotal>0?`<span class="sbadge" style="background:rgba(79,70,229,.07);color:var(--week);border:0.5px solid rgba(79,70,229,.25);font-weight:600;font-size:11px">Rs ${_bkTotal.toLocaleString('en-IN')}</span>`:'');
   })();
   const addBookBtns=`<button class="ttb-add-btn ttb-cab" onclick="_teOpenForm({type:'cab'})">🚕 <span class="ttb-lbl">Cab</span></button><button class="ttb-add-btn ttb-flight" onclick="_teOpenForm({type:'flight'})">✈️ <span class="ttb-lbl">Flight</span></button><button class="ttb-add-btn ttb-hotel" onclick="_teOpenForm({type:'hotel'})">🏨 <span class="ttb-lbl">Hotel</span></button><button class="ttb-add-btn ttb-freelancer" onclick="_teOpenForm({type:'freelancer'})">🧑‍💼 <span class="ttb-lbl">Freelancer</span></button><button class="ttb-add-btn ttb-other" onclick="_teOpenForm({type:'other'})">📦 <span class="ttb-lbl">Other</span></button>`;
   const addExpBtn=`<button class="btn btn-ghost btn-sm" onclick="_teOpenForm({type:'expense'})">💳 Add expense</button>`;
-  return `<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleBookings('${sid}')"><span style="font-size:14px">🗓</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Bookings</span>${bookBadges}<span id="te-book-chev-${sid}" style="font-size:11px;color:var(--text3)">${bookOpen?'▾':'▸'}</span></div><div id="te-book-body-${sid}" style="display:${bookOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-book-inner-${sid}" style="padding:8px 11px">${_teBuildBookingsInner(sid,gid)}</div><div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addBookBtns}<div style='flex:1'></div>${allBookPaid?'':`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllPaidGroup('${gid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark all paid</button>`}</div></div></div>
-    <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleExpenses('${sid}')"><span style="font-size:14px">💳</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Expenses</span>${allClaimed?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:expenses.filter(e=>_teGetClaimed(e)!=='yes').length?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${expenses.filter(e=>_teGetClaimed(e)!=='yes').length} unclaimed</span>`:''}${expTotal?`<span class="sbadge" style="background:rgba(13,148,136,.07);color:#0D9488;border:0.5px solid rgba(13,148,136,.25);font-weight:600;font-size:11px">${expTotal}</span>`:''}<span id="te-exp-chev-${sid}" style="font-size:11px;color:var(--text3)">${expOpen?'▾':'▸'}</span></div><div id="te-exp-body-${sid}" style="display:${expOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-exp-inner-${sid}" style="padding:8px 11px">${_teBuildExpensesInner(sid,gid)}</div><div style="display:flex;align-items:center;gap:5px;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addExpBtn}<div style="flex:1"></div>${allClaimed?`<button class="btn btn-ghost btn-sm" style="color:var(--text3);cursor:default">✓ Claimed</button>`:`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllClaimedGroup('${gid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark all claimed</button>`}</div></div></div>`;
+  return `<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleBookings('${sid}')"><span style="font-size:14px">🗓</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Bookings</span>${bookBadges}<span id="te-book-chev-${sid}" style="font-size:11px;color:var(--text3)">${bookOpen?'▾':'▸'}</span></div><div id="te-book-body-${sid}" style="display:${bookOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-book-inner-${sid}" style="padding:8px 11px">${_teBuildBookingsInner(sid,gid)}</div><div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addBookBtns}<div style='flex:1'></div>${allBookPaid?'':`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllPaidGroup('${gid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4);font-size:12px;padding:5px 12px">✓ Mark all paid</button>`}</div></div></div>
+    <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleExpenses('${sid}')"><span style="font-size:14px">💳</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Expenses</span>${allClaimed?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:expenses.filter(e=>_teGetClaimed(e)!=='yes').length?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${expenses.filter(e=>_teGetClaimed(e)!=='yes').length} unclaimed</span>`:''}${expTotal?`<span class="sbadge" style="background:rgba(13,148,136,.07);color:#0D9488;border:0.5px solid rgba(13,148,136,.25);font-weight:600;font-size:11px">${expTotal}</span>`:''}<span id="te-exp-chev-${sid}" style="font-size:11px;color:var(--text3)">${expOpen?'▾':'▸'}</span></div><div id="te-exp-body-${sid}" style="display:${expOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-exp-inner-${sid}" style="padding:8px 11px">${_teBuildExpensesInner(sid,gid)}</div><div style="display:flex;align-items:center;gap:5px;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addExpBtn}<div style="flex:1"></div>${allClaimed?`<button class="btn btn-ghost btn-sm" style="color:var(--text3);cursor:default">✓ Claimed</button>`:`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllClaimedGroup('${gid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4);font-size:12px;padding:5px 12px">✓ Mark all claimed</button>`}</div></div></div>`;
 }
 
 function _teSubAccordion(sid,sec){
   const isGen=(!sid||sid==='gen');
   const entries=isGen?_teEntriesGeneral():_teEntriesForStory(sid);
-  const bookings=entries.filter(e=>['cab','flight','hotel','freelancer','other'].includes(e.type));
+  const bookings=entries.filter(e=>['cab','flight','hotel','freelancer','fixer','other'].includes(e.type));
   const expenses=entries.filter(e=>e.type==='expense');
   const allClaimed=expenses.length>0&&expenses.every(e=>_teGetClaimed(e)==='yes');
   const expTotal=(()=>{const t=expenses.reduce((s,e)=>{const _m=String(e.data?.amount||'').match(/[0-9]+(?:\.[0-9]+)?/);const n=_m?parseFloat(_m[0]):0;return s+(isNaN(n)?0:n);},0);return t>0?'Rs '+t.toLocaleString('en-IN'):'';})();
@@ -8958,14 +8979,14 @@ function _teSubAccordion(sid,sec){
   const allBookPaid=bookings.length>0&&bookUnpaid===0;
   const bookBadges=(()=>{
     if(!bookings.length) return '';
-    if(allBookPaid) return `<span class="sbadge sb-in-progress">All paid</span>`;
+    const _bkTotalP=_teBookingTotal(bookings); if(allBookPaid) return _bkTotalP>0?`<span class="sbadge" style="background:rgba(79,70,229,.07);color:var(--week);border:0.5px solid rgba(79,70,229,.25);font-weight:600;font-size:11px">Rs ${_bkTotalP.toLocaleString('en-IN')}</span>`:''; // amount only when paid
     return (bookUnpaid?`<span class="sbadge" style="background:rgba(186,117,23,.09);color:#854F0B;border:0.5px solid rgba(186,117,23,.3);font-size:11px"><span class="badge-dot" style="background:#BA7517"></span>${bookUnpaid} unpaid</span>`:'')
       +`<span class="sbadge" style="background:rgba(37,99,235,.07);color:#1d4ed8;border:0.5px solid rgba(37,99,235,.25);font-size:11px">${bookings.length} entr${bookings.length===1?'y':'ies'}</span>`;
   })();
   const addBookBtns=isGen?`<button class="ttb-add-btn ttb-cab" onclick="_teOpenForm({type:'cab'})">🚕 <span class="ttb-lbl">Cab</span></button><button class="ttb-add-btn ttb-flight" onclick="_teOpenForm({type:'flight'})">✈️ <span class="ttb-lbl">Flight</span></button><button class="ttb-add-btn ttb-hotel" onclick="_teOpenForm({type:'hotel'})">🏨 <span class="ttb-lbl">Hotel</span></button><button class="ttb-add-btn ttb-freelancer" onclick="_teOpenForm({type:'freelancer'})">🧑‍💼 <span class="ttb-lbl">Freelancer</span></button><button class="ttb-add-btn ttb-other" onclick="_teOpenForm({type:'other'})">📦 <span class="ttb-lbl">Other</span></button>`:`<button class="ttb-add-btn ttb-cab" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'cab'})">🚕 <span class="ttb-lbl">Cab</span></button><button class="ttb-add-btn ttb-flight" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'flight'})">✈️ <span class="ttb-lbl">Flight</span></button><button class="ttb-add-btn ttb-hotel" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'hotel'})">🏨 <span class="ttb-lbl">Hotel</span></button><button class="ttb-add-btn ttb-freelancer" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'freelancer'})">🧑‍💼 <span class="ttb-lbl">Freelancer</span></button><button class="ttb-add-btn ttb-other" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'other'})">📦 <span class="ttb-lbl">Other</span></button>`;
   const addExpBtn=isGen?`<button class="btn btn-ghost btn-sm" onclick="_teOpenForm({type:'expense'})">💳 Add expense</button>`:`<button class="btn btn-ghost btn-sm" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'expense'})">💳 Add expense</button>`;
-  return `<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleBookings('${sid}')"><span style="font-size:14px">🗓</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Bookings</span>${bookBadges}<span id="te-book-chev-${sid}" style="font-size:11px;color:var(--text3)">${bookOpen?'▾':'▸'}</span></div><div id="te-book-body-${sid}" style="display:${bookOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-book-inner-${sid}" style="padding:8px 11px">${_teBuildBookingsInner(sid)}</div><div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addBookBtns}<div style='flex:1'></div>${allBookPaid?'':`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllPaid('${sid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark all paid</button>`}</div></div></div>
-    <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleExpenses('${sid}')"><span style="font-size:14px">💳</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Expenses</span>${allClaimed?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:expenses.filter(e=>_teGetClaimed(e)!=='yes').length?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${expenses.filter(e=>_teGetClaimed(e)!=='yes').length} unclaimed</span>`:''}${expTotal?`<span class="sbadge" style="background:rgba(13,148,136,.07);color:#0D9488;border:0.5px solid rgba(13,148,136,.25);font-weight:600;font-size:11px">${expTotal}</span>`:''}<span id="te-exp-chev-${sid}" style="font-size:11px;color:var(--text3)">${expOpen?'▾':'▸'}</span></div><div id="te-exp-body-${sid}" style="display:${expOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-exp-inner-${sid}" style="padding:8px 11px">${_teBuildExpensesInner(sid)}</div><div style="display:flex;align-items:center;gap:5px;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addExpBtn}<div style="flex:1"></div>${allClaimed?`<button class="btn btn-ghost btn-sm" style="color:var(--text3);cursor:default">✓ Claimed</button>`:`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllClaimed('${sid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark all claimed</button>`}</div></div></div>`;
+  return `<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleBookings('${sid}')"><span style="font-size:14px">🗓</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Bookings</span>${bookBadges}<span id="te-book-chev-${sid}" style="font-size:11px;color:var(--text3)">${bookOpen?'▾':'▸'}</span></div><div id="te-book-body-${sid}" style="display:${bookOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-book-inner-${sid}" style="padding:8px 11px">${_teBuildBookingsInner(sid)}</div><div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addBookBtns}<div style='flex:1'></div>${allBookPaid?'':`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllPaid('${sid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4);font-size:12px;padding:5px 12px">✓ Mark all paid</button>`}</div></div></div>
+    <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2)"><div style="display:flex;align-items:center;gap:8px;padding:8px 11px;cursor:pointer" onclick="_teToggleExpenses('${sid}')"><span style="font-size:14px">💳</span><span style="font-size:12px;font-weight:600;color:var(--text);flex:1">Expenses</span>${allClaimed?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:expenses.filter(e=>_teGetClaimed(e)!=='yes').length?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${expenses.filter(e=>_teGetClaimed(e)!=='yes').length} unclaimed</span>`:''}${expTotal?`<span class="sbadge" style="background:rgba(13,148,136,.07);color:#0D9488;border:0.5px solid rgba(13,148,136,.25);font-weight:600;font-size:11px">${expTotal}</span>`:''}<span id="te-exp-chev-${sid}" style="font-size:11px;color:var(--text3)">${expOpen?'▾':'▸'}</span></div><div id="te-exp-body-${sid}" style="display:${expOpen?'block':'none'};border-top:1px solid var(--border)"><div id="te-exp-inner-${sid}" style="padding:8px 11px">${_teBuildExpensesInner(sid)}</div><div style="display:flex;align-items:center;gap:5px;padding:6px 11px;border-top:1px dashed var(--border);background:var(--surface2)">${addExpBtn}<div style="flex:1"></div>${allClaimed?`<button class="btn btn-ghost btn-sm" style="color:var(--text3);cursor:default">✓ Claimed</button>`:`<button class="btn btn-ghost btn-sm" onclick="_teMarkAllClaimed('${sid}');event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4);font-size:12px;padding:5px 12px">✓ Mark all claimed</button>`}</div></div></div>`;
 }
 function _teRenderBody(){
   const today=todayStr();
@@ -8977,7 +8998,7 @@ function _teRenderBody(){
   if(_te.open) html+=_teBuildForm();
   stories.forEach(({sec,s})=>{
     const entries=_teEntriesForStory(s.id),expenses=entries.filter(e=>e.type==='expense'),unclaimed=expenses.filter(e=>_teGetClaimed(e)!=='yes').length,allClaimed=expenses.length>0&&unclaimed===0;
-    const bookingsAll=entries.filter(e=>['cab','flight','hotel','freelancer','other'].includes(e.type));
+    const bookingsAll=entries.filter(e=>['cab','flight','hotel','freelancer','fixer','other'].includes(e.type));
     const bookUnpaid=bookingsAll.filter(e=>
       e.data?.payment==='unpaid'
     ).length;
@@ -9066,14 +9087,14 @@ function _teRenderBody(){
   const totalResolved=autoResolvedStories.length+orphanResolvedIds.length+dismissedStories.length+dismissedGrps.length+autoResolvedGrps.length;
   if(totalResolved>0){
     // Use task-section-divider pattern to match Stories/Tasks/Notes resolved sections
-    html+=`<div class="task-section-divider" style="color:var(--done);border-bottom-color:rgba(22,163,74,.2);margin-top:8px" onclick="ui_teResolvedOpen=!ui_teResolvedOpen;const b=document.getElementById('te-resolved-body');if(b)b.style.display=ui_teResolvedOpen?'block':'none';this.querySelector('.te-res-chev').textContent=ui_teResolvedOpen?'▾':'▸'">✅ ${totalResolved} resolved <span style="font-size:10px;font-weight:400;opacity:.7;font-family:var(--font)">· all paid &amp; claimed</span><span class="te-res-chev tsd-chev">${ui_teResolvedOpen?'▾':'▸'}</span></div>`;
+    html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:8px" onclick="ui_teResolvedOpen=!ui_teResolvedOpen;const b=document.getElementById('te-resolved-body');if(b)b.style.display=ui_teResolvedOpen?'block':'none';this.querySelector('.te-res-chev').textContent=ui_teResolvedOpen?'▾':'▸'">✅ ${totalResolved} resolved<span class="tsd-count"> · all paid &amp; claimed</span><span class="te-res-chev tsd-chev">${ui_teResolvedOpen?'▾':'▸'}</span></div>`;
     html+=`<div id="te-resolved-body" style="display:${ui_teResolvedOpen?'block':'none'}">`;
 
     // Helper: render a resolved story card — uses _teSubAccordion so Reopen restores structure
     const _renderResolvedStory=(s,sec)=>{
       const entries=_teEntriesForStory(s.id);
       const expenses=entries.filter(e=>e.type==='expense');
-      const bookings=entries.filter(e=>['cab','flight','hotel','freelancer','other'].includes(e.type));
+      const bookings=entries.filter(e=>['cab','flight','hotel','freelancer','fixer','other'].includes(e.type));
       const bookTotal=_teBookingTotal(bookings);
       const expTotal=expenses.reduce((sum,e)=>{const m=String(e.data?.amount||'').match(/[0-9]+(?:\.[0-9]+)?/);return sum+(m?parseFloat(m[0]):0);},0);
       const bookTotalBadge=bookTotal>0?`<span class="sbadge" style="background:rgba(79,70,229,.07);color:var(--week);border:0.5px solid rgba(79,70,229,.25);font-weight:600;font-size:11px">Rs ${bookTotal.toLocaleString('en-IN')}</span>`:'';
@@ -9147,7 +9168,7 @@ function _teRenderBody(){
     autoResolvedGrps.forEach(({groupId:gid,groupLabel:glbl})=>{
       const grpEntries=_teEntriesForGroup(gid);
       const grpExp=grpEntries.filter(e=>e.type==='expense');
-      const grpBook=grpEntries.filter(e=>['cab','flight','hotel','freelancer','other'].includes(e.type));
+      const grpBook=grpEntries.filter(e=>['cab','flight','hotel','freelancer','fixer','other'].includes(e.type));
       const bookTotal=_teBookingTotal(grpBook);
       const expTotal=grpExp.reduce((sum,e)=>{const m=String(e.data?.amount||'').match(/[0-9]+(?:\.[0-9]+)?/);return sum+(m?parseFloat(m[0]):0);},0);
       const bookTotalBadge=bookTotal>0?`<span class="sbadge" style="background:rgba(79,70,229,.07);color:var(--week);border:0.5px solid rgba(79,70,229,.25);font-weight:600;font-size:11px">Rs ${bookTotal.toLocaleString('en-IN')}</span>`:'';
@@ -9181,7 +9202,7 @@ function renderTravelSection(){
   const allExp=allEntries.filter(e=>e.type==='expense');
   const notClaimedCount=allExp.filter(e=>_teGetClaimed(e)!=='yes').length;
   const allClaimed=allExp.length>0&&notClaimedCount===0;
-  const allBookings=allEntries.filter(e=>['cab','flight','hotel','freelancer','other'].includes(e.type));
+  const allBookings=allEntries.filter(e=>['cab','flight','hotel','freelancer','fixer','other'].includes(e.type));
   const allBookUnpaid=allBookings.filter(e=>
     e.data?.payment==='unpaid'
   ).length;
@@ -9216,12 +9237,13 @@ function renderTravelSection(){
     let meta='';
     if(firstStory?.deadline_date){
       const dl=firstStory.deadline_date;
-      const isOverdue=dl<today;
+      const diff=Math.round((new Date(dl+'T00:00:00')-new Date(today+'T00:00:00'))/86400000);
+      const dlColor=dl<today?'var(--urgent)':diff===0?'var(--accent)':diff<=2?'var(--progress)':'var(--text3)';
       const dlWord=_stripDateWord(dl,today);
-      const dlLabel=isOverdue?'Overdue':'Due';
-      meta=`<span style="font-size:10px;color:#888;font-family:var(--font);flex-shrink:0;margin-left:4px">${dlLabel} ${dlWord}</span>`;
+      const dlLabel=dl<today?'Overdue':diff===0?'Due today':diff===1?'Due tomorrow':'Due';
+      meta=`<span style="font-size:10px;color:${dlColor};font-family:var(--font);flex-shrink:0;margin-left:auto;padding-left:6px">${dlLabel} ${diff>1?dlWord:''}</span>`;
     } else if(stories.length>1){
-      meta=`<span style="font-size:10px;color:#888;font-family:var(--font);flex-shrink:0;margin-left:4px">+${stories.length-1} more</span>`;
+      meta=`<span style="font-size:10px;color:var(--text3);font-family:var(--font);flex-shrink:0;margin-left:auto">+${stories.length-1} more</span>`;
     }
     return `<div class="acc-info-strip"><span style="width:5px;height:5px;border-radius:50%;background:${dotCol};flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:var(--text2);font-style:italic;font-family:var(--font);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:5px">${esc((firstStory?.title||'').slice(0,32))}</span>${meta}</div>`;
   })();
@@ -9233,9 +9255,7 @@ function renderTravelSection(){
       <span class="acc-summary" id="acc-travel-summary">${allResolved?'All resolved':stories.length?esc((stories[0].s.title||'').slice(0,32)):''}</span>
       <div class="acc-meta" id="acc-travel-meta">
         ${!allResolved&&allBookUnpaid?`<span class="sbadge sb-in-progress">${allBookUnpaid} unpaid</span>`:''}
-        ${!allResolved&&allBookPaid&&allEntries.filter(e=>['cab','flight','hotel','freelancer','other'].includes(e.type)).length?`<span class="sbadge sb-in-progress">All paid</span>`:''}
         ${!allResolved&&notClaimedCount?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${notClaimedCount} unclaimed</span>`:''}
-        ${!allResolved&&allClaimed&&allExp.length?`<span class="sbadge sb-in-progress">All claimed</span>`:''}
       </div>
       <span class="acc-chevron${isOpen?' open':''}" id="acc-chev-travel">▾</span>
     </div>

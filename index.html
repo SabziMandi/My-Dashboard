@@ -5318,7 +5318,7 @@ function renderAccordion(sec,archKey){
     if(sec.key==='requests'){
       // Newest addition first — exclude on-hold
       const eligible=activeStories.filter(s=>s.status!=='on-hold'&&s.status!=='completed'&&s.status!=='not-done'&&s.status!=='shelved');
-      if(!eligible.length) return '';
+      if(!eligible.length) return `<div class="acc-info-strip"><span style="width:5px;height:5px;border-radius:50%;background:var(--border2);flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:var(--text3);font-style:italic;font-family:var(--font);margin-left:5px">No requests yet</span></div>`;
       eligible.sort((a,b)=>(b.created||0)-(a.created||0));
       const s=eligible[0];
       const ageDays=s.created?Math.round((Date.now()-(typeof s.created==='number'?s.created:parseInt(s.created)))/86400000):0;
@@ -8373,7 +8373,7 @@ function _teRefresh(){
   if(firstStory?.deadline_date){
     const dl=firstStory.deadline_date;
     const dlWord=_stripDateWord(dl,today);
-    meta=`<span style="font-size:10px;color:#888;font-family:var(--font);flex-shrink:0;margin-left:4px">${dl<today?'Overdue':'Due'} ${dlWord}</span>`;
+    meta=`<span style="font-size:10px;color:var(--text3);font-family:var(--font);flex-shrink:0;margin-left:auto;padding-left:6px">${dl<today?'Overdue '+Math.abs(Math.round((new Date(dl+'T00:00:00')-new Date(today+'T00:00:00'))/86400000))+'d':'Due'} ${dlWord}</span>`;
   } else if(stories.length>1){
     meta=`<span style="font-size:10px;color:#888;font-family:var(--font);flex-shrink:0;margin-left:4px">+${stories.length-1} more</span>`;
   }
@@ -8391,7 +8391,7 @@ function _teRefresh(){
         if(firstS?.deadline_date){
           const dl=firstS.deadline_date;
           const diff=Math.round((new Date(dl+'T00:00:00')-new Date(today+'T00:00:00'))/86400000);
-          const dlColor=dl<today?'var(--urgent)':diff===0?'var(--accent)':diff<=2?'var(--progress)':'var(--text3)';
+          const dlColor='var(--text3)';
           const dlLabel=dl<today?'Overdue '+Math.abs(diff)+'d':diff===0?'Due today':diff===1?'Due tomorrow':('Due '+_stripDateWord(dl,today));
           stripMeta=`<span style="font-size:10px;color:${dlColor};font-family:var(--font);flex-shrink:0;margin-left:auto;padding-left:6px">${dlLabel}</span>`;
         } else if(stories.length>1){
@@ -9280,7 +9280,7 @@ function renderTravelSection(){
     if(firstStory?.deadline_date){
       const dl=firstStory.deadline_date;
       const diff=Math.round((new Date(dl+'T00:00:00')-new Date(today+'T00:00:00'))/86400000);
-      const dlColor=dl<today?'var(--urgent)':diff===0?'var(--accent)':diff<=2?'var(--progress)':'var(--text3)';
+      const dlColor='var(--text3)';
       const dlWord=_stripDateWord(dl,today);
       const dlLabel=dl<today?'Overdue '+Math.abs(diff)+'d':diff===0?'Due today':diff===1?'Due tomorrow':'Due';
       meta=`<span style="font-size:10px;color:${dlColor};font-family:var(--font);flex-shrink:0;margin-left:auto;padding-left:6px">${dlLabel}${diff>1?' '+dlWord:''}</span>`;

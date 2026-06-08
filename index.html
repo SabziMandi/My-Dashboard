@@ -8338,8 +8338,7 @@ function _teRefresh(){
   if(metaEl){
     metaEl.innerHTML=
       (allBookUnpaid?`<span class="sbadge sb-in-progress">${allBookUnpaid} unpaid</span>`:'')+
-      (allBookPaid?`<span class="sbadge sb-in-progress">All paid</span>`:'')+
-      (notClaimedCount?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${notClaimedCount} unclaimed</span>`:'')+
+            (notClaimedCount?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${notClaimedCount} unclaimed</span>`:'')+
       (allClaimed?`<span class="sbadge sb-in-progress">All claimed</span>`:'');
   }
 
@@ -8581,8 +8580,17 @@ function _teUpdateHotelTotal(){
   const ci=document.getElementById('te-checkin')?.value;
   const co=document.getElementById('te-checkout')?.value;
   const tot=document.getElementById('te-pricetotal');
-  if(!tot||tot._edited) return;
-  if(pd&&ci&&co){ const n=Math.round((new Date(co)-new Date(ci))/86400000); if(n>0) tot.value=Math.round(pd*n); }
+  if(!tot) return;
+  if(pd&&ci&&co){
+    const n=Math.max(0,Math.round((new Date(co+'T00:00:00')-new Date(ci+'T00:00:00'))/86400000));
+    if(n>0){
+      const calcVal=Math.round(pd*n);
+      const curVal=parseFloat(String(tot.value||'').replace(/[^\d.]/g,''));
+      // Protect manual override: if stored value meaningfully differs from calc, it was manually entered
+      const isManual=tot.value.trim()&&curVal>0&&Math.abs(curVal-calcVal)>0.5;
+      if(!isManual&&!tot._edited) tot.value=calcVal;
+    }
+  }
 }
 
 function _teUpdateFixerTotal(){
@@ -8591,11 +8599,15 @@ function _teUpdateFixerTotal(){
   const daysEl=document.getElementById('te-fixerdays');
   const totEl=document.getElementById('te-fixertotal');
   if(sd&&ed){
-    const n=Math.round((new Date(ed)-new Date(sd))/86400000)+1;
+    const n=Math.max(0,Math.round((new Date(ed+'T00:00:00')-new Date(sd+'T00:00:00'))/86400000)+1);
     if(n>0&&daysEl) daysEl.value=n;
-    if(totEl&&!totEl._edited){
+    if(totEl){
       const rate=parseFloat(document.getElementById('te-rateday')?.value)||0;
-      if(rate&&n>0) totEl.value=Math.round(rate*n);
+      const calcVal=Math.round(rate*n);
+      const curVal=parseFloat(String(totEl.value||'').replace(/[^\d.]/g,''));
+      // Only auto-fill if: field is empty, OR user hasn't manually overridden (value matches calc)
+      const isManual=totEl.value.trim()&&curVal>0&&rate>0&&Math.abs(curVal-calcVal)>0.5;
+      if(!isManual&&!totEl._edited&&rate&&n>0) totEl.value=calcVal;
     }
   }
 }
@@ -8790,9 +8802,9 @@ function _teRenderEntry(e){
     const fl=(d.flightDate?_fmtDShort(d.flightDate):d.when?.slice(0,10)?_fmtDShort(d.when.slice(0,10)):'')+(d.flightTime?' '+d.flightTime:d.when?.slice(11,16)?' '+d.when.slice(11,16):'');
     sum=(d.direction==='inbound'?'↩ In':'→ Out')+': '+esc(d.from||'')+(d.to?' → '+esc(d.to):'')+( fl?' · '+fl:'');
   }
-  else if(e.type==='hotel') sum=esc(d.hotelName||d.where||'')+( d.checkIn?' · '+_fmtDShort(d.checkIn):'')+( d.checkOut?' – '+_fmtDShort(d.checkOut):'');
+  else if(e.type==='hotel'){ const _ht=(()=>{const ex=parseFloat(String(d.priceTotal||'').replace(/[^\d.]/g,''));if(ex>0)return ex;const r=parseFloat(String(d.priceDay||'').replace(/[^\d.]/g,''));if(!r)return 0;const ci=d.checkIn?new Date(d.checkIn+'T00:00:00'):null,co=d.checkOut?new Date(d.checkOut+'T00:00:00'):null;const n=(ci&&co)?Math.max(0,Math.round((co-ci)/86400000)):0;return r*n;})(); sum=esc(d.hotelName||d.where||'')+( d.checkIn?' · '+_fmtDShort(d.checkIn):'')+( d.checkOut?' – '+_fmtDShort(d.checkOut):'')+(d.payment&&d.payment!=='unpaid'?' · ✅':' · ⏳')+(_ht>0?' · Rs '+_ht.toLocaleString('en-IN'):''); }
   else if(e.type==='expense') sum=esc(d.what||'')+( d.amount?' · '+esc(d.amount):'')+(_teGetClaimed(e)==='yes'?' · ✅':' · ⏳');
-  else if(e.type==='freelancer') sum=esc(d.fixerName||d.where||'')+(d.where&&d.fixerName?' · '+esc(d.where):'')+(d.startDate?' · '+_fmtDShort(d.startDate):'')+( d.endDate?' – '+_fmtDShort(d.endDate):'')+(d.fixerTotal?' · '+esc(d.fixerTotal):'')+(d.payment&&d.payment!=='unpaid'?' · ✅':' · ⏳');
+  else if(e.type==='freelancer') sum=esc(d.fixerName||d.where||'')+(d.where&&d.fixerName?' · '+esc(d.where):'')+(d.startDate?' · '+_fmtDShort(d.startDate):'')+( d.endDate?' – '+_fmtDShort(d.endDate):'')+(d.fixerTotal?(()=>{const n=parseFloat(String(d.fixerTotal||'').replace(/[^\d.]/g,''));return ' · '+(n>0?'Rs '+n.toLocaleString('en-IN'):esc(d.fixerTotal));})():'')+(d.payment&&d.payment!=='unpaid'?' · ✅':' · ⏳');
   else if(e.type==='other') sum=esc(d.what||'')+(d.amount?' · '+esc(d.amount):'')+(d.when?' · '+_fmtDShort(d.when):'')+(d.payment&&d.payment!=='unpaid'?' · ✅':' · ⏳');
 
   // Detail block (expanded)
@@ -8809,7 +8821,7 @@ function _teRenderEntry(e){
   }
   else if(e.type==='hotel') det=fld('Hotel',d.hotelName)+fld('Location',d.where)+fld('Check-in',_fmtD(d.checkIn))+fld('Check-out',_fmtD(d.checkOut))+fld('Price/day',d.priceDay)+fld('Total',d.priceTotal)+fld('Payment',_payLabel(d.payment))+fld('Paid by',d.paidBy)+(d.hotelNotes?fld('Remarks',d.hotelNotes):'');
   else if(e.type==='expense') det=fld('What',d.what)+fld('Date',_fmtD(d.when))+fld('Location',d.where)+fld('Amount',d.amount)+fld('Paid by',d.paidBy)+fld('Payment',_payLabel(d.payment))+fld('Claimed',_teGetClaimed(e)==='yes'?'✅ Yes':'⏳ Not yet')+(d.expenseNotes?fld('Remarks',d.expenseNotes):'');
-  else if(e.type==='freelancer') det=fld('Name',d.fixerName)+fld('Location',d.where)+fld('Phone',d.phone)+fld('Email',d.email)+fld('Start date',_fmtD(d.startDate))+fld('End date',_fmtD(d.endDate))+fld('Days',d.fixerDays)+fld('Rate / day',d.rateDay)+fld('Total',d.fixerTotal)+fld('Payment',_payLabel(d.payment))+fld('Paid by',d.paidBy)+fld('Status',d.status)+fld('Payment',_payLabel(d.payment))+(d.fixerNotes?fld('Notes',d.fixerNotes):'');
+  else if(e.type==='freelancer') det=fld('Name',d.fixerName)+fld('Location',d.where)+fld('Phone',d.phone)+fld('Email',d.email)+fld('Start date',_fmtD(d.startDate))+fld('End date',_fmtD(d.endDate))+fld('Days',d.fixerDays)+fld('Rate / day',d.rateDay)+fld('Total',d.fixerTotal)+fld('Payment',_payLabel(d.payment))+fld('Paid by',d.paidBy)+fld('Status',d.status)+(d.fixerNotes?fld('Notes',d.fixerNotes):'');
   else if(e.type==='other') det=fld('Description',d.what)+fld('Date',_fmtD(d.when))+fld('Amount',d.amount)+fld('Paid by',d.paidBy)+fld('Payment',_payLabel(d.payment))+(d.otherNotes?fld('Remarks',d.otherNotes):'');
 
   // Remarks — full inline CRUD panel
@@ -8905,15 +8917,20 @@ function _teBookingTotal(entries){
     const d=e.data||{};
     let amt=0;
     if(e.type==='hotel'){
-      const rate=parseFloat(String(d.priceDay||'').replace(/[^\d.]/g,''))||0;
-      const ci=d.checkIn?new Date(d.checkIn):null;
-      const co=d.checkOut?new Date(d.checkOut):null;
-      const nights=(ci&&co)?Math.max(0,Math.round((co-ci)/86400000)):1;
-      amt=rate*nights;
-    } else if(e.type==='freelancer'){
-      // Use fixerTotal if computed, else rateDay × fixerDays
-      amt=parseFloat(String(d.fixerTotal||'').replace(/[^\d.]/g,''))||
-          (parseFloat(String(d.rateDay||'').replace(/[^\d.]/g,''))||0)*(parseFloat(d.fixerDays)||1);
+      // Use manually-entered priceTotal first (includes taxes); fall back to priceDay × nights
+      const explicit=parseFloat(String(d.priceTotal||'').replace(/[^\d.]/g,''));
+      if(explicit>0){ amt=explicit; } else {
+        const rate=parseFloat(String(d.priceDay||'').replace(/[^\d.]/g,''))||0;
+        const ci=d.checkIn?new Date(d.checkIn+'T00:00:00'):null;
+        const co=d.checkOut?new Date(d.checkOut+'T00:00:00'):null;
+        const nights=(ci&&co)?Math.max(0,Math.round((co-ci)/86400000)):1;
+        amt=rate*nights;
+      }
+    } else if(e.type==='freelancer'||e.type==='fixer'){
+      // Use fixerTotal (explicit) first; fall back to rateDay × fixerDays
+      const flTotal=parseFloat(String(d.fixerTotal||'').replace(/[^\d.]/g,''));
+      const flCalc=(parseFloat(String(d.rateDay||'').replace(/[^\d.]/g,''))||0)*(parseFloat(d.fixerDays)||0);
+      amt=flTotal>0?flTotal:(flCalc>0?flCalc:0);
     } else {
       // cab, flight, other — use amount field if present
       const m=String(d.amount||'').match(/[0-9]+(?:\.[0-9]+)?/);
@@ -8993,7 +9010,7 @@ function _teSubAccordion(sid,sec){
     if(!bookings.length) return '';
     const _bkTotalP=_teBookingTotal(bookings); if(allBookPaid) return _bkTotalP>0?`<span class="sbadge" style="background:rgba(79,70,229,.07);color:var(--week);border:0.5px solid rgba(79,70,229,.25);font-weight:600;font-size:11px">Rs ${_bkTotalP.toLocaleString('en-IN')}</span>`:''; // amount only when paid
     return (bookUnpaid?`<span class="sbadge" style="background:rgba(186,117,23,.09);color:#854F0B;border:0.5px solid rgba(186,117,23,.3);font-size:11px"><span class="badge-dot" style="background:#BA7517"></span>${bookUnpaid} unpaid</span>`:'')
-      +`<span class="sbadge" style="background:rgba(37,99,235,.07);color:#1d4ed8;border:0.5px solid rgba(37,99,235,.25);font-size:11px">${bookings.length} entr${bookings.length===1?'y':'ies'}</span>`;
+      ;
   })();
   const addBookBtns=isGen?`<button class="ttb-add-btn ttb-cab" onclick="_teOpenForm({type:'cab'})">🚕 <span class="ttb-lbl">Cab</span></button><button class="ttb-add-btn ttb-flight" onclick="_teOpenForm({type:'flight'})">✈️ <span class="ttb-lbl">Flight</span></button><button class="ttb-add-btn ttb-hotel" onclick="_teOpenForm({type:'hotel'})">🏨 <span class="ttb-lbl">Hotel</span></button><button class="ttb-add-btn ttb-freelancer" onclick="_teOpenForm({type:'freelancer'})">🧑‍💼 <span class="ttb-lbl">Freelancer</span></button><button class="ttb-add-btn ttb-other" onclick="_teOpenForm({type:'other'})">📦 <span class="ttb-lbl">Other</span></button>`:`<button class="ttb-add-btn ttb-cab" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'cab'})">🚕 <span class="ttb-lbl">Cab</span></button><button class="ttb-add-btn ttb-flight" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'flight'})">✈️ <span class="ttb-lbl">Flight</span></button><button class="ttb-add-btn ttb-hotel" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'hotel'})">🏨 <span class="ttb-lbl">Hotel</span></button><button class="ttb-add-btn ttb-freelancer" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'freelancer'})">🧑‍💼 <span class="ttb-lbl">Freelancer</span></button><button class="ttb-add-btn ttb-other" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'other'})">📦 <span class="ttb-lbl">Other</span></button>`;
   const addExpBtn=isGen?`<button class="btn btn-ghost btn-sm" onclick="_teOpenForm({type:'expense'})">💳 Add expense</button>`:`<button class="btn btn-ghost btn-sm" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'expense'})">💳 Add expense</button>`;
@@ -9112,14 +9129,16 @@ function _teRenderBody(){
       const expTotal=expenses.reduce((sum,e)=>{const m=String(e.data?.amount||'').match(/[0-9]+(?:\.[0-9]+)?/);return sum+(m?parseFloat(m[0]):0);},0);
       const bookTotalBadge=bookTotal>0?`<span class="sbadge" style="background:rgba(79,70,229,.07);color:var(--week);border:0.5px solid rgba(79,70,229,.25);font-weight:600;font-size:11px">Rs ${bookTotal.toLocaleString('en-IN')}</span>`:'';
       const expTotalBadge=expTotal>0?`<span class="sbadge" style="background:rgba(13,148,136,.07);color:#0D9488;border:0.5px solid rgba(13,148,136,.25);font-weight:600;font-size:11px">Rs ${expTotal.toLocaleString('en-IN')}</span>`:'';
-      const bookPayBadge=`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>All paid</span>`;
-      const claimBadge=expenses.length?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:'';
+      const bkAmt=_teBookingTotal(bookings);
+      const exAmt=expenses.reduce((s2,e2)=>{const m=String(e2.data?.amount||'').match(/[0-9]+(?:\.[0-9]+)?/);return s2+(m?parseFloat(m[0]):0);},0);
+      const paidBadge=bkAmt>0?`<span class="sbadge" style="background:rgba(79,70,229,.07);color:var(--week);border:0.5px solid rgba(79,70,229,.25);font-weight:600;font-size:11px">Rs ${bkAmt.toLocaleString('en-IN')} paid</span>`:'';
+      const claimedBadge=exAmt>0?`<span class="sbadge" style="background:rgba(13,148,136,.07);color:#0D9488;border:0.5px solid rgba(13,148,136,.25);font-weight:600;font-size:11px">Rs ${exAmt.toLocaleString('en-IN')} claimed</span>`:'';
       const knownTitle=teStoryTitleMap.get(s.id)||s.title||'Untitled';
       return `<div style="margin-bottom:10px;background:var(--surface);border:1px solid rgba(22,163,74,.2);border-radius:10px;overflow:hidden;opacity:.88">
         <div style="display:flex;align-items:center;gap:7px;padding:8px 13px;background:rgba(22,163,74,.05);border-bottom:1px solid rgba(22,163,74,.12);flex-wrap:wrap">
           <span style="font-size:13px">📡</span>
           <span style="font-size:13px;font-weight:600;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:80px">${esc(knownTitle)}</span>
-          ${bookPayBadge}${claimBadge}${bookTotalBadge}${expTotalBadge}
+          ${paidBadge}${claimedBadge}
           <button onclick="_teRestoreStory('${s.id}')" style="padding:2px 8px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--accent);cursor:pointer;flex-shrink:0" title="Reopen to active list">↩ Reopen</button>
           <button onclick="if(confirm('Delete this story and all its entries?'))_teDeleteStory('${s.id}')" style="padding:2px 7px;font-size:10px;border:1px solid rgba(220,38,38,.3);border-radius:5px;background:transparent;color:#DC2626;cursor:pointer;flex-shrink:0">🗑</button>
         </div>
@@ -9142,8 +9161,6 @@ function _teRenderBody(){
       html+=`<div style="margin-bottom:10px;background:var(--surface);border:1px solid rgba(22,163,74,.2);border-radius:10px;overflow:hidden;opacity:.88">
         <div style="display:flex;align-items:center;gap:7px;padding:8px 13px;background:rgba(22,163,74,.05);border-bottom:1px solid rgba(22,163,74,.12);flex-wrap:wrap">
           <span style="font-size:13px">📡</span>${titleHtml}
-          <span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>All paid</span>
-          <span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>
           <button onclick="_teRestoreStory('${sid}')" style="padding:2px 8px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--accent);cursor:pointer;flex-shrink:0">↩ Reopen</button>
         </div>
         <div style="padding:10px 13px;display:flex;flex-direction:column;gap:6px;opacity:.75">
@@ -9159,16 +9176,17 @@ function _teRenderBody(){
     dismissedGrps.forEach(({groupId:gid,groupLabel:glbl})=>{
       const grpEntries2=_teEntriesForGroup(gid);
       const grpExp2=grpEntries2.filter(e=>e.type==='expense');
-      const grpUnclaimed2=grpExp2.filter(e=>_teGetClaimed(e)!=='yes').length;
-      const grpBadge2=grpUnclaimed2
-        ?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${grpUnclaimed2} unclaimed</span>`
-        :(grpExp2.length?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:'');
+      const grpBook2=grpEntries2.filter(e=>['cab','flight','hotel','freelancer','fixer','other'].includes(e.type));
+      const grpBkAmt2=_teBookingTotal(grpBook2);
+      const grpExAmt2=grpExp2.reduce((s2,e2)=>{const m=String(e2.data?.amount||'').match(/[0-9]+(?:\.[0-9]+)?/);return s2+(m?parseFloat(m[0]):0);},0);
+      const grpPaidBadge2=grpBkAmt2>0?`<span class="sbadge" style="background:rgba(79,70,229,.07);color:var(--week);border:0.5px solid rgba(79,70,229,.25);font-weight:600;font-size:11px">Rs ${grpBkAmt2.toLocaleString('en-IN')} paid</span>`:'';
+      const grpClaimBadge2=grpExAmt2>0?`<span class="sbadge" style="background:rgba(13,148,136,.07);color:#0D9488;border:0.5px solid rgba(13,148,136,.25);font-weight:600;font-size:11px">Rs ${grpExAmt2.toLocaleString('en-IN')} claimed</span>`:'';
       const grpIcon2=gid==='__default'?'📋':'🗂';
       html+=`<div style="margin-bottom:10px;background:var(--surface);border:1px solid rgba(22,163,74,.2);border-radius:10px;overflow:hidden;opacity:.88">
         <div style="display:flex;align-items:center;gap:7px;padding:8px 13px;background:rgba(22,163,74,.05);border-bottom:1px solid rgba(22,163,74,.12)">
           <span style="font-size:13px">${grpIcon2}</span>
           <span style="font-size:13px;font-weight:600;color:var(--text);flex:1">${esc(glbl)}</span>
-          ${grpBadge2}
+          ${grpPaidBadge2}${grpClaimBadge2}
           <button onclick="_teRestoreGroup('${gid}')" style="padding:2px 8px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--accent);cursor:pointer;flex-shrink:0">↩ Reopen</button>
           <button onclick="_teConfirmDeleteGroup(this)" data-gid="${esc(gid)}" data-glbl="${esc(glbl)}" style="padding:2px 7px;font-size:10px;border:1px solid rgba(220,38,38,.3);border-radius:5px;background:transparent;color:#DC2626;cursor:pointer;flex-shrink:0">🗑</button>
         </div>
@@ -9187,13 +9205,15 @@ function _teRenderBody(){
       const bookTotalBadge=bookTotal>0?`<span class="sbadge" style="background:rgba(79,70,229,.07);color:var(--week);border:0.5px solid rgba(79,70,229,.25);font-weight:600;font-size:11px">Rs ${bookTotal.toLocaleString('en-IN')}</span>`:'';
       const expTotalBadge=expTotal>0?`<span class="sbadge" style="background:rgba(13,148,136,.07);color:#0D9488;border:0.5px solid rgba(13,148,136,.25);font-weight:600;font-size:11px">Rs ${expTotal.toLocaleString('en-IN')}</span>`:'';
       const grpIcon=gid==='__default'?'📋':'🗂';
+      const _grpBkAmt=_teBookingTotal(grpBook);
+      const _grpExAmt=grpExp.reduce((s2,e2)=>{const m=String(e2.data?.amount||'').match(/[0-9]+(?:\.[0-9]+)?/);return s2+(m?parseFloat(m[0]):0);},0);
+      const _grpPaidBadge=_grpBkAmt>0?`<span class="sbadge" style="background:rgba(79,70,229,.07);color:var(--week);border:0.5px solid rgba(79,70,229,.25);font-weight:600;font-size:11px">Rs ${_grpBkAmt.toLocaleString('en-IN')} paid</span>`:'';
+      const _grpClaimBadge=_grpExAmt>0?`<span class="sbadge" style="background:rgba(13,148,136,.07);color:#0D9488;border:0.5px solid rgba(13,148,136,.25);font-weight:600;font-size:11px">Rs ${_grpExAmt.toLocaleString('en-IN')} claimed</span>`:'';
       html+=`<div style="margin-bottom:10px;background:var(--surface);border:1px solid rgba(22,163,74,.2);border-radius:10px;overflow:hidden;opacity:.88">
         <div style="display:flex;align-items:center;gap:7px;padding:8px 13px;background:rgba(22,163,74,.05);border-bottom:1px solid rgba(22,163,74,.12);flex-wrap:wrap">
           <span style="font-size:13px">${grpIcon}</span>
           <span style="font-size:13px;font-weight:600;color:var(--text2);flex:1">${esc(glbl)}</span>
-          <span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>All paid</span>
-          <span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>
-          ${bookTotalBadge}${expTotalBadge}
+          ${_grpPaidBadge}${_grpClaimBadge}
           <button onclick="_teRestoreGroup('${gid}')" style="padding:2px 8px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--accent);cursor:pointer;flex-shrink:0">↩ Reopen</button>
           <button onclick="_teConfirmDeleteGroup(this)" data-gid="${esc(gid)}" data-glbl="${esc(glbl)}" style="padding:2px 7px;font-size:10px;border:1px solid rgba(220,38,38,.3);border-radius:5px;background:transparent;color:#DC2626;cursor:pointer;flex-shrink:0">🗑</button>
         </div>

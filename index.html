@@ -8373,14 +8373,14 @@ function _teRefresh(){
   if(firstStory?.deadline_date){
     const dl=firstStory.deadline_date;
     const dlWord=_stripDateWord(dl,today);
-    meta=`<span style="font-size:10px;color:var(--text3);font-family:var(--font);flex-shrink:0;margin-left:auto;padding-left:6px">${dl<today?'Overdue '+Math.abs(Math.round((new Date(dl+'T00:00:00')-new Date(today+'T00:00:00'))/86400000))+'d':'Due'} ${dlWord}</span>`;
+    meta=`<span style="font-size:10px;color:var(--text3);font-family:var(--font);flex-shrink:0;margin-left:4px">${dl<today?'Overdue '+Math.abs(Math.round((new Date(dl+'T00:00:00')-new Date(today+'T00:00:00'))/86400000))+'d':'Due'} ${dlWord}</span>`;
   } else if(stories.length>1){
     meta=`<span style="font-size:10px;color:#888;font-family:var(--font);flex-shrink:0;margin-left:4px">+${stories.length-1} more</span>`;
   }
   const stripEl=document.getElementById('acc-travel-strip');
   if(stripEl){
     if(allResolved){
-      stripEl.innerHTML=`<div class="acc-info-strip"><span style="font-size:10px;color:var(--text3);font-style:italic;font-family:var(--font);flex:1">All resolved</span></div>`;
+      stripEl.innerHTML=`<span style="font-size:10px;color:var(--text3);font-style:italic;font-family:var(--font);flex:1">All resolved</span>`;
     } else {
       const firstS=stories[0]?.s;
       const stripTitle=firstS?(firstS.title||'').slice(0,32):'';
@@ -8391,13 +8391,12 @@ function _teRefresh(){
         if(firstS?.deadline_date){
           const dl=firstS.deadline_date;
           const diff=Math.round((new Date(dl+'T00:00:00')-new Date(today+'T00:00:00'))/86400000);
-          const dlColor='var(--text3)';
           const dlLabel=dl<today?'Overdue '+Math.abs(diff)+'d':diff===0?'Due today':diff===1?'Due tomorrow':('Due '+_stripDateWord(dl,today));
-          stripMeta=`<span style="font-size:10px;color:${dlColor};font-family:var(--font);flex-shrink:0;margin-left:auto;padding-left:6px">${dlLabel}</span>`;
+          stripMeta=`<span style="font-size:10px;color:var(--text3);font-family:var(--font);flex-shrink:0;margin-left:4px">${dlLabel}</span>`;
         } else if(stories.length>1){
-          stripMeta=`<span style="font-size:10px;color:var(--text3);font-family:var(--font);flex-shrink:0;margin-left:auto">+${stories.length-1} more</span>`;
+          stripMeta=`<span style="font-size:10px;color:var(--text3);font-family:var(--font);flex-shrink:0;margin-left:4px">+${stories.length-1} more</span>`;
         }
-        stripEl.innerHTML=`<div class="acc-info-strip"><span style="width:5px;height:5px;border-radius:50%;background:${dotCol2};flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:var(--text2);font-style:italic;font-family:var(--font);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:5px">${esc(stripTitle)}</span>${stripMeta}</div>`;
+        stripEl.innerHTML=`<span style="width:5px;height:5px;border-radius:50%;background:${dotCol2};flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:var(--text2);font-style:italic;font-family:var(--font);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:5px">${esc(stripTitle)}</span>${stripMeta}`;
       } else {
         stripEl.innerHTML='';
       }
@@ -9272,7 +9271,7 @@ function renderTravelSection(){
 
   const travelStrip=(()=>{
     if(!hasAnyEntries) return '';
-    if(allResolved) return `<div class="acc-info-strip"><span style="font-size:10px;color:var(--text3);font-style:italic;font-family:var(--font);flex:1">All resolved</span></div>`;
+    if(allResolved) return `<span style="font-size:10px;color:var(--text3);font-style:italic;font-family:var(--font);flex:1">All resolved</span>`;
     if(!stories.length) return '';
     const dotCol=notClaimedCount?'#D97706':allClaimed?'#16A34A':'#94a3b8';
     const firstStory=stories[0]?.s;
@@ -9280,14 +9279,13 @@ function renderTravelSection(){
     if(firstStory?.deadline_date){
       const dl=firstStory.deadline_date;
       const diff=Math.round((new Date(dl+'T00:00:00')-new Date(today+'T00:00:00'))/86400000);
-      const dlColor='var(--text3)';
       const dlWord=_stripDateWord(dl,today);
       const dlLabel=dl<today?'Overdue '+Math.abs(diff)+'d':diff===0?'Due today':diff===1?'Due tomorrow':'Due';
-      meta=`<span style="font-size:10px;color:${dlColor};font-family:var(--font);flex-shrink:0;margin-left:auto;padding-left:6px">${dlLabel}${diff>1?' '+dlWord:''}</span>`;
+      meta=`<span style="font-size:10px;color:var(--text3);font-family:var(--font);flex-shrink:0;margin-left:4px">${dlLabel}${diff>1?' '+dlWord:''}</span>`;
     } else if(stories.length>1){
-      meta=`<span style="font-size:10px;color:var(--text3);font-family:var(--font);flex-shrink:0;margin-left:auto">+${stories.length-1} more</span>`;
+      meta=`<span style="font-size:10px;color:var(--text3);font-family:var(--font);flex-shrink:0;margin-left:4px">+${stories.length-1} more</span>`;
     }
-    return `<div class="acc-info-strip"><span style="width:5px;height:5px;border-radius:50%;background:${dotCol};flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:var(--text2);font-style:italic;font-family:var(--font);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:5px">${esc((firstStory?.title||'').slice(0,32))}</span>${meta}</div>`;
+    return `<span style="width:5px;height:5px;border-radius:50%;background:${dotCol};flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:var(--text2);font-style:italic;font-family:var(--font);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:5px">${esc((firstStory?.title||'').slice(0,32))}</span>${meta}`;
   })();
 
   return`<div class="accordion${isOpen?' acc-open':''}" id="acc-travel">

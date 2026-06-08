@@ -1291,6 +1291,7 @@ body {
 .task-section-divider.tsd-nodeadline { color: var(--text3); }
 .task-section-divider.tsd-resolved  { color: var(--text3); background: rgba(154,140,126,.07); border-bottom-color: rgba(154,140,126,.18); border-radius: 5px; padding: 4px 8px; margin-top: 8px; }
 .task-section-divider .tsd-dot  { width:6px; height:6px; border-radius:50%; background:var(--border2); display:inline-block; flex-shrink:0; margin-right:2px; }
+.task-section-divider .tsd-act-dot { width:6px; height:6px; border-radius:50%; background:currentColor; display:inline-block; flex-shrink:0; margin-right:2px; }
 .task-section-divider .tsd-count  { font-weight: 400; color: var(--text3); font-size: 10.5px; }
 .task-section-divider .tsd-chev   { font-size: 10px; color: var(--text3); margin-left: auto; }
 /* Story date bucket label — same visual language as task-section-divider */
@@ -5241,11 +5242,11 @@ function _renderUpcomingActiveGrouped(activeUpcoming, sec, archKey, today){
     else               groups.upcoming.push(s);
   });
   const meta={
-    today:     {label:'Today',      cls:'tsd-today',     icon:'📅'},
-    overdue:   {label:'Overdue',    cls:'tsd-overdue',   icon:'⚠'},
-    tomorrow:  {label:'Tomorrow',   cls:'tsd-tomorrow',  icon:'→'},
-    upcoming:  {label:'Upcoming',   cls:'tsd-upcoming',  icon:'🗓'},
-    nodeadline:{label:'No date',    cls:'tsd-nodeadline',icon:'—'},
+    today:     {label:'Today',       cls:'tsd-today',     icon:''},
+    overdue:   {label:'Overdue',     cls:'tsd-overdue',   icon:''},
+    tomorrow:  {label:'Tomorrow',    cls:'tsd-tomorrow',  icon:''},
+    upcoming:  {label:'Upcoming',    cls:'tsd-upcoming',  icon:''},
+    nodeadline:{label:'No date',     cls:'tsd-nodeadline',icon:''},
   };
   const prefix=(archKey||'live')+'-'+(sec||'upcoming')+'-';
   const firstNonEmpty=['today','overdue','tomorrow','upcoming','nodeadline'].find(k=>groups[k].length>0)||'today';
@@ -5258,7 +5259,7 @@ function _renderUpcomingActiveGrouped(activeUpcoming, sec, archKey, today){
     const defaultOpen=gKey===firstNonEmpty;
     const isOpen=ui_upcomingGroupOpen[stateKey]!==undefined?ui_upcomingGroupOpen[stateKey]:defaultOpen;
     const bodyId='upg-body-'+stateKey.replace(/[^a-z0-9]/gi,'-');
-    html+=`<div class="task-section-divider ${m.cls}${isFirst?' tsd-first':''}" onclick="ui_upcomingGroupOpen['${stateKey}']=!ui_upcomingGroupOpen['${stateKey}'];const b=document.getElementById('${bodyId}');const c=document.getElementById('upg-chev-${stateKey.replace(/[^a-z0-9]/gi,'-')}');if(b)b.style.display=ui_upcomingGroupOpen['${stateKey}']?'block':'none';if(c)c.textContent=ui_upcomingGroupOpen['${stateKey}']?'▾':'▸'">${m.icon} ${m.label} <span class="tsd-count">(${arr.length})</span><span id="upg-chev-${stateKey.replace(/[^a-z0-9]/gi,'-')}" class="tsd-chev">${isOpen?'▾':'▸'}</span></div>`;
+    html+=`<div class="task-section-divider ${m.cls}${isFirst?' tsd-first':''}" onclick="ui_upcomingGroupOpen['${stateKey}']=!ui_upcomingGroupOpen['${stateKey}'];const b=document.getElementById('${bodyId}');const c=document.getElementById('upg-chev-${stateKey.replace(/[^a-z0-9]/gi,'-')}');if(b)b.style.display=ui_upcomingGroupOpen['${stateKey}']?'block':'none';if(c)c.textContent=ui_upcomingGroupOpen['${stateKey}']?'▾':'▸'"><span class="tsd-act-dot"></span>${m.label} <span class="tsd-count">(${arr.length})</span><span id="upg-chev-${stateKey.replace(/[^a-z0-9]/gi,'-')}" class="tsd-chev">${isOpen?'▾':'▸'}</span></div>`;
     html+=`<div id="${bodyId}" style="display:${isOpen?'block':'none'}">`;
     arr.forEach(s=>{ html+=renderCard(sec||'upcoming',s,archKey); });
     html+=`</div>`;
@@ -6438,11 +6439,11 @@ function renderTasksSection(){
     });
 
     const _groupMeta={
-      today:      {label:'Today',      icon:'📅', extraCls:'tsd-today'},
-      overdue:    {label:'Overdue',    icon:'⚠',  extraCls:'tsd-overdue'},
-      tomorrow:   {label:'Tomorrow',   icon:'→',  extraCls:'tsd-tomorrow'},
-      upcoming:   {label:'Upcoming',   icon:'⏳', extraCls:'tsd-upcoming'},
-      nodeadline: {label:'No deadline',icon:'—',  extraCls:'tsd-nodeadline'},
+      today:      {label:'Today',       icon:'', extraCls:'tsd-today'},
+      overdue:    {label:'Overdue',     icon:'', extraCls:'tsd-overdue'},
+      tomorrow:   {label:'Tomorrow',    icon:'', extraCls:'tsd-tomorrow'},
+      upcoming:   {label:'Upcoming',    icon:'', extraCls:'tsd-upcoming'},
+      nodeadline: {label:'No deadline', icon:'', extraCls:'tsd-nodeadline'},
     };
     // Per-group pagination — each group has its own page counter
     if(!ui_taskGroupPage) ui_taskGroupPage={};
@@ -6458,7 +6459,7 @@ function renderTasksSection(){
       const limit=page*10;
       const visible=arr.slice(0,limit);
       const remaining=arr.length-visible.length;
-      html+=`<div class="task-section-divider ${extraCls}${isFirstGroup?' tsd-first':''}" onclick="ui_taskGroupOpen['${gKey}']=!ui_taskGroupOpen['${gKey}'];const b=document.getElementById('${bodyId}');const c=document.getElementById('tg-chev-${gKey}');if(b)b.style.display=ui_taskGroupOpen['${gKey}']?'block':'none';if(c)c.textContent=ui_taskGroupOpen['${gKey}']?'▾':'▸'">${icon} ${label} <span class="tsd-count">(${arr.length})</span><span id="tg-chev-${gKey}" class="tsd-chev">${isOpen?'▾':'▸'}</span></div>`;
+      html+=`<div class="task-section-divider ${extraCls}${isFirstGroup?' tsd-first':''}" onclick="ui_taskGroupOpen['${gKey}']=!ui_taskGroupOpen['${gKey}'];const b=document.getElementById('${bodyId}');const c=document.getElementById('tg-chev-${gKey}');if(b)b.style.display=ui_taskGroupOpen['${gKey}']?'block':'none';if(c)c.textContent=ui_taskGroupOpen['${gKey}']?'▾':'▸'"><span class="tsd-act-dot"></span>${label} <span class="tsd-count">(${arr.length})</span><span id="tg-chev-${gKey}" class="tsd-chev">${isOpen?'▾':'▸'}</span></div>`;
       html+=`<div id="${bodyId}" style="display:${isOpen?'block':'none'}">`;
       visible.forEach(t=>{ html+=renderTaskCard(t,today); });
       if(remaining>0) html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:2px" onclick="if(!ui_taskGroupPage)ui_taskGroupPage={};ui_taskGroupPage['${gKey}']=(ui_taskGroupPage['${gKey}']||1)+1;render();event.stopPropagation()">↓ Show ${Math.min(remaining,10)} more <span class="tsd-count">(${remaining} remaining)</span><span class="tsd-chev">+</span></div>`;
@@ -7685,11 +7686,11 @@ function renderRemarksAccordion(){
       return 'upcoming';
     };
     const _noteGroupMeta={
-      today:     {label:'Due today',    cls:'tsd-today',     icon:'📅'},
-      overdue:   {label:'Overdue',      cls:'tsd-overdue',   icon:'⚠'},
-      tomorrow:  {label:'Due tomorrow', cls:'tsd-tomorrow',  icon:'🔜'},
-      upcoming:  {label:'Upcoming',     cls:'tsd-upcoming',  icon:'🗓'},
-      nodeadline:{label:'No deadline',  cls:'tsd-nodeadline',icon:'📝'},
+      today:     {label:'Today',       cls:'tsd-today',     icon:''},
+      overdue:   {label:'Overdue',     cls:'tsd-overdue',   icon:''},
+      tomorrow:  {label:'Tomorrow',    cls:'tsd-tomorrow',  icon:''},
+      upcoming:  {label:'Upcoming',    cls:'tsd-upcoming',  icon:''},
+      nodeadline:{label:'No deadline', cls:'tsd-nodeadline',icon:''},
     };
     // Bucket ALL active notes — per-group pagination handles slicing
     const _noteGroups={today:[],overdue:[],tomorrow:[],upcoming:[],nodeadline:[]};
@@ -7707,7 +7708,7 @@ function renderRemarksAccordion(){
       const visible=arr.slice(0,limit);
       const remaining=arr.length-visible.length;
       const bodyId='ng-body-'+gKey;
-      body+=`<div class="task-section-divider ${meta.cls}${gi===0?' tsd-first':''}" onclick="ui_noteGroupOpen['${gKey}']=!ui_noteGroupOpen['${gKey}'];const b=document.getElementById('${bodyId}');const c=document.getElementById('ng-chev-${gKey}');if(b)b.style.display=ui_noteGroupOpen['${gKey}']?'block':'none';if(c)c.textContent=ui_noteGroupOpen['${gKey}']?'▾':'▸'">${meta.icon} ${meta.label} <span class="tsd-count">(${arr.length})</span><span id="ng-chev-${gKey}" class="tsd-chev">${isOpen?'▾':'▸'}</span></div>`;
+      body+=`<div class="task-section-divider ${meta.cls}${gi===0?' tsd-first':''}" onclick="ui_noteGroupOpen['${gKey}']=!ui_noteGroupOpen['${gKey}'];const b=document.getElementById('${bodyId}');const c=document.getElementById('ng-chev-${gKey}');if(b)b.style.display=ui_noteGroupOpen['${gKey}']?'block':'none';if(c)c.textContent=ui_noteGroupOpen['${gKey}']?'▾':'▸'"><span class="tsd-act-dot"></span>${meta.label} <span class="tsd-count">(${arr.length})</span><span id="ng-chev-${gKey}" class="tsd-chev">${isOpen?'▾':'▸'}</span></div>`;
       body+=`<div id="${bodyId}" style="display:${isOpen?'block':'none'}">`;
       visible.forEach(n=>{
         const created=new Date(n.created).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});

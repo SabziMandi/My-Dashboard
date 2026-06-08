@@ -538,7 +538,7 @@ body {
 .card:hover { border-color: var(--border2); transform: translateY(-1px); box-shadow: var(--shadow); }
 .card.c-urgent      { border-left-color: var(--urgent);   --card-accent: rgba(220,38,38,.09); }
 .card.c-in-progress { border-left-color: var(--progress); --card-accent: rgba(217,119,6,.09); }
-.card.c-completed   { border-left-color: var(--done);     --card-accent: rgba(22,163,74,.08); }
+.card.c-completed   { border-left-color: var(--border2);  --card-accent: rgba(154,140,126,.07); opacity: .82; }
 .card.c-on-hold     { border: 1.5px dashed rgba(124,58,237,.45); border-left: 3px dashed var(--onhold); background: rgba(124,58,237,.03); --card-accent: rgba(124,58,237,.08); }
 .card.c-carried     { border-left-color: var(--carry);    --card-accent: rgba(234,88,12,.09); }
 .card.c-working     { border-left-color: var(--working);  --card-accent: rgba(13,148,136,.09); }
@@ -659,7 +659,7 @@ body {
 .sbadge { display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;font-family:var(--font);white-space:nowrap; }
 .sb-urgent      { background:rgba(220,38,38,.09);  color:#B91C1C; border:0.5px solid rgba(220,38,38,.3); }
 .sb-in-progress { background:rgba(217,119,6,.09);  color:#B45309; border:0.5px solid rgba(217,119,6,.3); }
-.sb-completed   { background:rgba(22,163,74,.09);  color:#15803D; border:0.5px solid rgba(22,163,74,.3); }
+.sb-completed   { background:rgba(154,140,126,.10); color:var(--text2); border:0.5px solid rgba(154,140,126,.3); }
 .sb-on-hold     { background:rgba(124,58,237,.09); color:#7C3AED; border:0.5px solid rgba(124,58,237,.3); }
 .sb-not-done    { background:rgba(100,116,139,.09);color:#475569; border:0.5px solid rgba(100,116,139,.3); }
 .sb-postponed   { background:rgba(14,165,233,.09); color:#0369A1; border:0.5px solid rgba(14,165,233,.3); }
@@ -1037,7 +1037,7 @@ body {
 }
 .upcoming-card:hover { border-color: rgba(13,148,136,.4); box-shadow: var(--shadow); }
 .upcoming-card.uc-overdue { border-left-color: var(--urgent); }
-.upcoming-card.uc-completed { border-left-color: var(--done); }
+.upcoming-card.uc-completed { border-left-color: var(--border2); opacity: .78; }
 .upcoming-card.uc-on-hold { border-left-color: var(--onhold); }
 .migrate-header { background: linear-gradient(135deg,rgba(79,70,229,.06),transparent); border: 1px solid rgba(79,70,229,.2); border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; }
 .migrate-h1 { font-family: var(--serif); font-size: 19px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
@@ -1109,10 +1109,10 @@ body {
 }
 .uc-row:hover { border-color: var(--border2); box-shadow: var(--shadow); }
 .uc-row.ucr-overdue  { border-left-color: var(--urgent);  --card-accent: rgba(220,38,38,.09); }
-.uc-row.ucr-completed{ border-left-color: var(--done);    --card-accent: rgba(22,163,74,.08); }
+.uc-row.ucr-completed{ border-left-color: var(--border2);  --card-accent: rgba(154,140,126,.07); opacity: .78; }
 .uc-row.ucr-on-hold  { border-left-color: var(--onhold);  --card-accent: rgba(124,58,237,.08); }
-.uc-row.ucr-past     { border-left-color: var(--text3); opacity: .6; }
-.uc-row.ucr-past:hover { border-color: var(--border); box-shadow: none; }
+.uc-row.ucr-past     { border-left-color: var(--border2); opacity: .65; }
+.uc-row.ucr-past:hover { border-color: var(--border2); box-shadow: none; }
 /* Prevent scroll-anchor adjustment when accordions or cards expand */
 .accordion,.acc-body,.app-header,.leave-card,.leave-body,.meeting-card,.meeting-body { overflow-anchor: none; }
 .uc-top {
@@ -1184,8 +1184,8 @@ body {
   .note-card-tap-hint { display: none !important; }
   .note-card .card-action-footer.note-footer-mobile-collapse { display: flex !important; }
 }
-.note-card.note-done    { border-left-color: var(--done);     opacity: .6; --card-accent: rgba(22,163,74,.08); }
-.note-card.note-pass    { border-left-color: var(--text3);    opacity: .5; --card-accent: rgba(154,140,126,.09); }
+.note-card.note-done    { border-left-color: var(--border2);  opacity: .72; --card-accent: rgba(154,140,126,.07); }
+.note-card.note-pass    { border-left-color: var(--border2);  opacity: .65; --card-accent: rgba(154,140,126,.07); }
 .note-card.note-carried { border-left-color: var(--carry);                 --card-accent: rgba(234,88,12,.09); }
 .note-text { font-size: 13px; color: var(--text); line-height: 1.6; white-space: pre-wrap; margin-bottom: 7px; }
 .note-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 10.5px; font-family: var(--mono); color: var(--text3); }
@@ -1268,7 +1268,7 @@ body {
   --card-accent: rgba(164,149,133,.12);
 }
 .task-card:hover { border-color: var(--border2); box-shadow: var(--shadow); }
-.task-card.ts-done       { border-left-color: var(--done);     opacity: .7; --card-accent: rgba(22,163,74,.08); }
+.task-card.ts-done       { border-left-color: var(--border2);  opacity: .78; --card-accent: rgba(154,140,126,.07); }
 .task-card.ts-today      { border-left-color: var(--progress);             --card-accent: rgba(217,119,6,.09); }
 .task-card.ts-tomorrow   { border-left-color: var(--progress);             --card-accent: rgba(217,119,6,.09); }
 .task-card.ts-overdue    { border-left-color: var(--urgent);               --card-accent: rgba(220,38,38,.09); }
@@ -1288,7 +1288,8 @@ body {
 .task-section-divider.tsd-today   { color: var(--accent); border-bottom-color: rgba(207,102,64,.25); }
 .task-section-divider.tsd-tomorrow{ color: var(--progress); border-bottom-color: rgba(217,119,6,.22); }
 .task-section-divider.tsd-upcoming{ color: var(--upcoming); border-bottom-color: rgba(13,148,136,.2); }
-.task-section-divider.tsd-nodeadline { color: var(--text3); }
+.task-section-divider.tsd-nodeadline { color: var(--text3); background: rgba(154,140,126,.07); border-bottom-color: rgba(154,140,126,.18); border-radius: 5px; padding: 4px 8px; margin-top: 8px; }
+.task-section-divider .tsd-dot  { width:6px; height:6px; border-radius:50%; background:var(--border2); display:inline-block; flex-shrink:0; margin-right:2px; }
 .task-section-divider .tsd-count  { font-weight: 400; color: var(--text3); font-size: 10.5px; }
 .task-section-divider .tsd-chev   { font-size: 10px; color: var(--text3); margin-left: auto; }
 /* Story date bucket label — same visual language as task-section-divider */
@@ -1314,12 +1315,12 @@ body {
   display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;
   font-size:11px;font-weight:500;font-family:var(--font);white-space:nowrap;
 }
-.tsb-done      { background:rgba(22,163,74,.09);  color:#15803D; border:0.5px solid rgba(22,163,74,.3); }
+.tsb-done      { background:rgba(154,140,126,.10); color:var(--text2); border:0.5px solid rgba(154,140,126,.3); }
 .tsb-today     { background:rgba(217,119,6,.12);  color:#B45309; border:0.5px solid rgba(217,119,6,.4); font-weight:600; }
 .tsb-pending   { background:rgba(217,119,6,.09);  color:#B45309; border:0.5px solid rgba(217,119,6,.3); }
 .tsb-postponed { background:rgba(124,58,237,.09); color:#7C3AED; border:0.5px solid rgba(124,58,237,.3); }
 .tsb-carried   { background:rgba(234,88,12,.09);  color:#C2410C; border:0.5px solid rgba(234,88,12,.3); }
-.tsb-notdone   { background:rgba(100,116,139,.09);color:#475569; border:0.5px solid rgba(100,116,139,.3); }
+.tsb-notdone   { background:rgba(154,140,126,.10); color:var(--text2); border:0.5px solid rgba(154,140,126,.3); }
 .task-body { display: none; padding: 4px 13px 12px; border-top: 1px solid var(--border); }
 .task-body.open { display: block; }
 .task-btns { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
@@ -1584,7 +1585,7 @@ button.tasks-tab-btn {
 .travel-wrap{display:none;border-top:1px solid var(--border);margin-top:10px;padding-top:10px;}
 /* ── Meetings ── */
 .meeting-card { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--border); border-radius:10px; margin-bottom:8px; overflow:hidden; --card-accent: rgba(164,149,133,.12); }
-.meeting-card.mc-done { border-left-color:var(--done); opacity:.8; --card-accent: rgba(22,163,74,.08); }
+.meeting-card.mc-done { border-left-color:var(--border2); opacity:.78; --card-accent: rgba(154,140,126,.07); }
 .meeting-card.mc-cancelled { border-left-color:var(--border2); opacity:.6; }
 .meeting-top { display:flex; align-items:center; gap:10px; padding:11px 14px; cursor:pointer; }
 .meeting-time-block { display:flex; flex-direction:column; align-items:center; justify-content:center; background:var(--surface2); border-radius:7px; padding:5px 10px; flex-shrink:0; min-width:62px; height:44px; border:0.5px solid var(--border); }
@@ -1595,7 +1596,7 @@ button.tasks-tab-btn {
 .meeting-meta { font-size:11px; color:var(--text3); font-family:var(--mono); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .meeting-status-badge { font-size:10px; font-weight:600; font-family:var(--font); padding:2px 8px; border-radius:10px; flex-shrink:0; }
 .msb-scheduled { display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;font-family:var(--font);padding:3px 9px;border-radius:20px;background:rgba(99,102,241,.09);color:#4F46E5;border:0.5px solid rgba(99,102,241,.3); }
-.msb-done { display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;font-family:var(--font);padding:3px 9px;border-radius:20px;background:rgba(22,163,74,.09);color:#15803D;border:0.5px solid rgba(22,163,74,.3); }
+.msb-done { display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;font-family:var(--font);padding:3px 9px;border-radius:20px;background:rgba(154,140,126,.10);color:var(--text2);border:0.5px solid rgba(154,140,126,.3); }
 .msb-cancelled { display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;font-family:var(--font);padding:3px 9px;border-radius:20px;background:rgba(148,163,184,.09);color:#64748B;border:0.5px solid rgba(148,163,184,.3); }
 .meeting-body { display:none; padding:0 14px 14px; border-top:1px solid var(--border); }
 .meeting-body.open { display:block; }
@@ -5115,7 +5116,7 @@ function renderUpcomingView(){
 
     if(expiredUpcoming.length){
       const isExpOpen=ui_expiredUpcomingOpen['today']===true;
-      html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:6px" onclick="ui_expiredUpcomingOpen['today']=!ui_expiredUpcomingOpen['today'];const b=document.getElementById('upexp-today');const c=document.getElementById('upexp-today-chev');if(b)b.style.display=ui_expiredUpcomingOpen['today']?'block':'none';if(c)c.textContent=ui_expiredUpcomingOpen['today']?'▾':'▸'">↩ ${expiredUpcoming.length} expired <span id="upexp-today-chev" class="tsd-chev">${isExpOpen?'▾':'▸'}</span></div>`;
+      html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:6px" onclick="ui_expiredUpcomingOpen['today']=!ui_expiredUpcomingOpen['today'];const b=document.getElementById('upexp-today');const c=document.getElementById('upexp-today-chev');if(b)b.style.display=ui_expiredUpcomingOpen['today']?'block':'none';if(c)c.textContent=ui_expiredUpcomingOpen['today']?'▾':'▸'"><span class="tsd-dot"></span>${expiredUpcoming.length} expired <span id="upexp-today-chev" class="tsd-chev">${isExpOpen?'▾':'▸'}</span></div>`;
       html+=`<div id="upexp-today" style="display:${isExpOpen?'block':'none'}">${expiredUpcoming.map(s=>renderCard('upcoming',s,null)).join('')}</div>`;
     }
   }
@@ -5307,7 +5308,7 @@ function renderAccordion(sec,archKey){
   // Build info strip — logic differs per section type
   const _accStrip=(()=>{
     if(!activeStories.length){
-      if(sec.key==='requests') return `<div class="acc-info-strip"><span style="font-size:10px;color:var(--text3);font-style:italic;font-family:var(--font)">No requests yet</span></div>`;
+      if(sec.key==='requests') return `<div class="acc-info-strip"><span style="width:5px;height:5px;border-radius:50%;background:#CBD5E1;flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:var(--text3);font-style:italic;font-family:var(--font);margin-left:5px">No requests yet</span></div>`;
       return '';
     }
     const today=todayStr();
@@ -5361,7 +5362,8 @@ function renderAccordion(sec,archKey){
 })()}</span>
       <div class="acc-meta">
         ${(() => {
-          const activeCount=activeStories.filter(s=>s.status!=='completed'&&s.status!=='not-done'&&s.status!=='on-hold'&&s.status!=='shelved'&&s.status!=='postponed').length;
+          const _todayStr2=todayStr();
+          const activeCount=activeStories.filter(s=>s.status!=='completed'&&s.status!=='not-done'&&s.status!=='on-hold'&&s.status!=='shelved'&&s.status!=='postponed'&&(secObj.isUpcoming?(!s.expected_date||s.expected_date>=_todayStr2):true)).length;
           return activeCount?`<span class="sbadge sb-in-progress">${activeCount} pending</span>`:'';
         })()}
       </div>
@@ -5416,7 +5418,7 @@ function renderAccordion(sec,archKey){
     if(completedUpcoming.length){
       const _compKey=(archKey||'today')+'-'+sec.key+'-comp';
       const isCompOpen=ui_expiredUpcomingOpen[_compKey]!==false;
-      html+=`<div class="task-section-divider" style="color:var(--done);border-bottom-color:rgba(22,163,74,.2);margin-top:8px" onclick="ui_expiredUpcomingOpen['${_compKey}']=!ui_expiredUpcomingOpen['${_compKey}'];const b=document.getElementById('upcomp-body-${_compKey.replace(/[^a-z0-9]/gi,'-')}');const c=document.getElementById('upcomp-chev-${_compKey.replace(/[^a-z0-9]/gi,'-')}');if(b)b.style.display=ui_expiredUpcomingOpen['${_compKey}']?'block':'none';if(c)c.textContent=ui_expiredUpcomingOpen['${_compKey}']?'▾':'▸'">✓ ${completedUpcoming.length} completed <span id="upcomp-chev-${_compKey.replace(/[^a-z0-9]/gi,'-')}" class="tsd-chev">${isCompOpen?'▾':'▸'}</span></div>`;
+      html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:8px" onclick="ui_expiredUpcomingOpen['${_compKey}']=!ui_expiredUpcomingOpen['${_compKey}'];const b=document.getElementById('upcomp-body-${_compKey.replace(/[^a-z0-9]/gi,'-')}');const c=document.getElementById('upcomp-chev-${_compKey.replace(/[^a-z0-9]/gi,'-')}');if(b)b.style.display=ui_expiredUpcomingOpen['${_compKey}']?'block':'none';if(c)c.textContent=ui_expiredUpcomingOpen['${_compKey}']?'▾':'▸'"><span class="tsd-dot"></span>${completedUpcoming.length} completed <span id="upcomp-chev-${_compKey.replace(/[^a-z0-9]/gi,'-')}" class="tsd-chev">${isCompOpen?'▾':'▸'}</span></div>`;
       html+=`<div id="upcomp-body-${_compKey.replace(/[^a-z0-9]/gi,'-')}" style="display:${isCompOpen?'block':'none'}">${completedUpcoming.map(s=>renderCard(sec.key,s,archKey)).join('')}</div>`;
     }
 
@@ -5426,7 +5428,7 @@ function renderAccordion(sec,archKey){
       const isExpOpen=ui_expiredUpcomingOpen[_expKey]===true;
       const _expBodyId='upexp-body-'+_expKey.replace(/[^a-z0-9]/gi,'-');
       const _expChevId='upexp-chev-'+_expKey.replace(/[^a-z0-9]/gi,'-');
-      html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:6px" onclick="ui_expiredUpcomingOpen['${_expKey}']=!ui_expiredUpcomingOpen['${_expKey}'];const b=document.getElementById('${_expBodyId}');const c=document.getElementById('${_expChevId}');if(b)b.style.display=ui_expiredUpcomingOpen['${_expKey}']?'block':'none';if(c)c.textContent=ui_expiredUpcomingOpen['${_expKey}']?'▾':'▸'">↩ ${expiredUpcoming.length} expired <span id="${_expChevId}" class="tsd-chev">${isExpOpen?'▾':'▸'}</span></div>`;
+      html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:6px" onclick="ui_expiredUpcomingOpen['${_expKey}']=!ui_expiredUpcomingOpen['${_expKey}'];const b=document.getElementById('${_expBodyId}');const c=document.getElementById('${_expChevId}');if(b)b.style.display=ui_expiredUpcomingOpen['${_expKey}']?'block':'none';if(c)c.textContent=ui_expiredUpcomingOpen['${_expKey}']?'▾':'▸'"><span class="tsd-dot"></span>${expiredUpcoming.length} expired <span id="${_expChevId}" class="tsd-chev">${isExpOpen?'▾':'▸'}</span></div>`;
       html+=`<div id="${_expBodyId}" style="display:${isExpOpen?'block':'none'}">${expiredUpcoming.map(s=>renderCard(sec.key,s,archKey)).join('')}</div>`;
     }
   } else {
@@ -5456,7 +5458,7 @@ function renderAccordion(sec,archKey){
       if(_done.length){
         const _secDoneKey=(archKey||'today')+'-'+sec.key;
         const _isDoneOpen=ui_storiesDoneOpen[_secDoneKey]===true;
-        html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:6px" onclick="ui_storiesDoneOpen['${_secDoneKey}']=!ui_storiesDoneOpen['${_secDoneKey}'];const b=document.getElementById('sdone-body-${_secDoneKey.replace(/[^a-z0-9]/gi,'-')}');const c=document.getElementById('sdone-chev-${_secDoneKey.replace(/[^a-z0-9]/gi,'-')}');if(b)b.style.display=ui_storiesDoneOpen['${_secDoneKey}']?'block':'none';if(c)c.textContent=ui_storiesDoneOpen['${_secDoneKey}']?'▾':'▸'">↩ ${_done.length} done / not done <span id="sdone-chev-${_secDoneKey.replace(/[^a-z0-9]/gi,'-')}" class="tsd-chev">${_isDoneOpen?'▾':'▸'}</span></div>`;
+        html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:6px" onclick="ui_storiesDoneOpen['${_secDoneKey}']=!ui_storiesDoneOpen['${_secDoneKey}'];const b=document.getElementById('sdone-body-${_secDoneKey.replace(/[^a-z0-9]/gi,'-')}');const c=document.getElementById('sdone-chev-${_secDoneKey.replace(/[^a-z0-9]/gi,'-')}');if(b)b.style.display=ui_storiesDoneOpen['${_secDoneKey}']?'block':'none';if(c)c.textContent=ui_storiesDoneOpen['${_secDoneKey}']?'▾':'▸'"><span class="tsd-dot"></span>${_done.length} done / not done <span id="sdone-chev-${_secDoneKey.replace(/[^a-z0-9]/gi,'-')}" class="tsd-chev">${_isDoneOpen?'▾':'▸'}</span></div>`;
         html+=`<div id="sdone-body-${_secDoneKey.replace(/[^a-z0-9]/gi,'-')}" style="display:${_isDoneOpen?'block':'none'}">`;
         _done.forEach(s=>{ html+=renderCard(sec.key,s,s._archiveDate||archKey); });
         html+=`</div>`;
@@ -5468,7 +5470,7 @@ function renderAccordion(sec,archKey){
       const _isShelvedOpen=ui_storiesShelvedOpen[sec.key]===true;
       const _shelvBodyId='shelved-body-'+sec.key;
       const _shelvChevId='shelved-chev-'+sec.key;
-      html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:6px" onclick="ui_storiesShelvedOpen['${sec.key}']=!ui_storiesShelvedOpen['${sec.key}'];const b=document.getElementById('${_shelvBodyId}');const c=document.getElementById('${_shelvChevId}');if(b)b.style.display=ui_storiesShelvedOpen['${sec.key}']?'block':'none';if(c)c.textContent=ui_storiesShelvedOpen['${sec.key}']?'▾':'▸'">🗄 ${shelvedCount} shelved <span id="${_shelvChevId}" class="tsd-chev">${_isShelvedOpen?'▾':'▸'}</span></div>`;
+      html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:6px" onclick="ui_storiesShelvedOpen['${sec.key}']=!ui_storiesShelvedOpen['${sec.key}'];const b=document.getElementById('${_shelvBodyId}');const c=document.getElementById('${_shelvChevId}');if(b)b.style.display=ui_storiesShelvedOpen['${sec.key}']?'block':'none';if(c)c.textContent=ui_storiesShelvedOpen['${sec.key}']?'▾':'▸'"><span class="tsd-dot"></span>${shelvedCount} shelved <span id="${_shelvChevId}" class="tsd-chev">${_isShelvedOpen?'▾':'▸'}</span></div>`;
       html+=`<div id="${_shelvBodyId}" style="display:${_isShelvedOpen?'block':'none'}">`;
       html+=`<div class="shelved-section">`;
       all.filter(s=>s.status==='shelved').forEach(s=>{ html+=renderCard(sec.key,s,archKey); });
@@ -6264,9 +6266,9 @@ function renderTasksSection(){
           const dot=col=>`<span class="badge-dot" style="background:${col}"></span>`;
           const _archDays=t.deadline_date?Math.round((new Date(t.deadline_date+'T00:00:00').getTime()-new Date(today+'T00:00:00').getTime())/86400000):null;
           let aCls='tsb-pending', aTxt=dot('#B45309')+'Upcoming';
-          if(t._deleted)                      { aCls='tsb-notdone';  aTxt=dot('#475569')+'Deleted'; }
-          else if(t.taskStatus==='done')       { aCls='tsb-done';     aTxt=dot('#15803D')+'Done'; }
-          else if(t.taskStatus==='not-done')   { aCls='tsb-notdone';  aTxt=dot('#475569')+'Not done'; }
+          if(t._deleted)                      { aCls='tsb-notdone';  aTxt=dot('#9A8C7E')+'Deleted'; }
+          else if(t.taskStatus==='done')       { aCls='tsb-done';     aTxt=dot('#9A8C7E')+'Done'; }
+          else if(t.taskStatus==='not-done')   { aCls='tsb-notdone';  aTxt=dot('#9A8C7E')+'Not done'; }
           else if(t.taskStatus==='transferred') { aCls='tsb-postponed'; aTxt=dot('#7C3AED')+'Transferred'; }
           else if(isOvd)                       { aCls='tsb-notdone';  aTxt=dot('#B91C1C')+'Overdue '+ovdDays+'d'; }
           else if(_archDays===0)               { aCls='tsb-today';    aTxt=dot('#B45309')+'Due today'; }
@@ -6466,7 +6468,7 @@ function renderTasksSection(){
       const doneLimit=ui_doneTaskPage*10;
       const visibleDone=_doneTasks.slice(0,doneLimit);
       const doneRemaining=_doneTasks.length-visibleDone.length;
-      html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:8px" onclick="ui_doneTaskOpen=!ui_doneTaskOpen;const b=document.getElementById('tg-body-done');const c=document.getElementById('tg-chev-done');if(b)b.style.display=ui_doneTaskOpen?'block':'none';if(c)c.textContent=ui_doneTaskOpen?'▾':'▸'">✓ Done / not done <span class="tsd-count">(${_doneTasks.length})</span><span id="tg-chev-done" class="tsd-chev">${ui_doneTaskOpen?'▾':'▸'}</span></div>`;
+      html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:8px" onclick="ui_doneTaskOpen=!ui_doneTaskOpen;const b=document.getElementById('tg-body-done');const c=document.getElementById('tg-chev-done');if(b)b.style.display=ui_doneTaskOpen?'block':'none';if(c)c.textContent=ui_doneTaskOpen?'▾':'▸'"><span class="tsd-dot"></span>Done / not done <span class="tsd-count">(${_doneTasks.length})</span><span id="tg-chev-done" class="tsd-chev">${ui_doneTaskOpen?'▾':'▸'}</span></div>`;
       html+=`<div id="tg-body-done" style="display:${ui_doneTaskOpen?'block':'none'}">`;
       visibleDone.forEach(t=>{ html+=renderTaskCard(t,today); });
       if(doneRemaining>0){
@@ -6544,8 +6546,8 @@ function renderTaskCard(t, today){
   // Status badge — single source of truth on the right
   let sbCls='task-status-badge ', sbTxt='';
   const dot=color=>`<span class="badge-dot" style="background:${color}"></span>`;
-  if(t.taskStatus==='done'){       sbCls+='tsb-done';      sbTxt=dot('#15803D')+'Done'; }
-  else if(t.taskStatus==='not-done'){  sbCls+='tsb-notdone'; sbTxt=dot('#475569')+'Not done'; }
+  if(t.taskStatus==='done'){       sbCls+='tsb-done';      sbTxt=dot('#9A8C7E')+'Done'; }
+  else if(t.taskStatus==='not-done'){  sbCls+='tsb-notdone'; sbTxt=dot('#9A8C7E')+'Not done'; }
   else if(t.taskStatus==='transferred'){ sbCls+='tsb-postponed'; sbTxt=dot('#7C3AED')+'Transferred'; }
   else if(t.taskStatus==='postponed-to'){ sbCls+='tsb-postponed'; sbTxt=dot('#0369A1')+'Postponed'; }
   else if(isOverdue&&!t.isRecurring){ sbCls+='tsb-notdone'; const od=Math.abs(Math.round((new Date(today+'T00:00:00').getTime()-new Date(_effectiveDue+'T00:00:00').getTime())/86400000)); sbTxt=dot('#B91C1C')+'Overdue '+od+'d'; }
@@ -6839,7 +6841,7 @@ function renderCombinedAccordion(archKey){
       const groupBodyId='rg-body-'+key;
       const page=ui_resolvedPages[key]||1, limit=page*10;
       const visible=arr.slice(0,limit), remaining=arr.length-limit;
-      let g=`<div style="margin-bottom:6px"><div style="font-size:11px;font-weight:500;color:var(--text3);padding:3px 2px;display:flex;align-items:center;gap:6px;cursor:pointer;border-radius:5px" onclick="ui._resolvedGroupOpen['${key}']=!ui._resolvedGroupOpen['${key}'];const gb=document.getElementById('${groupBodyId}');const gc=document.getElementById('rg-chev-${key}');if(gb)gb.style.display=ui._resolvedGroupOpen['${key}']?'block':'none';if(gc)gc.textContent=ui._resolvedGroupOpen['${key}']?'▾':'▸'" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='transparent'"><span style="width:7px;height:7px;border-radius:50%;background:${color};display:inline-block;flex-shrink:0"></span>${label} <span style="font-weight:400;color:var(--text3)">(${arr.length})</span><span id="rg-chev-${key}" style="font-size:10px;color:var(--text3);margin-left:auto">${isGOpen?'▾':'▸'}</span></div><div id="${groupBodyId}" style="display:${isGOpen?'block':'none'}">`;
+      let g=`<div style="margin-bottom:6px"><div class="task-section-divider tsd-nodeadline" style="margin-top:4px" onclick="ui._resolvedGroupOpen['${key}']=!ui._resolvedGroupOpen['${key}'];const gb=document.getElementById('${groupBodyId}');const gc=document.getElementById('rg-chev-${key}');if(gb)gb.style.display=ui._resolvedGroupOpen['${key}']?'block':'none';if(gc)gc.textContent=ui._resolvedGroupOpen['${key}']?'▾':'▸'"><span class="tsd-dot"></span>${label} <span class="tsd-count">(${arr.length})</span><span id="rg-chev-${key}" class="tsd-chev">${isGOpen?'▾':'▸'}</span></div><div id="${groupBodyId}" style="display:${isGOpen?'block':'none'}">`;
       visible.forEach(s=>{
         const resolvedDate=s.deadline_date?new Date(s.deadline_date+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'';
         const postponeLabel=s.status==='postponed'&&s.postponedTo?` → ${new Date(s.postponedTo+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'})}`:'';
@@ -6850,17 +6852,17 @@ function renderCombinedAccordion(archKey){
         // Lazy render: only call renderCard() for already-open cards.
         // Closed cards get an empty placeholder; expandResolvedCard() fills it on first click.
         const bodyContent=isOpen?renderCard(_subsec,s,_cardAK):`<div class="res-lazy" data-id="${s.id}" data-sec="${_subsec}" data-ak="${_cardAK||''}"></div>`;
-        g+=`<div style="margin-bottom:5px"><div id="${rowId}" style="display:${isOpen?'none':'flex'};align-items:center;gap:8px;padding:7px 11px;background:var(--surface);border:1px solid var(--border);border-radius:7px;cursor:pointer" onclick="expandResolvedCard('${s.id}','${_subsec}','${_cardAK||''}');toggleCard('${s.id}');"><span style="font-size:12px;color:${color};flex-shrink:0">${icon}</span><span style="font-size:12.5px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.title||'Untitled')}</span>${resolvedDate?`<span style="font-size:10px;color:var(--text3);flex-shrink:0">${resolvedDate}${postponeLabel}</span>`:''}<span style="font-size:11px;color:var(--border2);flex-shrink:0">▾</span></div><div id="${bodyId}" style="display:${isOpen?'block':'none'}">${bodyContent}</div></div>`;
+        g+=`<div style="margin-bottom:5px"><div id="${rowId}" style="display:${isOpen?'none':'flex'};align-items:center;gap:8px;padding:7px 11px;background:var(--surface);border:1px solid var(--border);border-radius:7px;cursor:pointer" onclick="expandResolvedCard('${s.id}','${_subsec}','${_cardAK||''}');toggleCard('${s.id}');"><span style="width:6px;height:6px;border-radius:50%;background:var(--border2);display:inline-block;flex-shrink:0"></span><span style="font-size:12.5px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.title||'Untitled')}</span>${resolvedDate?`<span style="font-size:10px;color:var(--text3);flex-shrink:0">${resolvedDate}${postponeLabel}</span>`:''}<span style="font-size:11px;color:var(--border2);flex-shrink:0">▾</span></div><div id="${bodyId}" style="display:${isOpen?'block':'none'}">${bodyContent}</div></div>`;
       });
       if(remaining>0){ const nb=Math.min(remaining,10); g+=`<div style="padding:4px 2px"><button class="btn btn-ghost btn-sm" onclick="ui_resolvedPages['${key}']=(ui_resolvedPages['${key}']||1)+1;render();event.stopPropagation()" style="color:var(--accent);border-color:rgba(207,102,64,.3);font-size:11.5px">Show ${nb} more <span style="opacity:.6;font-size:11px">(${remaining} remaining)</span></button></div>`; }
       g+='</div>'; // close groupBodyId
       g+='</div>'; return g;
     };
-    html+=_rGroup('Done','✓','var(--done)',_rDone,'done');
-    html+=_rGroup('On hold','⏸','var(--onhold)',_rHold,'on-hold');
-    html+=_rGroup('Not done','✕','#991B1B',_rNotDone,'not-done');
-    html+=_rGroup('Postponed','→','#6B7280',_rPostponed,'postponed');
-    html+=_rGroup('Shelved','🗄','var(--text3)',_rShelved,'shelved');
+    html+=_rGroup('Done','·','var(--border2)',_rDone,'done');
+    html+=_rGroup('On hold','·','var(--border2)',_rHold,'on-hold');
+    html+=_rGroup('Not done','·','var(--border2)',_rNotDone,'not-done');
+    html+=_rGroup('Postponed','·','var(--border2)',_rPostponed,'postponed');
+    html+=_rGroup('Shelved','·','var(--border2)',_rShelved,'shelved');
     html+='</div>';
   }
 
@@ -7573,7 +7575,7 @@ function renderMeetingsSection(){
     _scheduledMeetings.forEach(m=>{ body+=renderMeetingCard(m, false, m.id===_nearestId); });
     const _previousMeetings=[..._pastOneOffMeetings, ..._doneMeetings].sort((a,b)=>((b.date||'')+(b.time||'')).localeCompare((a.date||'')+(a.time||'')));
     if(_previousMeetings.length){
-      body+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:6px" onclick="ui_meetPrevOpen=!ui_meetPrevOpen;const b=document.getElementById('meet-prev-body');const c=document.getElementById('meet-prev-chev');if(b)b.style.display=ui_meetPrevOpen?'block':'none';if(c)c.textContent=ui_meetPrevOpen?'▾':'▸'">↩ ${_previousMeetings.length} previous / done <span id="meet-prev-chev" class="tsd-chev">${ui_meetPrevOpen?'▾':'▸'}</span></div>`;
+      body+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:6px" onclick="ui_meetPrevOpen=!ui_meetPrevOpen;const b=document.getElementById('meet-prev-body');const c=document.getElementById('meet-prev-chev');if(b)b.style.display=ui_meetPrevOpen?'block':'none';if(c)c.textContent=ui_meetPrevOpen?'▾':'▸'"><span class="tsd-dot"></span>${_previousMeetings.length} previous / done <span id="meet-prev-chev" class="tsd-chev">${ui_meetPrevOpen?'▾':'▸'}</span></div>`;
       body+=`<div id="meet-prev-body" style="display:${ui_meetPrevOpen?'block':'none'}">`;
       _previousMeetings.forEach(m=>{ body+=renderMeetingCard(m, _pastOneOffMeetings.includes(m)); });
       body+=`</div>`;
@@ -7746,7 +7748,7 @@ function renderRemarksAccordion(){
   if(resolved.length){
     const isResOpen=ui.notesResolvedOpen===true;
     const resolvedSorted=[...resolved].sort((a,b)=>(b.resolvedOn||b.updated||b.created||0)-(a.resolvedOn||a.updated||a.created||0));
-    body+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:10px" onclick="ui.notesResolvedOpen=!ui.notesResolvedOpen;const b=document.getElementById('notes-res-body');const c=document.getElementById('notes-res-chev');if(b)b.style.display=ui.notesResolvedOpen?'block':'none';if(c)c.textContent=ui.notesResolvedOpen?'▾':'▸'">↩ ${resolved.length} resolved <span id="notes-res-chev" class="tsd-chev">${isResOpen?'▾':'▸'}</span></div>`;
+    body+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:10px" onclick="ui.notesResolvedOpen=!ui.notesResolvedOpen;const b=document.getElementById('notes-res-body');const c=document.getElementById('notes-res-chev');if(b)b.style.display=ui.notesResolvedOpen?'block':'none';if(c)c.textContent=ui.notesResolvedOpen?'▾':'▸'"><span class="tsd-dot"></span>${resolved.length} resolved <span id="notes-res-chev" class="tsd-chev">${isResOpen?'▾':'▸'}</span></div>`;
     body+=`<div id="notes-res-body" style="display:${isResOpen?'block':'none'}">`;
     resolvedSorted.forEach(n=>{
       const created=new Date(n.created).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
@@ -8388,7 +8390,7 @@ function _teRefresh(){
           const dl=firstS.deadline_date;
           const diff=Math.round((new Date(dl+'T00:00:00')-new Date(today+'T00:00:00'))/86400000);
           const dlColor=dl<today?'var(--urgent)':diff===0?'var(--accent)':diff<=2?'var(--progress)':'var(--text3)';
-          const dlLabel=dl<today?'Overdue':diff===0?'Due today':diff===1?'Due tomorrow':('Due '+_stripDateWord(dl,today));
+          const dlLabel=dl<today?'Overdue '+Math.abs(diff)+'d':diff===0?'Due today':diff===1?'Due tomorrow':('Due '+_stripDateWord(dl,today));
           stripMeta=`<span style="font-size:10px;color:${dlColor};font-family:var(--font);flex-shrink:0;margin-left:auto;padding-left:6px">${dlLabel}</span>`;
         } else if(stories.length>1){
           stripMeta=`<span style="font-size:10px;color:var(--text3);font-family:var(--font);flex-shrink:0;margin-left:auto">+${stories.length-1} more</span>`;
@@ -9039,7 +9041,7 @@ function _teRenderBody(){
     const allBookPaid=bookingsAll.length>0&&bookUnpaid===0;
     const bookTotal=_teBookingTotal(bookingsAll);
     const bookPayBadge=bookUnpaid?`<span class="sbadge sb-in-progress">${bookUnpaid} unpaid</span>`:(bookTotal>0?`<span class="sbadge" style="background:rgba(79,70,229,.07);color:var(--week);border:0.5px solid rgba(79,70,229,.25);font-weight:600;font-size:11px">Rs ${bookTotal.toLocaleString('en-IN')}</span>`:'')+'';
-    const deadlineStr=s.deadline_date?(()=>{const diff=Math.round((new Date(s.deadline_date+'T00:00:00')-new Date(today+'T00:00:00'))/86400000);const lbl=diff<0?'Overdue '+Math.abs(diff)+'d':diff===0?'Due today':diff===1?'Due tomorrow':'Due '+_fmtDShort(s.deadline_date);const col=diff<0?'#B91C1C':diff<=2?'#B45309':'var(--text3)';return `<span style="font-size:10.5px;color:${col};flex-shrink:0">⏰ ${lbl}</span>`;})():'';
+    const deadlineStr='';
     const claimBadge=unclaimed?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${unclaimed} unclaimed</span>`:'';
     html+=`<div style="margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden"><div style="display:flex;align-items:center;gap:7px;padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap"><span style="font-size:13px">📡</span><span style="font-size:13px;font-weight:600;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:80px">${esc(s.title||'Untitled')}</span>${deadlineStr}${bookPayBadge}${claimBadge}<button onclick="_teDismissStory('${s.id}')" style="padding:2px 7px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--text3);cursor:pointer;flex-shrink:0;margin-left:auto" title="Hide from this list">✕ Hide</button></div><div style="padding:10px 13px;display:flex;flex-direction:column;gap:8px">${_teSubAccordion(s.id,sec)}</div></div>`;
   });
@@ -9122,7 +9124,7 @@ function _teRenderBody(){
   const totalResolved=autoResolvedStories.length+orphanResolvedIds.length+dismissedStories.length+dismissedGrps.length+autoResolvedGrps.length;
   if(totalResolved>0){
     // Use task-section-divider pattern to match Stories/Tasks/Notes resolved sections
-    html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:8px" onclick="ui_teResolvedOpen=!ui_teResolvedOpen;const b=document.getElementById('te-resolved-body');if(b)b.style.display=ui_teResolvedOpen?'block':'none';this.querySelector('.te-res-chev').textContent=ui_teResolvedOpen?'▾':'▸'">${totalResolved} resolved<span class="tsd-count"> · all paid &amp; claimed</span><span class="te-res-chev tsd-chev">${ui_teResolvedOpen?'▾':'▸'}</span></div>`;
+    html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:8px" onclick="ui_teResolvedOpen=!ui_teResolvedOpen;const b=document.getElementById('te-resolved-body');if(b)b.style.display=ui_teResolvedOpen?'block':'none';this.querySelector('.te-res-chev').textContent=ui_teResolvedOpen?'▾':'▸'"><span class="tsd-dot"></span>${totalResolved} resolved<span class="tsd-count"> · all paid &amp; claimed</span><span class="te-res-chev tsd-chev">${ui_teResolvedOpen?'▾':'▸'}</span></div>`;
     html+=`<div id="te-resolved-body" style="display:${ui_teResolvedOpen?'block':'none'}">`;
 
     // Helper: render a resolved story card — uses _teSubAccordion so Reopen restores structure
@@ -9139,8 +9141,8 @@ function _teRenderBody(){
       const paidBadge=bkAmt>0?`<span class="sbadge" style="background:rgba(79,70,229,.07);color:var(--week);border:0.5px solid rgba(79,70,229,.25);font-weight:600;font-size:11px">Rs ${bkAmt.toLocaleString('en-IN')} paid</span>`:'';
       const claimedBadge=exAmt>0?`<span class="sbadge" style="background:rgba(13,148,136,.07);color:#0D9488;border:0.5px solid rgba(13,148,136,.25);font-weight:600;font-size:11px">Rs ${exAmt.toLocaleString('en-IN')} claimed</span>`:'';
       const knownTitle=teStoryTitleMap.get(s.id)||s.title||'Untitled';
-      return `<div style="margin-bottom:10px;background:var(--surface);border:1px solid rgba(22,163,74,.2);border-radius:10px;overflow:hidden;opacity:.88">
-        <div style="display:flex;align-items:center;gap:7px;padding:8px 13px;background:rgba(22,163,74,.05);border-bottom:1px solid rgba(22,163,74,.12);flex-wrap:wrap">
+      return `<div style="margin-bottom:10px;background:var(--surface);border:1px solid var(--border2);border-radius:10px;overflow:hidden;opacity:.80">
+        <div style="display:flex;align-items:center;gap:7px;padding:8px 13px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap">
           <span style="font-size:13px">📡</span>
           <span style="font-size:13px;font-weight:600;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:80px">${esc(knownTitle)}</span>
           ${paidBadge}${claimedBadge}
@@ -9163,8 +9165,8 @@ function _teRenderBody(){
       const titleHtml=knownTitle
         ?`<span style="font-size:13px;font-weight:600;color:var(--text2);flex:1">${esc(knownTitle)}</span>`
         :`<span style="font-size:13px;font-weight:600;color:var(--text2);flex:1">Story <span style="font-size:11px;font-weight:400;color:var(--text3)">(syncing…)</span></span>`;
-      html+=`<div style="margin-bottom:10px;background:var(--surface);border:1px solid rgba(22,163,74,.2);border-radius:10px;overflow:hidden;opacity:.88">
-        <div style="display:flex;align-items:center;gap:7px;padding:8px 13px;background:rgba(22,163,74,.05);border-bottom:1px solid rgba(22,163,74,.12);flex-wrap:wrap">
+      html+=`<div style="margin-bottom:10px;background:var(--surface);border:1px solid var(--border2);border-radius:10px;overflow:hidden;opacity:.80">
+        <div style="display:flex;align-items:center;gap:7px;padding:8px 13px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap">
           <span style="font-size:13px">📡</span>${titleHtml}
           <button onclick="_teRestoreStory('${sid}')" style="padding:2px 8px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--accent);cursor:pointer;flex-shrink:0">↩ Reopen</button>
         </div>
@@ -9187,8 +9189,8 @@ function _teRenderBody(){
       const grpPaidBadge2=grpBkAmt2>0?`<span class="sbadge" style="background:rgba(79,70,229,.07);color:var(--week);border:0.5px solid rgba(79,70,229,.25);font-weight:600;font-size:11px">Rs ${grpBkAmt2.toLocaleString('en-IN')} paid</span>`:'';
       const grpClaimBadge2=grpExAmt2>0?`<span class="sbadge" style="background:rgba(13,148,136,.07);color:#0D9488;border:0.5px solid rgba(13,148,136,.25);font-weight:600;font-size:11px">Rs ${grpExAmt2.toLocaleString('en-IN')} claimed</span>`:'';
       const grpIcon2=gid==='__default'?'📋':'🗂';
-      html+=`<div style="margin-bottom:10px;background:var(--surface);border:1px solid rgba(22,163,74,.2);border-radius:10px;overflow:hidden;opacity:.88">
-        <div style="display:flex;align-items:center;gap:7px;padding:8px 13px;background:rgba(22,163,74,.05);border-bottom:1px solid rgba(22,163,74,.12)">
+      html+=`<div style="margin-bottom:10px;background:var(--surface);border:1px solid var(--border2);border-radius:10px;overflow:hidden;opacity:.80">
+        <div style="display:flex;align-items:center;gap:7px;padding:8px 13px;background:var(--surface2);border-bottom:1px solid var(--border)">
           <span style="font-size:13px">${grpIcon2}</span>
           <span style="font-size:13px;font-weight:600;color:var(--text);flex:1">${esc(glbl)}</span>
           ${grpPaidBadge2}${grpClaimBadge2}
@@ -9214,8 +9216,8 @@ function _teRenderBody(){
       const _grpExAmt=grpExp.reduce((s2,e2)=>{const m=String(e2.data?.amount||'').match(/[0-9]+(?:\.[0-9]+)?/);return s2+(m?parseFloat(m[0]):0);},0);
       const _grpPaidBadge=_grpBkAmt>0?`<span class="sbadge" style="background:rgba(79,70,229,.07);color:var(--week);border:0.5px solid rgba(79,70,229,.25);font-weight:600;font-size:11px">Rs ${_grpBkAmt.toLocaleString('en-IN')} paid</span>`:'';
       const _grpClaimBadge=_grpExAmt>0?`<span class="sbadge" style="background:rgba(13,148,136,.07);color:#0D9488;border:0.5px solid rgba(13,148,136,.25);font-weight:600;font-size:11px">Rs ${_grpExAmt.toLocaleString('en-IN')} claimed</span>`:'';
-      html+=`<div style="margin-bottom:10px;background:var(--surface);border:1px solid rgba(22,163,74,.2);border-radius:10px;overflow:hidden;opacity:.88">
-        <div style="display:flex;align-items:center;gap:7px;padding:8px 13px;background:rgba(22,163,74,.05);border-bottom:1px solid rgba(22,163,74,.12);flex-wrap:wrap">
+      html+=`<div style="margin-bottom:10px;background:var(--surface);border:1px solid var(--border2);border-radius:10px;overflow:hidden;opacity:.80">
+        <div style="display:flex;align-items:center;gap:7px;padding:8px 13px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap">
           <span style="font-size:13px">${grpIcon}</span>
           <span style="font-size:13px;font-weight:600;color:var(--text2);flex:1">${esc(glbl)}</span>
           ${_grpPaidBadge}${_grpClaimBadge}
@@ -9278,8 +9280,8 @@ function renderTravelSection(){
       const diff=Math.round((new Date(dl+'T00:00:00')-new Date(today+'T00:00:00'))/86400000);
       const dlColor=dl<today?'var(--urgent)':diff===0?'var(--accent)':diff<=2?'var(--progress)':'var(--text3)';
       const dlWord=_stripDateWord(dl,today);
-      const dlLabel=dl<today?'Overdue':diff===0?'Due today':diff===1?'Due tomorrow':'Due';
-      meta=`<span style="font-size:10px;color:${dlColor};font-family:var(--font);flex-shrink:0;margin-left:auto;padding-left:6px">${dlLabel} ${diff>1?dlWord:''}</span>`;
+      const dlLabel=dl<today?'Overdue '+Math.abs(diff)+'d':diff===0?'Due today':diff===1?'Due tomorrow':'Due';
+      meta=`<span style="font-size:10px;color:${dlColor};font-family:var(--font);flex-shrink:0;margin-left:auto;padding-left:6px">${dlLabel}${diff>1?' '+dlWord:''}</span>`;
     } else if(stories.length>1){
       meta=`<span style="font-size:10px;color:var(--text3);font-family:var(--font);flex-shrink:0;margin-left:auto">+${stories.length-1} more</span>`;
     }
@@ -9615,7 +9617,7 @@ function renderLeavesSection(){
     }
     // Past leaves
     if(pastLeaves.length){
-      statusHtml+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:6px" onclick="ui_showPastLeaves=!ui_showPastLeaves;const b=document.getElementById('past-leaves-body');const c=document.getElementById('past-leaves-chev');if(b)b.style.display=ui_showPastLeaves?'block':'none';if(c)c.textContent=ui_showPastLeaves?'▾':'▸'">↩ ${pastLeaves.length} past leaves <span id="past-leaves-chev" class="tsd-chev">${ui_showPastLeaves?'▾':'▸'}</span></div>`;
+      statusHtml+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:6px" onclick="ui_showPastLeaves=!ui_showPastLeaves;const b=document.getElementById('past-leaves-body');const c=document.getElementById('past-leaves-chev');if(b)b.style.display=ui_showPastLeaves?'block':'none';if(c)c.textContent=ui_showPastLeaves?'▾':'▸'"><span class="tsd-dot"></span>${pastLeaves.length} past leaves <span id="past-leaves-chev" class="tsd-chev">${ui_showPastLeaves?'▾':'▸'}</span></div>`;
       statusHtml+=`<div id="past-leaves-body" style="display:${ui_showPastLeaves?'block':'none'}">`;
       [...pastLeaves].sort((a,b)=>b.dateFrom.localeCompare(a.dateFrom)).forEach(l=>{ statusHtml+=renderLeaveCard(l,today,true); });
       statusHtml+=`</div>`;
@@ -9781,7 +9783,7 @@ function renderUpcomingRow(sec,s,archKey){
   const isCompleted=s.status==='completed';
   const isOverdue=false; // overdue is now just "expired" — handled by isExpired
 
-  const _dot=col=>`<span class="badge-dot" style="background:${col}"></span>`; const sbL=s.status==='urgent'?_dot('#B91C1C')+'Urgent':s.status==='in-progress'?_dot('#B45309')+'In progress':s.status==='completed'?_dot('#15803D')+'Done':s.status==='on-hold'?_dot('#7C3AED')+'On hold':s.status==='passed'||s.status==='not-done'?_dot('#475569')+'Not done':s.status==='postponed'?_dot('#0369A1')+'Postponed':s.status==='shelved'?_dot('#64748B')+'Shelved':'';
+  const _dot=col=>`<span class="badge-dot" style="background:${col}"></span>`; const sbL=s.status==='urgent'?_dot('#B91C1C')+'Urgent':s.status==='in-progress'?_dot('#B45309')+'In progress':s.status==='completed'?_dot('#9A8C7E')+'Done':s.status==='on-hold'?_dot('#7C3AED')+'On hold':s.status==='passed'||s.status==='not-done'?_dot('#9A8C7E')+'Not done':s.status==='postponed'?_dot('#0369A1')+'Postponed':s.status==='shelved'?_dot('#9A8C7E')+'Shelved':'';
   const sbC=s.status==='urgent'?'sb-urgent':s.status==='in-progress'?'sb-in-progress':s.status==='completed'?'sb-completed':s.status==='on-hold'?'sb-on-hold':s.status==='passed'||s.status==='not-done'?'sb-not-done':s.status==='postponed'?'sb-postponed':s.status==='shelved'?'sb-shelved':'sb-not-started';
 
   // Build compact date box — short date line 1, countdown line 2
@@ -9874,7 +9876,7 @@ function renderStoryCard(sec,s,archKey){
   const secObj=SECTIONS.find(ss=>ss.key===sec)||{};
   const isOpen=ui.openCards.has(s.id);
   const isComplOpen=ui.complForms.has(s.id);
-  const _dot=col=>`<span class="badge-dot" style="background:${col}"></span>`; const sbL=s.status==='urgent'?_dot('#B91C1C')+'Urgent':s.status==='in-progress'?_dot('#B45309')+'In progress':s.status==='completed'?_dot('#15803D')+'Done':s.status==='on-hold'?_dot('#7C3AED')+'On hold':s.status==='not-done'?_dot('#475569')+'Not done':s.status==='postponed'?_dot('#0369A1')+'Postponed':s.status==='shelved'?_dot('#64748B')+'Shelved':'';
+  const _dot=col=>`<span class="badge-dot" style="background:${col}"></span>`; const sbL=s.status==='urgent'?_dot('#B91C1C')+'Urgent':s.status==='in-progress'?_dot('#B45309')+'In progress':s.status==='completed'?_dot('#9A8C7E')+'Done':s.status==='on-hold'?_dot('#7C3AED')+'On hold':s.status==='not-done'?_dot('#9A8C7E')+'Not done':s.status==='postponed'?_dot('#0369A1')+'Postponed':s.status==='shelved'?_dot('#9A8C7E')+'Shelved':'';
   const sbC=s.status==='urgent'?'sb-urgent':s.status==='in-progress'?'sb-in-progress':s.status==='completed'?'sb-completed':s.status==='on-hold'?'sb-on-hold':s.status==='not-done'?'sb-not-done':s.status==='postponed'?'sb-postponed':s.status==='shelved'?'sb-shelved':'sb-not-started';
   const reqTime=s.created?new Date(s.created).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):null;
   let loc=s.location||'';

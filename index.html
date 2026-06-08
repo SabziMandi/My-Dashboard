@@ -2063,11 +2063,8 @@ function loadLocal(){
   if(!state.travelGroupAutoResolved) state.travelGroupAutoResolved=[];
   if(!state.travelRestored)  state.travelRestored=[];
   // One-time migration: freelancer/other entries that used claimed field now use payment field
-  // Also migrate legacy type:'fixer' entries to type:'freelancer'
   if(!state._paymentMigrated){
     (state.travelEntries||[]).forEach(e=>{
-      // Rename legacy 'fixer' type to 'freelancer'
-      if(e.type==='fixer') e.type='freelancer';
       if((e.type==='freelancer'||e.type==='other')&&e.data){
         if(!e.data.payment){
           e.data.payment=e.data.claimed==='yes'?'cash':'unpaid';
@@ -2076,6 +2073,21 @@ function loadLocal(){
       }
     });
     state._paymentMigrated=true;
+  }
+  // SEPARATE migration: rename legacy type:'fixer' → type:'freelancer'
+  // Uses its own flag so it runs even if _paymentMigrated was already true from a prior session
+  if(!state._typeMigrated){
+    (state.travelEntries||[]).forEach(e=>{
+      if(e.type==='fixer'){
+        e.type='freelancer';
+        // Also fix payment if not yet set (catches entries that slipped through payment migration)
+        if(e.data&&!e.data.payment){
+          e.data.payment=e.data.claimed==='yes'?'cash':'unpaid';
+          delete e.data.claimed;
+        }
+      }
+    });
+    state._typeMigrated=true;
   }
   if(!state.deletedIds)      state.deletedIds={};
   if(!state.staffNames)      state.staffNames={correspondents:[],producers:[],shootEdit:[]};
@@ -9003,9 +9015,10 @@ function _teRenderBody(){
       e.data?.payment==='unpaid'
     ).length;
     const allBookPaid=bookingsAll.length>0&&bookUnpaid===0;
-    const bookPayBadge=allBookPaid?`<span class="sbadge sb-in-progress">All paid</span>`:bookUnpaid?`<span class="sbadge sb-in-progress">${bookUnpaid} unpaid</span>`:'';
+    const bookTotal=_teBookingTotal(bookingsAll);
+    const bookPayBadge=bookUnpaid?`<span class="sbadge sb-in-progress">${bookUnpaid} unpaid</span>`:(bookTotal>0?`<span class="sbadge" style="background:rgba(79,70,229,.07);color:var(--week);border:0.5px solid rgba(79,70,229,.25);font-weight:600;font-size:11px">Rs ${bookTotal.toLocaleString('en-IN')}</span>`:'')+'';
     const deadlineStr=s.deadline_date?(()=>{const diff=Math.round((new Date(s.deadline_date+'T00:00:00')-new Date(today+'T00:00:00'))/86400000);const lbl=diff<0?'Overdue '+Math.abs(diff)+'d':diff===0?'Due today':diff===1?'Due tomorrow':'Due '+_fmtDShort(s.deadline_date);const col=diff<0?'#B91C1C':diff<=2?'#B45309':'var(--text3)';return `<span style="font-size:10.5px;color:${col};flex-shrink:0">⏰ ${lbl}</span>`;})():'';
-    const claimBadge=allClaimed?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:unclaimed?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${unclaimed} unclaimed</span>`:'';
+    const claimBadge=unclaimed?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${unclaimed} unclaimed</span>`:'';
     html+=`<div style="margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden"><div style="display:flex;align-items:center;gap:7px;padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap"><span style="font-size:13px">📡</span><span style="font-size:13px;font-weight:600;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:80px">${esc(s.title||'Untitled')}</span>${deadlineStr}${bookPayBadge}${claimBadge}<button onclick="_teDismissStory('${s.id}')" style="padding:2px 7px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--text3);cursor:pointer;flex-shrink:0;margin-left:auto" title="Hide from this list">✕ Hide</button></div><div style="padding:10px 13px;display:flex;flex-direction:column;gap:8px">${_teSubAccordion(s.id,sec)}</div></div>`;
   });
   // Safety net: entries linked to a story not found in the active stories list.
@@ -9087,7 +9100,7 @@ function _teRenderBody(){
   const totalResolved=autoResolvedStories.length+orphanResolvedIds.length+dismissedStories.length+dismissedGrps.length+autoResolvedGrps.length;
   if(totalResolved>0){
     // Use task-section-divider pattern to match Stories/Tasks/Notes resolved sections
-    html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:8px" onclick="ui_teResolvedOpen=!ui_teResolvedOpen;const b=document.getElementById('te-resolved-body');if(b)b.style.display=ui_teResolvedOpen?'block':'none';this.querySelector('.te-res-chev').textContent=ui_teResolvedOpen?'▾':'▸'">✅ ${totalResolved} resolved<span class="tsd-count"> · all paid &amp; claimed</span><span class="te-res-chev tsd-chev">${ui_teResolvedOpen?'▾':'▸'}</span></div>`;
+    html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:8px" onclick="ui_teResolvedOpen=!ui_teResolvedOpen;const b=document.getElementById('te-resolved-body');if(b)b.style.display=ui_teResolvedOpen?'block':'none';this.querySelector('.te-res-chev').textContent=ui_teResolvedOpen?'▾':'▸'">${totalResolved} resolved<span class="tsd-count"> · all paid &amp; claimed</span><span class="te-res-chev tsd-chev">${ui_teResolvedOpen?'▾':'▸'}</span></div>`;
     html+=`<div id="te-resolved-body" style="display:${ui_teResolvedOpen?'block':'none'}">`;
 
     // Helper: render a resolved story card — uses _teSubAccordion so Reopen restores structure

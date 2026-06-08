@@ -1288,7 +1288,8 @@ body {
 .task-section-divider.tsd-today   { color: var(--accent); border-bottom-color: rgba(207,102,64,.25); }
 .task-section-divider.tsd-tomorrow{ color: var(--progress); border-bottom-color: rgba(217,119,6,.22); }
 .task-section-divider.tsd-upcoming{ color: var(--upcoming); border-bottom-color: rgba(13,148,136,.2); }
-.task-section-divider.tsd-nodeadline { color: var(--text3); background: rgba(154,140,126,.07); border-bottom-color: rgba(154,140,126,.18); border-radius: 5px; padding: 4px 8px; margin-top: 8px; }
+.task-section-divider.tsd-nodeadline { color: var(--text3); }
+.task-section-divider.tsd-resolved  { color: var(--text3); background: rgba(154,140,126,.07); border-bottom-color: rgba(154,140,126,.18); border-radius: 5px; padding: 4px 8px; margin-top: 8px; }
 .task-section-divider .tsd-dot  { width:6px; height:6px; border-radius:50%; background:var(--border2); display:inline-block; flex-shrink:0; margin-right:2px; }
 .task-section-divider .tsd-count  { font-weight: 400; color: var(--text3); font-size: 10.5px; }
 .task-section-divider .tsd-chev   { font-size: 10px; color: var(--text3); margin-left: auto; }
@@ -5116,7 +5117,7 @@ function renderUpcomingView(){
 
     if(expiredUpcoming.length){
       const isExpOpen=ui_expiredUpcomingOpen['today']===true;
-      html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:6px" onclick="ui_expiredUpcomingOpen['today']=!ui_expiredUpcomingOpen['today'];const b=document.getElementById('upexp-today');const c=document.getElementById('upexp-today-chev');if(b)b.style.display=ui_expiredUpcomingOpen['today']?'block':'none';if(c)c.textContent=ui_expiredUpcomingOpen['today']?'▾':'▸'"><span class="tsd-dot"></span>${expiredUpcoming.length} expired <span id="upexp-today-chev" class="tsd-chev">${isExpOpen?'▾':'▸'}</span></div>`;
+      html+=`<div class="task-section-divider tsd-resolved" style="margin-top:6px" onclick="ui_expiredUpcomingOpen['today']=!ui_expiredUpcomingOpen['today'];const b=document.getElementById('upexp-today');const c=document.getElementById('upexp-today-chev');if(b)b.style.display=ui_expiredUpcomingOpen['today']?'block':'none';if(c)c.textContent=ui_expiredUpcomingOpen['today']?'▾':'▸'"><span class="tsd-dot"></span>${expiredUpcoming.length} expired <span id="upexp-today-chev" class="tsd-chev">${isExpOpen?'▾':'▸'}</span></div>`;
       html+=`<div id="upexp-today" style="display:${isExpOpen?'block':'none'}">${expiredUpcoming.map(s=>renderCard('upcoming',s,null)).join('')}</div>`;
     }
   }
@@ -5308,7 +5309,7 @@ function renderAccordion(sec,archKey){
   // Build info strip — logic differs per section type
   const _accStrip=(()=>{
     if(!activeStories.length){
-      if(sec.key==='requests') return `<div class="acc-info-strip"><span style="width:5px;height:5px;border-radius:50%;background:#CBD5E1;flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:var(--text3);font-style:italic;font-family:var(--font);margin-left:5px">No requests yet</span></div>`;
+      if(sec.key==='requests') return `<div class="acc-info-strip"><span style="width:5px;height:5px;border-radius:50%;background:var(--border2);flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:var(--text3);font-style:italic;font-family:var(--font);margin-left:5px">No requests yet</span></div>`;
       return '';
     }
     const today=todayStr();
@@ -5418,7 +5419,7 @@ function renderAccordion(sec,archKey){
     if(completedUpcoming.length){
       const _compKey=(archKey||'today')+'-'+sec.key+'-comp';
       const isCompOpen=ui_expiredUpcomingOpen[_compKey]!==false;
-      html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:8px" onclick="ui_expiredUpcomingOpen['${_compKey}']=!ui_expiredUpcomingOpen['${_compKey}'];const b=document.getElementById('upcomp-body-${_compKey.replace(/[^a-z0-9]/gi,'-')}');const c=document.getElementById('upcomp-chev-${_compKey.replace(/[^a-z0-9]/gi,'-')}');if(b)b.style.display=ui_expiredUpcomingOpen['${_compKey}']?'block':'none';if(c)c.textContent=ui_expiredUpcomingOpen['${_compKey}']?'▾':'▸'"><span class="tsd-dot"></span>${completedUpcoming.length} completed <span id="upcomp-chev-${_compKey.replace(/[^a-z0-9]/gi,'-')}" class="tsd-chev">${isCompOpen?'▾':'▸'}</span></div>`;
+      html+=`<div class="task-section-divider tsd-resolved" style="margin-top:8px" onclick="ui_expiredUpcomingOpen['${_compKey}']=!ui_expiredUpcomingOpen['${_compKey}'];const b=document.getElementById('upcomp-body-${_compKey.replace(/[^a-z0-9]/gi,'-')}');const c=document.getElementById('upcomp-chev-${_compKey.replace(/[^a-z0-9]/gi,'-')}');if(b)b.style.display=ui_expiredUpcomingOpen['${_compKey}']?'block':'none';if(c)c.textContent=ui_expiredUpcomingOpen['${_compKey}']?'▾':'▸'"><span class="tsd-dot"></span>${completedUpcoming.length} completed <span id="upcomp-chev-${_compKey.replace(/[^a-z0-9]/gi,'-')}" class="tsd-chev">${isCompOpen?'▾':'▸'}</span></div>`;
       html+=`<div id="upcomp-body-${_compKey.replace(/[^a-z0-9]/gi,'-')}" style="display:${isCompOpen?'block':'none'}">${completedUpcoming.map(s=>renderCard(sec.key,s,archKey)).join('')}</div>`;
     }
 
@@ -5428,7 +5429,7 @@ function renderAccordion(sec,archKey){
       const isExpOpen=ui_expiredUpcomingOpen[_expKey]===true;
       const _expBodyId='upexp-body-'+_expKey.replace(/[^a-z0-9]/gi,'-');
       const _expChevId='upexp-chev-'+_expKey.replace(/[^a-z0-9]/gi,'-');
-      html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:6px" onclick="ui_expiredUpcomingOpen['${_expKey}']=!ui_expiredUpcomingOpen['${_expKey}'];const b=document.getElementById('${_expBodyId}');const c=document.getElementById('${_expChevId}');if(b)b.style.display=ui_expiredUpcomingOpen['${_expKey}']?'block':'none';if(c)c.textContent=ui_expiredUpcomingOpen['${_expKey}']?'▾':'▸'"><span class="tsd-dot"></span>${expiredUpcoming.length} expired <span id="${_expChevId}" class="tsd-chev">${isExpOpen?'▾':'▸'}</span></div>`;
+      html+=`<div class="task-section-divider tsd-resolved" style="margin-top:6px" onclick="ui_expiredUpcomingOpen['${_expKey}']=!ui_expiredUpcomingOpen['${_expKey}'];const b=document.getElementById('${_expBodyId}');const c=document.getElementById('${_expChevId}');if(b)b.style.display=ui_expiredUpcomingOpen['${_expKey}']?'block':'none';if(c)c.textContent=ui_expiredUpcomingOpen['${_expKey}']?'▾':'▸'"><span class="tsd-dot"></span>${expiredUpcoming.length} expired <span id="${_expChevId}" class="tsd-chev">${isExpOpen?'▾':'▸'}</span></div>`;
       html+=`<div id="${_expBodyId}" style="display:${isExpOpen?'block':'none'}">${expiredUpcoming.map(s=>renderCard(sec.key,s,archKey)).join('')}</div>`;
     }
   } else {
@@ -5458,7 +5459,7 @@ function renderAccordion(sec,archKey){
       if(_done.length){
         const _secDoneKey=(archKey||'today')+'-'+sec.key;
         const _isDoneOpen=ui_storiesDoneOpen[_secDoneKey]===true;
-        html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:6px" onclick="ui_storiesDoneOpen['${_secDoneKey}']=!ui_storiesDoneOpen['${_secDoneKey}'];const b=document.getElementById('sdone-body-${_secDoneKey.replace(/[^a-z0-9]/gi,'-')}');const c=document.getElementById('sdone-chev-${_secDoneKey.replace(/[^a-z0-9]/gi,'-')}');if(b)b.style.display=ui_storiesDoneOpen['${_secDoneKey}']?'block':'none';if(c)c.textContent=ui_storiesDoneOpen['${_secDoneKey}']?'▾':'▸'"><span class="tsd-dot"></span>${_done.length} done / not done <span id="sdone-chev-${_secDoneKey.replace(/[^a-z0-9]/gi,'-')}" class="tsd-chev">${_isDoneOpen?'▾':'▸'}</span></div>`;
+        html+=`<div class="task-section-divider tsd-resolved" style="margin-top:6px" onclick="ui_storiesDoneOpen['${_secDoneKey}']=!ui_storiesDoneOpen['${_secDoneKey}'];const b=document.getElementById('sdone-body-${_secDoneKey.replace(/[^a-z0-9]/gi,'-')}');const c=document.getElementById('sdone-chev-${_secDoneKey.replace(/[^a-z0-9]/gi,'-')}');if(b)b.style.display=ui_storiesDoneOpen['${_secDoneKey}']?'block':'none';if(c)c.textContent=ui_storiesDoneOpen['${_secDoneKey}']?'▾':'▸'"><span class="tsd-dot"></span>${_done.length} done / not done <span id="sdone-chev-${_secDoneKey.replace(/[^a-z0-9]/gi,'-')}" class="tsd-chev">${_isDoneOpen?'▾':'▸'}</span></div>`;
         html+=`<div id="sdone-body-${_secDoneKey.replace(/[^a-z0-9]/gi,'-')}" style="display:${_isDoneOpen?'block':'none'}">`;
         _done.forEach(s=>{ html+=renderCard(sec.key,s,s._archiveDate||archKey); });
         html+=`</div>`;
@@ -5470,7 +5471,7 @@ function renderAccordion(sec,archKey){
       const _isShelvedOpen=ui_storiesShelvedOpen[sec.key]===true;
       const _shelvBodyId='shelved-body-'+sec.key;
       const _shelvChevId='shelved-chev-'+sec.key;
-      html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:6px" onclick="ui_storiesShelvedOpen['${sec.key}']=!ui_storiesShelvedOpen['${sec.key}'];const b=document.getElementById('${_shelvBodyId}');const c=document.getElementById('${_shelvChevId}');if(b)b.style.display=ui_storiesShelvedOpen['${sec.key}']?'block':'none';if(c)c.textContent=ui_storiesShelvedOpen['${sec.key}']?'▾':'▸'"><span class="tsd-dot"></span>${shelvedCount} shelved <span id="${_shelvChevId}" class="tsd-chev">${_isShelvedOpen?'▾':'▸'}</span></div>`;
+      html+=`<div class="task-section-divider tsd-resolved" style="margin-top:6px" onclick="ui_storiesShelvedOpen['${sec.key}']=!ui_storiesShelvedOpen['${sec.key}'];const b=document.getElementById('${_shelvBodyId}');const c=document.getElementById('${_shelvChevId}');if(b)b.style.display=ui_storiesShelvedOpen['${sec.key}']?'block':'none';if(c)c.textContent=ui_storiesShelvedOpen['${sec.key}']?'▾':'▸'"><span class="tsd-dot"></span>${shelvedCount} shelved <span id="${_shelvChevId}" class="tsd-chev">${_isShelvedOpen?'▾':'▸'}</span></div>`;
       html+=`<div id="${_shelvBodyId}" style="display:${_isShelvedOpen?'block':'none'}">`;
       html+=`<div class="shelved-section">`;
       all.filter(s=>s.status==='shelved').forEach(s=>{ html+=renderCard(sec.key,s,archKey); });
@@ -6468,7 +6469,7 @@ function renderTasksSection(){
       const doneLimit=ui_doneTaskPage*10;
       const visibleDone=_doneTasks.slice(0,doneLimit);
       const doneRemaining=_doneTasks.length-visibleDone.length;
-      html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:8px" onclick="ui_doneTaskOpen=!ui_doneTaskOpen;const b=document.getElementById('tg-body-done');const c=document.getElementById('tg-chev-done');if(b)b.style.display=ui_doneTaskOpen?'block':'none';if(c)c.textContent=ui_doneTaskOpen?'▾':'▸'"><span class="tsd-dot"></span>Done / not done <span class="tsd-count">(${_doneTasks.length})</span><span id="tg-chev-done" class="tsd-chev">${ui_doneTaskOpen?'▾':'▸'}</span></div>`;
+      html+=`<div class="task-section-divider tsd-resolved" style="margin-top:8px" onclick="ui_doneTaskOpen=!ui_doneTaskOpen;const b=document.getElementById('tg-body-done');const c=document.getElementById('tg-chev-done');if(b)b.style.display=ui_doneTaskOpen?'block':'none';if(c)c.textContent=ui_doneTaskOpen?'▾':'▸'"><span class="tsd-dot"></span>Done / not done <span class="tsd-count">(${_doneTasks.length})</span><span id="tg-chev-done" class="tsd-chev">${ui_doneTaskOpen?'▾':'▸'}</span></div>`;
       html+=`<div id="tg-body-done" style="display:${ui_doneTaskOpen?'block':'none'}">`;
       visibleDone.forEach(t=>{ html+=renderTaskCard(t,today); });
       if(doneRemaining>0){
@@ -6841,7 +6842,7 @@ function renderCombinedAccordion(archKey){
       const groupBodyId='rg-body-'+key;
       const page=ui_resolvedPages[key]||1, limit=page*10;
       const visible=arr.slice(0,limit), remaining=arr.length-limit;
-      let g=`<div style="margin-bottom:6px"><div class="task-section-divider tsd-nodeadline" style="margin-top:4px" onclick="ui._resolvedGroupOpen['${key}']=!ui._resolvedGroupOpen['${key}'];const gb=document.getElementById('${groupBodyId}');const gc=document.getElementById('rg-chev-${key}');if(gb)gb.style.display=ui._resolvedGroupOpen['${key}']?'block':'none';if(gc)gc.textContent=ui._resolvedGroupOpen['${key}']?'▾':'▸'"><span class="tsd-dot"></span>${label} <span class="tsd-count">(${arr.length})</span><span id="rg-chev-${key}" class="tsd-chev">${isGOpen?'▾':'▸'}</span></div><div id="${groupBodyId}" style="display:${isGOpen?'block':'none'}">`;
+      let g=`<div style="margin-bottom:6px"><div class="task-section-divider tsd-resolved" style="margin-top:4px" onclick="ui._resolvedGroupOpen['${key}']=!ui._resolvedGroupOpen['${key}'];const gb=document.getElementById('${groupBodyId}');const gc=document.getElementById('rg-chev-${key}');if(gb)gb.style.display=ui._resolvedGroupOpen['${key}']?'block':'none';if(gc)gc.textContent=ui._resolvedGroupOpen['${key}']?'▾':'▸'"><span class="tsd-dot"></span>${label} <span class="tsd-count">(${arr.length})</span><span id="rg-chev-${key}" class="tsd-chev">${isGOpen?'▾':'▸'}</span></div><div id="${groupBodyId}" style="display:${isGOpen?'block':'none'}">`;
       visible.forEach(s=>{
         const resolvedDate=s.deadline_date?new Date(s.deadline_date+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'';
         const postponeLabel=s.status==='postponed'&&s.postponedTo?` → ${new Date(s.postponedTo+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'})}`:'';
@@ -7575,7 +7576,7 @@ function renderMeetingsSection(){
     _scheduledMeetings.forEach(m=>{ body+=renderMeetingCard(m, false, m.id===_nearestId); });
     const _previousMeetings=[..._pastOneOffMeetings, ..._doneMeetings].sort((a,b)=>((b.date||'')+(b.time||'')).localeCompare((a.date||'')+(a.time||'')));
     if(_previousMeetings.length){
-      body+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:6px" onclick="ui_meetPrevOpen=!ui_meetPrevOpen;const b=document.getElementById('meet-prev-body');const c=document.getElementById('meet-prev-chev');if(b)b.style.display=ui_meetPrevOpen?'block':'none';if(c)c.textContent=ui_meetPrevOpen?'▾':'▸'"><span class="tsd-dot"></span>${_previousMeetings.length} previous / done <span id="meet-prev-chev" class="tsd-chev">${ui_meetPrevOpen?'▾':'▸'}</span></div>`;
+      body+=`<div class="task-section-divider tsd-resolved" style="margin-top:6px" onclick="ui_meetPrevOpen=!ui_meetPrevOpen;const b=document.getElementById('meet-prev-body');const c=document.getElementById('meet-prev-chev');if(b)b.style.display=ui_meetPrevOpen?'block':'none';if(c)c.textContent=ui_meetPrevOpen?'▾':'▸'"><span class="tsd-dot"></span>${_previousMeetings.length} previous / done <span id="meet-prev-chev" class="tsd-chev">${ui_meetPrevOpen?'▾':'▸'}</span></div>`;
       body+=`<div id="meet-prev-body" style="display:${ui_meetPrevOpen?'block':'none'}">`;
       _previousMeetings.forEach(m=>{ body+=renderMeetingCard(m, _pastOneOffMeetings.includes(m)); });
       body+=`</div>`;
@@ -7748,7 +7749,7 @@ function renderRemarksAccordion(){
   if(resolved.length){
     const isResOpen=ui.notesResolvedOpen===true;
     const resolvedSorted=[...resolved].sort((a,b)=>(b.resolvedOn||b.updated||b.created||0)-(a.resolvedOn||a.updated||a.created||0));
-    body+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:10px" onclick="ui.notesResolvedOpen=!ui.notesResolvedOpen;const b=document.getElementById('notes-res-body');const c=document.getElementById('notes-res-chev');if(b)b.style.display=ui.notesResolvedOpen?'block':'none';if(c)c.textContent=ui.notesResolvedOpen?'▾':'▸'"><span class="tsd-dot"></span>${resolved.length} resolved <span id="notes-res-chev" class="tsd-chev">${isResOpen?'▾':'▸'}</span></div>`;
+    body+=`<div class="task-section-divider tsd-resolved" style="margin-top:10px" onclick="ui.notesResolvedOpen=!ui.notesResolvedOpen;const b=document.getElementById('notes-res-body');const c=document.getElementById('notes-res-chev');if(b)b.style.display=ui.notesResolvedOpen?'block':'none';if(c)c.textContent=ui.notesResolvedOpen?'▾':'▸'"><span class="tsd-dot"></span>${resolved.length} resolved <span id="notes-res-chev" class="tsd-chev">${isResOpen?'▾':'▸'}</span></div>`;
     body+=`<div id="notes-res-body" style="display:${isResOpen?'block':'none'}">`;
     resolvedSorted.forEach(n=>{
       const created=new Date(n.created).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
@@ -9124,7 +9125,7 @@ function _teRenderBody(){
   const totalResolved=autoResolvedStories.length+orphanResolvedIds.length+dismissedStories.length+dismissedGrps.length+autoResolvedGrps.length;
   if(totalResolved>0){
     // Use task-section-divider pattern to match Stories/Tasks/Notes resolved sections
-    html+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:8px" onclick="ui_teResolvedOpen=!ui_teResolvedOpen;const b=document.getElementById('te-resolved-body');if(b)b.style.display=ui_teResolvedOpen?'block':'none';this.querySelector('.te-res-chev').textContent=ui_teResolvedOpen?'▾':'▸'"><span class="tsd-dot"></span>${totalResolved} resolved<span class="tsd-count"> · all paid &amp; claimed</span><span class="te-res-chev tsd-chev">${ui_teResolvedOpen?'▾':'▸'}</span></div>`;
+    html+=`<div class="task-section-divider tsd-resolved" style="margin-top:8px" onclick="ui_teResolvedOpen=!ui_teResolvedOpen;const b=document.getElementById('te-resolved-body');if(b)b.style.display=ui_teResolvedOpen?'block':'none';this.querySelector('.te-res-chev').textContent=ui_teResolvedOpen?'▾':'▸'"><span class="tsd-dot"></span>${totalResolved} resolved<span class="tsd-count"> · all paid &amp; claimed</span><span class="te-res-chev tsd-chev">${ui_teResolvedOpen?'▾':'▸'}</span></div>`;
     html+=`<div id="te-resolved-body" style="display:${ui_teResolvedOpen?'block':'none'}">`;
 
     // Helper: render a resolved story card — uses _teSubAccordion so Reopen restores structure
@@ -9617,7 +9618,7 @@ function renderLeavesSection(){
     }
     // Past leaves
     if(pastLeaves.length){
-      statusHtml+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:6px" onclick="ui_showPastLeaves=!ui_showPastLeaves;const b=document.getElementById('past-leaves-body');const c=document.getElementById('past-leaves-chev');if(b)b.style.display=ui_showPastLeaves?'block':'none';if(c)c.textContent=ui_showPastLeaves?'▾':'▸'"><span class="tsd-dot"></span>${pastLeaves.length} past leaves <span id="past-leaves-chev" class="tsd-chev">${ui_showPastLeaves?'▾':'▸'}</span></div>`;
+      statusHtml+=`<div class="task-section-divider tsd-resolved" style="margin-top:6px" onclick="ui_showPastLeaves=!ui_showPastLeaves;const b=document.getElementById('past-leaves-body');const c=document.getElementById('past-leaves-chev');if(b)b.style.display=ui_showPastLeaves?'block':'none';if(c)c.textContent=ui_showPastLeaves?'▾':'▸'"><span class="tsd-dot"></span>${pastLeaves.length} past leaves <span id="past-leaves-chev" class="tsd-chev">${ui_showPastLeaves?'▾':'▸'}</span></div>`;
       statusHtml+=`<div id="past-leaves-body" style="display:${ui_showPastLeaves?'block':'none'}">`;
       [...pastLeaves].sort((a,b)=>b.dateFrom.localeCompare(a.dateFrom)).forEach(l=>{ statusHtml+=renderLeaveCard(l,today,true); });
       statusHtml+=`</div>`;

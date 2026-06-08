@@ -8840,10 +8840,8 @@ function _teRenderEntry(e){
       ${remHTML}
       <div style="display:flex;gap:7px;justify-content:flex-end;margin-top:10px;padding-top:8px;border-top:1px dashed var(--border);flex-wrap:wrap">
         ${!e.storyId?`<button class="btn btn-ghost btn-sm" onclick="_teRelinkEntry('${e.id}');event.stopPropagation()" style="color:var(--week);border-color:rgba(79,70,229,.3)" title="Link this entry to a story">🔗 Re-link</button>`:''}
-        ${e.type==='freelancer'&&d.payment==='unpaid'?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),payment:'cash'}});event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark paid</button>`:''}
         ${e.type==='freelancer'&&d.payment!=='unpaid'&&d.payment?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),payment:'unpaid'}});event.stopPropagation()" style="color:var(--text3)">↩ Undo paid</button>`:''}
         ${e.type==='expense'&&_teGetClaimed(e)!=='yes'?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),claimed:'yes'}});event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark claimed</button>`:''}
-        ${e.type==='other'&&d.payment==='unpaid'?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),payment:'cash'}});event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark paid</button>`:''}
         ${['cab','flight','hotel','freelancer','fixer','other'].includes(e.type)&&d.payment==='unpaid'?`<button class="btn btn-ghost btn-sm" onclick="_teUpdate('${e.id}',{data:{...((state.travelEntries||[]).find(x=>x.id==='${e.id}')?.data||{}),payment:'cash'}});event.stopPropagation()" style="color:#15803D;border-color:rgba(22,163,74,.4)">✓ Mark paid</button>`:''}
         <button class="btn btn-ghost btn-sm" onclick="_teOpenForm({type:'${e.type}',storyId:${e.storyId?`'${e.storyId}'`:'null'},storySec:${e.storySec?`'${e.storySec}'`:'null'},editId:'${e.id}'});event.stopPropagation()">✏ Edit</button>
         <button class="btn btn-ghost btn-sm btn-danger" onclick="_teDelete('${e.id}');event.stopPropagation()">🗑 Delete</button>
@@ -8947,8 +8945,7 @@ function _teBuildBookingsInner(sid, gid){
   const page=ui_teBookingsPage[sid]||1,limit=page*10,visible=entries.slice(0,limit),remaining=entries.length-limit;
   let h=visible.map(e=>_teRenderEntry(e)).join('');
   if(remaining>0) h+=`<div class="task-section-divider tsd-nodeadline" style="margin:2px 0 0;cursor:pointer" onclick="_teShowMoreBookings('${sid}');event.stopPropagation()">Show ${Math.min(remaining,10)} more <span class="tsd-count">(${remaining} remaining)</span></div>`;
-  const total=_teBookingTotal(entries);
-  if(total>0) h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 11px;background:rgba(79,70,229,.04);border-top:1px solid rgba(79,70,229,.15);margin-top:2px"><span style="font-size:12px;font-weight:600;color:var(--week)">Total bookings</span><span style="font-size:14px;font-weight:700;color:var(--week)">Rs ${total.toLocaleString('en-IN')}</span></div>`;
+  // Amount is shown in sub-accordion header badge — no redundant total row needed
   return h;
 }
 function _teBuildExpensesInner(sid, gid){
@@ -9009,8 +9006,8 @@ function _teSubAccordion(sid,sec){
   const bookBadges=(()=>{
     if(!bookings.length) return '';
     const _bkTotalP=_teBookingTotal(bookings); if(allBookPaid) return _bkTotalP>0?`<span class="sbadge" style="background:rgba(79,70,229,.07);color:var(--week);border:0.5px solid rgba(79,70,229,.25);font-weight:600;font-size:11px">Rs ${_bkTotalP.toLocaleString('en-IN')}</span>`:''; // amount only when paid
-    return (bookUnpaid?`<span class="sbadge" style="background:rgba(186,117,23,.09);color:#854F0B;border:0.5px solid rgba(186,117,23,.3);font-size:11px"><span class="badge-dot" style="background:#BA7517"></span>${bookUnpaid} unpaid</span>`:'')
-      ;
+    const _bkTotalU=_teBookingTotal(bookings);
+    return (bookUnpaid?`<span class="sbadge" style="background:rgba(186,117,23,.09);color:#854F0B;border:0.5px solid rgba(186,117,23,.3);font-size:11px"><span class="badge-dot" style="background:#BA7517"></span>${bookUnpaid} unpaid</span>`:'')+(_bkTotalU>0?`<span class="sbadge" style="background:rgba(79,70,229,.07);color:var(--week);border:0.5px solid rgba(79,70,229,.25);font-weight:600;font-size:11px">Rs ${_bkTotalU.toLocaleString('en-IN')}</span>`:'');
   })();
   const addBookBtns=isGen?`<button class="ttb-add-btn ttb-cab" onclick="_teOpenForm({type:'cab'})">🚕 <span class="ttb-lbl">Cab</span></button><button class="ttb-add-btn ttb-flight" onclick="_teOpenForm({type:'flight'})">✈️ <span class="ttb-lbl">Flight</span></button><button class="ttb-add-btn ttb-hotel" onclick="_teOpenForm({type:'hotel'})">🏨 <span class="ttb-lbl">Hotel</span></button><button class="ttb-add-btn ttb-freelancer" onclick="_teOpenForm({type:'freelancer'})">🧑‍💼 <span class="ttb-lbl">Freelancer</span></button><button class="ttb-add-btn ttb-other" onclick="_teOpenForm({type:'other'})">📦 <span class="ttb-lbl">Other</span></button>`:`<button class="ttb-add-btn ttb-cab" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'cab'})">🚕 <span class="ttb-lbl">Cab</span></button><button class="ttb-add-btn ttb-flight" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'flight'})">✈️ <span class="ttb-lbl">Flight</span></button><button class="ttb-add-btn ttb-hotel" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'hotel'})">🏨 <span class="ttb-lbl">Hotel</span></button><button class="ttb-add-btn ttb-freelancer" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'freelancer'})">🧑‍💼 <span class="ttb-lbl">Freelancer</span></button><button class="ttb-add-btn ttb-other" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'other'})">📦 <span class="ttb-lbl">Other</span></button>`;
   const addExpBtn=isGen?`<button class="btn btn-ghost btn-sm" onclick="_teOpenForm({type:'expense'})">💳 Add expense</button>`:`<button class="btn btn-ghost btn-sm" onclick="_teOpenForm({storyId:'${sid}',storySec:'${sec}',type:'expense'})">💳 Add expense</button>`;
@@ -9393,7 +9390,8 @@ function leaveCalcForPerson(name){
     else if(l.leaveType==='comp') totals.comp+=d;
     else if(l.leaveType==='otherdept') totals.otherdept+=d;
   });
-  totals.total=totals.earned+totals.sick+totals.casual+totals.comp+totals.otherdept;
+  // otherdept is NOT real leave — employee is with another dept, not on leave from the bureau
+  totals.total=totals.earned+totals.sick+totals.casual+totals.comp; // otherdept excluded
   return totals;
 }
 
@@ -9425,7 +9423,7 @@ function renderLeavesByPerson(leaves,today){
       ${makeTile(totals.sick,'Sick','rgba(239,68,68,.08)','rgba(239,68,68,.2)','#DC2626')}
       ${makeTile(totals.casual,'Casual','rgba(124,58,237,.08)','rgba(124,58,237,.2)','#7C3AED')}
       ${makeTile(totals.comp,'Comp','rgba(13,148,136,.08)','rgba(13,148,136,.2)','#0D9488')}
-      ${makeTile(totals.otherdept,'Other','rgba(180,83,9,.08)','rgba(180,83,9,.2)','#B45309')}
+      <div style="flex:1;text-align:center;padding:5px 2px;border-radius:7px;background:rgba(180,83,9,.05);border:0.5px dashed rgba(180,83,9,.3)"><div style="font-size:16px;font-weight:700;color:#B45309;line-height:1;font-family:var(--font)">${totals.otherdept}</div><div style="font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-top:3px;font-family:var(--font)">Other dept</div><div style="font-size:7px;color:var(--text3);margin-top:1px;font-family:var(--font);font-style:italic">not counted</div></div>
     </div>`;
     // Sort entries newest first
     const sorted=[...entries].sort((a,b)=>b.dateFrom.localeCompare(a.dateFrom)); // newest first — latest on top

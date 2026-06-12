@@ -421,14 +421,14 @@ body {
 }
 .acc-header:hover { background: var(--surface2); }
 .acc-icon { font-size: 14px; flex-shrink: 0; width: 20px; text-align: center; }
-.acc-name { font-size: 13.5px; font-weight: 600; color: var(--text); flex: 1; font-family: var(--font); }
+.acc-name { font-size: 13.5px; font-weight: 600; color: var(--text); flex-shrink: 0; font-family: var(--font); }
 .acc-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .acc-count {
   font-size: 10.5px; font-family: var(--font); color: var(--text3);
   background: var(--surface3); border: 1px solid var(--border);
   padding: 2px 7px; border-radius: 4px;
 }
-.acc-summary { font-size: 12px; font-weight: 400; color: #888; font-family: var(--font); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acc-summary { font-size: 12px; font-weight: 400; color: #888; font-family: var(--font); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .acc-chevron { color: var(--text3); font-size: 14px; transition: transform .22s; flex-shrink: 0; }
 .acc-chevron.open { transform: rotate(180deg); }
 .acc-body { display: none; border-top: 1px solid var(--border); padding: 16px 17px; background: var(--surface); }
@@ -4013,8 +4013,7 @@ function doExportStoryTxt(sec,id,archKey){
   const arr=archKey?state.archive[archKey]?.sections[sec]||[]:state.sections[sec]||[];
   const s=arr.find(x=>x.id===id);
   if(!s){ toast('Story not found'); return; }
-  const lines=[storyToText(s)];
-  const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
+  const blob=new Blob([storyToText(s)],{type:'text/plain;charset=utf-8'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download=(s.title||'story').replace(/[^a-z0-9]/gi,'-').slice(0,40)+'.txt';
   document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href);
@@ -4323,31 +4322,21 @@ function toggleForm(sec,archKey){
 }
 function cancelForm(sec,archKey){ const k=sec+(archKey?'::'+archKey:''); ui.openForms.delete(k); delete ui.editMap[k]; render(); if(window._pendingSyncRender){ window._pendingSyncRender=false; _teRefresh(); } }
 function _addSlotInline(sec,id){
-  // Open the edit form for this story, then auto-add a new slot row
   const sfx='-'+sec;
-  const k=sec;
-  ui.openForms.add(k); ui.editMap[k]=id;
+  ui.openForms.add(sec); ui.editMap[sec]=id;
   if(!ui.openSections.has(sec)) ui.openSections.add(sec);
   render();
   setTimeout(()=>{
     showFieldRow(sec,null);
-    // Open the broadcast slots fsec accordion if it is collapsed
     const bcastBody=document.getElementById('fsec-bcast'+sfx);
     if(bcastBody&&!bcastBody.classList.contains('open')){
       bcastBody.classList.add('open');
-      // toggle the chev on the header sibling
       const hdr=bcastBody.previousElementSibling;
       if(hdr){ const chev=hdr.querySelector('.fsec-chev'); if(chev) chev.classList.add('open'); }
     }
-    // Add a new slot row
     addBroadcastSlot();
-    // Scroll to the new slot
     const bcastWrap=document.getElementById('broadcast-slots');
-    if(bcastWrap){
-      const lastRow=bcastWrap.lastElementChild;
-      if(lastRow) lastRow.scrollIntoView({behavior:'smooth',block:'nearest'});
-    }
-    // Scroll form into view
+    if(bcastWrap){ const lastRow=bcastWrap.lastElementChild; if(lastRow) lastRow.scrollIntoView({behavior:'smooth',block:'nearest'}); }
     document.getElementById('story-form-'+sec)?.scrollIntoView({behavior:'smooth',block:'start'});
   }, 60);
 }
@@ -5404,7 +5393,7 @@ function renderAccordion(sec,archKey){
     return esc(eligible[0].title||'');
   }
   const eligible=activeStories.filter(s=>s.status!=='on-hold'&&s.status!=='completed'&&s.status!=='not-done'&&s.status!=='shelved');
-  if(!eligible.length) return sec.key==='requests'?'No requests':'';
+  if(!eligible.length) return '';
   eligible.sort((a,b)=>(b.created||0)-(a.created||0));
   return esc(eligible[0].title||'');
 })()}</span>
@@ -5413,6 +5402,7 @@ function renderAccordion(sec,archKey){
           const _todayStr2=todayStr();
           const activeCount=activeStories.filter(s=>s.status!=='completed'&&s.status!=='not-done'&&s.status!=='on-hold'&&s.status!=='shelved'&&s.status!=='postponed'&&(secObj.isUpcoming?(!s.expected_date||s.expected_date>=_todayStr2):true)).length;
           if(sec.key==='requests') return `<span class="sbadge sb-in-progress">${activeCount} pending</span>`;
+          if(sec.key==='upcoming'||secObj.isUpcoming) return `<span class="sbadge sb-in-progress">${activeCount} pending</span>`;
           return activeCount?`<span class="sbadge sb-in-progress">${activeCount} pending</span>`:'';
         })()}
       </div>
@@ -6796,7 +6786,8 @@ function renderCombinedAccordion(archKey){
       <span class="acc-icon">📡</span>
       <span class="acc-name">Stories</span>
       <span class="acc-summary">${(()=>{ if(!allActive.length)return 'No active stories'; const c=[...allActive].filter(s=>!['completed','not-done','on-hold','shelved'].includes(s.status)); if(!c.length)return 'No active stories'; c.sort((a,b)=>(b.created||0)-(a.created||0)); return esc(c[0].title||''); })()}</span>
-      <div class="acc-meta">${(()=>{const _ac=allActive.filter(s=>!['completed','not-done','shelved'].includes(s.status)).length;return `<span class="sbadge sb-in-progress">${_ac} active</span>`;})()}${_urgentBadge}${_progressBadge}${_carryBadge}${_filterChip}</div>
+      <div class="acc-meta">${(()=>{const _ac=allActive.filter(s=>!['completed','not-done','shelved'].includes(s.status)).length;return _ac===0?`<span class="sbadge sb-in-progress">0 active</span>`:'';})()}${_urgentBadge}${_progressBadge}${_carryBadge}</div>
+      ${_filterChip}
       <span class="acc-chevron${isOpen?' open':''}" id="acc-chev-ibu">▾</span>
     </div>
     ${_storiesStrip}
@@ -8415,14 +8406,14 @@ function _teRefresh(){
   const allResolved=hasAnyEntries&&stories.length===0&&activeGroups2.length===0;
   const sumEl=document.getElementById('acc-travel-summary');
   if(sumEl){
-    let _liveSummary='';
-    if(allResolved) _liveSummary='All resolved';
-    else if(stories.length) _liveSummary=(stories[0].s.title||'').slice(0,32);
+    let _ls='';
+    if(allResolved) _ls='All resolved';
+    else if(stories.length) _ls=(stories[0].s.title||'').slice(0,32);
     else if(activeGroups2.length){
-      const _lg=activeGroups2.map(g=>{const e=_teEntriesForGroup(g.groupId);const l=e.reduce((m,x)=>((x.updated||x.created||0)>(m.updated||m.created||0)?x:m),e[0]||{});return{g,t:l.updated||l.created||0};}).sort((a,b)=>b.t-a.t);
-      _liveSummary=(_lg[0]?.g?.groupLabel)||'General';
+      const _gl=activeGroups2.map(g=>{const e=_teEntriesForGroup(g.groupId);const l=e.reduce((m,x)=>((x.updated||x.created||0)>(m.updated||m.created||0)?x:m),e[0]||{});return{g,t:l.updated||l.created||0};}).sort((a,b)=>b.t-a.t);
+      _ls=_gl[0]?.g?.groupLabel||'General';
     }
-    sumEl.textContent=_liveSummary;
+    sumEl.textContent=_ls;
   }
 
   const dotCol=allResolved?'#16A34A':notClaimedCount?'#D97706':allClaimed?'#16A34A':'#94a3b8';
@@ -9325,44 +9316,12 @@ function renderTravelSection(){
   const _grpAutoRes=new Set(state.travelGroupAutoResolved||[]);
   const _activeGrps=_allGrps.filter(g=>!_dismissedGrps2.has(g.groupId)&&!_grpAutoRes.has(g.groupId)&&_teEntriesForGroup(g.groupId).length>0);
   const allResolved=hasAnyEntries&&stories.length===0&&_activeGrps.length===0;
-  // When no story-linked cards, show latest group/trip name (or "General" for __default)
-  const _teSummaryLabel=(()=>{
-    if(allResolved) return 'All resolved';
-    if(stories.length) return esc((stories[0].s.title||'').slice(0,32));
-    if(_activeGrps.length){
-      // Sort active groups by most recently updated entry
-      const _grpLatest=_activeGrps.map(g=>{
-        const entries=_teEntriesForGroup(g.groupId);
-        const latest=entries.reduce((m,e)=>((e.updated||e.created||0)>(m.updated||m.created||0)?e:m),entries[0]||{});
-        return {g,latest:latest.updated||latest.created||0};
-      }).sort((a,b)=>b.latest-a.latest);
-      const topGrp=_grpLatest[0]?.g;
-      return topGrp?(topGrp.groupLabel||'General'):'';
-    }
-    return '';
-  })();
-  const summary=_teSummaryLabel;
+  const summary=allResolved?'All resolved':stories.length?esc((stories[0].s.title||'').slice(0,32)):'';
 
   const travelStrip=(()=>{
     if(!hasAnyEntries) return '';
     if(allResolved) return `<span style="font-size:10px;color:var(--text3);font-style:italic;font-family:var(--font);flex:1">All resolved</span>`;
-    if(!stories.length){
-      // Show latest general group name in the strip
-      if(!_activeGrps.length) return '';
-      const _grpLatest2=_activeGrps.map(g=>{
-        const entries=_teEntriesForGroup(g.groupId);
-        const latest=entries.reduce((m,e)=>((e.updated||e.created||0)>(m.updated||m.created||0)?e:m),entries[0]||{});
-        return {g,latest:latest.updated||latest.created||0};
-      }).sort((a,b)=>b.latest-a.latest);
-      const topGrp=_grpLatest2[0]?.g;
-      if(!topGrp) return '';
-      const grpLabel=topGrp.groupLabel||'General';
-      const grpEntries=_teEntriesForGroup(topGrp.groupId);
-      const grpUnclaimed=grpEntries.filter(e=>e.type==='expense'&&_teGetClaimed(e)!=='yes').length;
-      const dotCol=grpUnclaimed?'#D97706':'#94a3b8';
-      const metaStr=_activeGrps.length>1?`+${_activeGrps.length-1} more`:'';
-      return `<span style="width:5px;height:5px;border-radius:50%;background:${dotCol};flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:var(--text2);font-style:italic;font-family:var(--font);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:5px">${esc(grpLabel)}</span>${metaStr?`<span style="font-size:10px;font-weight:400;color:#888;font-family:var(--font);flex-shrink:0;margin-left:4px">${metaStr}</span>`:''}`;
-    }
+    if(!stories.length) return '';
     const dotCol=notClaimedCount?'#D97706':allClaimed?'#16A34A':'#94a3b8';
     const firstStory=stories[0]?.s;
     let meta='';
@@ -9382,7 +9341,15 @@ function renderTravelSection(){
     <div class="acc-header" onclick="toggleAccordion('travel')">
       <span class="acc-icon">🗺</span>
       <span class="acc-name">Travel &amp; Expenses</span>
-      <span class="acc-summary" id="acc-travel-summary">${summary}</span>
+      <span class="acc-summary" id="acc-travel-summary">${(()=>{
+        if(allResolved) return 'All resolved';
+        if(stories.length) return esc((stories[0].s.title||'').slice(0,32));
+        if(activeGroups2.length){
+          const _gl=activeGroups2.map(g=>{const e=_teEntriesForGroup(g.groupId);const l=e.reduce((m,x)=>((x.updated||x.created||0)>(m.updated||m.created||0)?x:m),e[0]||{});return{g,t:l.updated||l.created||0};}).sort((a,b)=>b.t-a.t);
+          return esc(_gl[0]?.g?.groupLabel||'General');
+        }
+        return '';
+      })()}</span>
       <div class="acc-meta" id="acc-travel-meta">
         ${!hasAnyEntries?`<span class="sbadge sb-in-progress">0 unresolved</span>`:''}
         ${hasAnyEntries&&!allResolved&&allBookUnpaid?`<span class="sbadge sb-in-progress">${allBookUnpaid} unpaid</span>`:''}
@@ -10201,28 +10168,28 @@ function renderStoryCard(sec,s,archKey){
         ? `<button class="btn btn-ghost btn-sm" onclick="editStory('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">✏ Edit</button>
            <button class="btn btn-done-active btn-sm" disabled>✅ Done</button>
            <button class="btn btn-not-done btn-sm" onclick="markNotDone('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">↩ Reopen</button>
-           <button class="btn btn-ghost btn-sm" onclick="doExportStoryTxt('${sec}','${s.id}',${archKeyJS});event.stopPropagation()" title="Export this story as .txt">↓ Export</button>
+           <button class="btn btn-ghost btn-sm" onclick="doExportStoryTxt('${sec}','${s.id}',${archKeyJS});event.stopPropagation()" title="Export this story">↓ Export</button>
            <span class="caf-spacer"></span>
            <button class="btn btn-ghost btn-sm btn-danger" onclick="confirmDelete('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">🗑 Delete</button>`
         : s.status==='not-done'
         ? `<button class="btn btn-ghost btn-sm" onclick="editStory('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">✏ Edit</button>
            <button class="btn btn-ghost btn-sm" style="color:#64748b;border-color:rgba(100,116,139,.3)" disabled>⚫ Not done</button>
            <button class="btn btn-ghost btn-sm" onclick="markNotDone('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">↩ Reopen</button>
-           <button class="btn btn-ghost btn-sm" onclick="doExportStoryTxt('${sec}','${s.id}',${archKeyJS});event.stopPropagation()" title="Export this story as .txt">↓ Export</button>
+           <button class="btn btn-ghost btn-sm" onclick="doExportStoryTxt('${sec}','${s.id}',${archKeyJS});event.stopPropagation()" title="Export this story">↓ Export</button>
            <span class="caf-spacer"></span>
            <button class="btn btn-ghost btn-sm btn-danger" onclick="confirmDelete('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">🗑 Delete</button>`
         : s.status==='postponed'
         ? `<button class="btn btn-ghost btn-sm" onclick="editStory('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">✏ Edit</button>
            <button class="btn btn-postpone btn-sm" disabled>⏸ Postponed${s.postponeTo?' to '+s.postponeTo:''}</button>
            <button class="btn btn-ghost btn-sm" onclick="markNotDone('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">↩ Reopen</button>
-           <button class="btn btn-ghost btn-sm" onclick="doExportStoryTxt('${sec}','${s.id}',${archKeyJS});event.stopPropagation()" title="Export this story as .txt">↓ Export</button>
+           <button class="btn btn-ghost btn-sm" onclick="doExportStoryTxt('${sec}','${s.id}',${archKeyJS});event.stopPropagation()" title="Export this story">↓ Export</button>
            <span class="caf-spacer"></span>
            <button class="btn btn-ghost btn-sm btn-danger" onclick="confirmDelete('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">🗑 Delete</button>`
         : s.status==='shelved'
         ? `<button class="btn btn-ghost btn-sm" onclick="editStory('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">✏ Edit</button>
            <button class="btn btn-shelve btn-sm" disabled>🗄 Shelved</button>
            <button class="btn btn-ghost btn-sm" onclick="unshelveStory('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">↩ Unshelf</button>
-           <button class="btn btn-ghost btn-sm" onclick="doExportStoryTxt('${sec}','${s.id}',${archKeyJS});event.stopPropagation()" title="Export this story as .txt">↓ Export</button>
+           <button class="btn btn-ghost btn-sm" onclick="doExportStoryTxt('${sec}','${s.id}',${archKeyJS});event.stopPropagation()" title="Export this story">↓ Export</button>
            <span class="caf-spacer"></span>
            <button class="btn btn-ghost btn-sm btn-danger" onclick="confirmDelete('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">🗑 Delete</button>`
         : `<button class="btn btn-ghost btn-sm" onclick="editStory('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">✏ Edit</button>
@@ -10233,7 +10200,7 @@ function renderStoryCard(sec,s,archKey){
            <button class="btn btn-done btn-sm" onclick="toggleComplForm('${s.id}');event.stopPropagation()">Mark Done</button>
            <button class="btn btn-not-done btn-sm" onclick="markStoryNotDone('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">⚫ Not done</button>
            <button class="btn btn-shelve btn-sm hide-mobile" onclick="shelveStory('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">🗄 Shelve</button>
-           <button class="btn btn-ghost btn-sm" onclick="doExportStoryTxt('${sec}','${s.id}',${archKeyJS});event.stopPropagation()" title="Export this story as .txt">↓ Export</button>
+           <button class="btn btn-ghost btn-sm" onclick="doExportStoryTxt('${sec}','${s.id}',${archKeyJS});event.stopPropagation()" title="Export this story">↓ Export</button>
            <span class="caf-spacer"></span>
            <button class="btn btn-ghost btn-sm btn-danger" onclick="confirmDelete('${sec}','${s.id}',${archKeyJS});event.stopPropagation()">🗑 Delete</button>`
       }

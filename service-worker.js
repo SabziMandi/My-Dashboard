@@ -27,8 +27,8 @@ self.addEventListener('activate', event => {
       Promise.all(
         keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
       )
-    ).then(() => self.clients.claim()) // take control of all open pages immediately
-     .then(() => _reArmAll())          // re-arm any reminders that survived SW kill
+    ).then(() => self.clients.claim())
+     .then(() => _reArmAll())
   );
 });
 
@@ -79,8 +79,7 @@ const _timers = {};
 
 // ── IndexedDB helpers ──────────────────────────────────────────────────────
 // Reminders are persisted so they survive the SW being killed by the browser.
-// On every SW startup (activate + message handler first call) we re-arm any
-// entries whose fireAt is still in the future.
+// On every SW startup we re-arm any entries whose fireAt is still in the future.
 const IDB_NAME = 'bbc-dash-reminders';
 const IDB_STORE = 'reminders';
 const IDB_VERSION = 1;
@@ -95,7 +94,6 @@ function _idbOpen() {
     req.onerror = e => reject(e.target.error);
   });
 }
-
 function _idbPut(record) {
   return _idbOpen().then(db => new Promise((resolve, reject) => {
     const tx = db.transaction(IDB_STORE, 'readwrite');
@@ -104,7 +102,6 @@ function _idbPut(record) {
     tx.onerror = e => reject(e.target.error);
   }));
 }
-
 function _idbDelete(id) {
   return _idbOpen().then(db => new Promise((resolve, reject) => {
     const tx = db.transaction(IDB_STORE, 'readwrite');
@@ -113,7 +110,6 @@ function _idbDelete(id) {
     tx.onerror = e => reject(e.target.error);
   }));
 }
-
 function _idbClear() {
   return _idbOpen().then(db => new Promise((resolve, reject) => {
     const tx = db.transaction(IDB_STORE, 'readwrite');
@@ -122,7 +118,6 @@ function _idbClear() {
     tx.onerror = e => reject(e.target.error);
   }));
 }
-
 function _idbGetAll() {
   return _idbOpen().then(db => new Promise((resolve, reject) => {
     const tx = db.transaction(IDB_STORE, 'readonly');
@@ -132,12 +127,11 @@ function _idbGetAll() {
   }));
 }
 
-// ── Core: arm a single reminder in memory ─────────────────────────────────
+// ── Arm a single reminder in memory ───────────────────────────────────────
 function _armTimer(reminder) {
   const { id, title, body, fireAt } = reminder;
   const delay = fireAt - Date.now();
   if (delay <= 0) {
-    // Already past — clean up IDB entry
     _idbDelete(id).catch(() => {});
     return;
   }
@@ -155,8 +149,7 @@ function _armTimer(reminder) {
   }, Math.min(delay, 2147483647));
 }
 
-// ── Re-arm persisted reminders on SW startup ───────────────────────────────
-// Called from activate so reminders survive the SW being killed and restarted.
+// ── Re-arm all persisted reminders on SW startup ───────────────────────────
 function _reArmAll() {
   return _idbGetAll().then(records => {
     records.forEach(r => _armTimer(r));
@@ -173,12 +166,9 @@ self.addEventListener('message', event => {
   }
 
   if (data.type === 'SCHEDULE') {
-    const reminder = data.reminder || {};
-    const { id, title, body, fireAt } = reminder;
+    const { id, title, body, fireAt } = data.reminder || {};
     if (!id || !fireAt) return;
     if (fireAt - Date.now() <= 0) return;
-    // Persist first, then arm — so a crash between the two doesn't leave a
-    // dangling IDB entry with no timer (re-arm on next wake will fix it).
     _idbPut({ id, title, body, fireAt }).then(() => _armTimer({ id, title, body, fireAt })).catch(() => {});
     event.ports[0]?.postMessage({ ok: true, id });
     return;

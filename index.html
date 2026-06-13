@@ -422,13 +422,16 @@ body {
 .acc-header:hover { background: var(--surface2); }
 .acc-icon { font-size: 14px; flex-shrink: 0; width: 20px; text-align: center; }
 .acc-name { font-size: 13.5px; font-weight: 600; color: var(--text); flex-shrink: 0; font-family: var(--font); }
+.acc-name-mobile { display: none; }
+.acc-name-desktop { display: inline; }
 .acc-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .acc-count {
   font-size: 10.5px; font-family: var(--font); color: var(--text3);
   background: var(--surface3); border: 1px solid var(--border);
   padding: 2px 7px; border-radius: 4px;
 }
-.acc-summary { font-size: 12px; font-weight: 400; color: #888; font-family: var(--font); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.acc-summary { font-size: 12px; font-weight: 400; color: #888; font-family: var(--font); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; max-width: 320px; text-align: right; }
+.acc-spacer { flex: 1; min-width: 0; }
 .acc-chevron { color: var(--text3); font-size: 14px; transition: transform .22s; flex-shrink: 0; }
 .acc-chevron.open { transform: rotate(180deg); }
 .acc-body { display: none; border-top: 1px solid var(--border); padding: 16px 17px; background: var(--surface); }
@@ -1462,6 +1465,8 @@ button.tasks-tab-btn {
   .migrate-layout { grid-template-columns: 1fr; }
   .migrate-dest { position: static; }
   .acc-summary { display: none; }
+  .acc-name-mobile { display: inline; }
+  .acc-name-desktop { display: none; }
   .acc-info-strip { display: flex; }
   .date-full.sz-today { font-size: 20px; }
   .content { padding: 14px 16px 80px; }
@@ -3220,6 +3225,7 @@ function deleteStory(sec,id,archKey){
   const filtered=arr.filter(s=>s.id!==id);
   state.sections[sec]=filtered;
   ui.openCards.delete(id); ui.complForms.delete(id);
+  cancelReminder(id);
   saveAndPush(); render();
 }
 function doMoveSelect(fromSec, id, archKey, selectEl){
@@ -4328,7 +4334,7 @@ function _addSlotInline(sec,id){
   render();
   setTimeout(()=>{
     showFieldRow(sec,null);
-    const bcastBody=document.getElementById('fsec-bcast'+sfx);
+    const bcastBody=document.getElementById('fsec-bcast-'+sfx);
     if(bcastBody&&!bcastBody.classList.contains('open')){
       bcastBody.classList.add('open');
       const hdr=bcastBody.previousElementSibling;
@@ -5384,6 +5390,7 @@ function renderAccordion(sec,archKey){
       <span class="acc-icon">${sec.icon}</span>
       <span class="acc-name">${esc(displayName)}</span>
       ${secObj.renameable&&!archKey?`<button class="btn btn-ghost btn-xs" style="flex-shrink:0;padding:2px 7px;font-size:10px;color:var(--text3)" onclick="event.stopPropagation();startRename('${sec.key}')" title="Rename section">✏ Rename</button>`:''}
+      <span class="acc-spacer"></span>
       <span class="acc-summary">${(()=>{
   const today=todayStr();
   if(sec.key==='upcoming'||secObj.isUpcoming){
@@ -5393,7 +5400,7 @@ function renderAccordion(sec,archKey){
     return esc(eligible[0].title||'');
   }
   const eligible=activeStories.filter(s=>s.status!=='on-hold'&&s.status!=='completed'&&s.status!=='not-done'&&s.status!=='shelved');
-  if(!eligible.length) return '';
+  if(!eligible.length) return sec.key==='requests'?'No pending requests':'';
   eligible.sort((a,b)=>(b.created||0)-(a.created||0));
   return esc(eligible[0].title||'');
 })()}</span>
@@ -5799,11 +5806,21 @@ function addTask(data){
     state.archive[today].tasksLog.push({...t});
   }
   saveAndPush();
+  if(t.reminder&&t.reminder!=='off') scheduleReminder({...t, _type:'task', id:'task-'+t.id});
 }
 function updateTask(id,data){
   if(!state.tasks) return;
   const i=state.tasks.findIndex(t=>t.id===id);
-  if(i>=0){ state.tasks[i]={...state.tasks[i],...data, updated:Date.now()}; saveAndPush(); }
+  if(i<0) return;
+  state.tasks[i]={...state.tasks[i],...data, updated:Date.now()};
+  saveAndPush();
+  const merged=state.tasks[i];
+  const prefixedId='task-'+id;
+  if(merged.taskStatus==='done'||merged.taskStatus==='not-done'||!merged.reminder||merged.reminder==='off'){
+    cancelReminder(prefixedId);
+  } else {
+    scheduleReminder({...merged, _type:'task', id:prefixedId});
+  }
 }
 function deleteTask(id){
   const task=(state.tasks||[]).find(t=>t.id===id); if(!task) return;
@@ -5824,6 +5841,7 @@ function deleteTask(id){
   if(!state.deletedIds.tasks) state.deletedIds.tasks=[];
   if(!state.deletedIds.tasks.includes(id)) state.deletedIds.tasks.push(id);
   ui_openTasks.delete(id);
+  cancelReminder('task-'+id);
   saveAndPush(); render();
 }
 function nextRecurrenceDate(task){
@@ -6167,7 +6185,7 @@ function renderTasksSection(){
   const accHeader=`<div class="accordion${isOpen?' acc-open':''}" id="acc-tasks">
     <div class="acc-header" onclick="toggleAccordion('tasks')">
       <span class="acc-icon">☑</span><span class="acc-name">Tasks</span>
-
+      <span class="acc-spacer"></span>
       <span class="acc-summary">${(()=>{
         const today=todayStr();
         const todayMs=new Date(today+'T00:00:00').getTime();
@@ -6785,6 +6803,7 @@ function renderCombinedAccordion(archKey){
     <div class="acc-header" onclick="toggleAccordion('ibu')">
       <span class="acc-icon">📡</span>
       <span class="acc-name">Stories</span>
+      <span class="acc-spacer"></span>
       <span class="acc-summary">${(()=>{ if(!allActive.length)return 'No active stories'; const c=[...allActive].filter(s=>!['completed','not-done','on-hold','shelved'].includes(s.status)); if(!c.length)return 'No active stories'; c.sort((a,b)=>(b.created||0)-(a.created||0)); return esc(c[0].title||''); })()}</span>
       <div class="acc-meta">${(()=>{const _ac=allActive.filter(s=>!['completed','not-done','shelved'].includes(s.status)).length;return _ac===0?`<span class="sbadge sb-in-progress">0 active</span>`:'';})()}${_urgentBadge}${_progressBadge}${_carryBadge}</div>
       ${_filterChip}
@@ -7049,12 +7068,23 @@ let ui_editMeetingRemarkId={}; // meetingId → remarkId
 
 function addMeeting(data){
   if(!state.meetings) state.meetings=[];
-  state.meetings.push({...data, id:genId(), created:Date.now(), remarks:[]});
+  const m={...data, id:genId(), created:Date.now(), remarks:[]};
+  state.meetings.push(m);
   saveAndPush();
+  if(m.reminder&&m.reminder!=='off') scheduleReminder({...m, _type:'meeting', id:'meeting-'+m.id, title:m.name||'Meeting'});
 }
 function updateMeeting(id,data){
   const i=(state.meetings||[]).findIndex(m=>m.id===id);
-  if(i>=0){ state.meetings[i]={...state.meetings[i],...data, updated:Date.now()}; saveAndPush(); }
+  if(i<0) return;
+  state.meetings[i]={...state.meetings[i],...data, updated:Date.now()};
+  saveAndPush();
+  const merged=state.meetings[i];
+  const prefixedId='meeting-'+id;
+  if(merged.status==='done'||merged.status==='cancelled'||!merged.reminder||merged.reminder==='off'){
+    cancelReminder(prefixedId);
+  } else {
+    scheduleReminder({...merged, _type:'meeting', id:prefixedId, title:merged.name||'Meeting'});
+  }
 }
 function deleteMeeting(id){
   state.meetings=(state.meetings||[]).filter(m=>m.id!==id);
@@ -7062,6 +7092,7 @@ function deleteMeeting(id){
   if(!state.deletedIds.meetings) state.deletedIds.meetings=[];
   if(!state.deletedIds.meetings.includes(id)) state.deletedIds.meetings.push(id);
   ui_openMeetings.delete(id);
+  cancelReminder('meeting-'+id);
   saveAndPush(); render();
 }
 function addMeetingRemark(id, text){
@@ -7645,6 +7676,7 @@ function renderMeetingsSection(){
     <div class="acc-header" onclick="toggleAccordion('meetings')">
       <span class="acc-icon">📅</span>
       <span class="acc-name">Meetings</span>
+      <span class="acc-spacer"></span>
       <span class="acc-summary">${(()=>{ const active=(state.meetings||[]).filter(m=>m.status!=='done'&&m.status!=='cancelled'); if(!active.length)return ''; const withMs=active.map(m=>({m,ms:nextMeetingOccurrenceMs(m)})).filter(x=>x.ms<Infinity); if(!withMs.length){ const sorted=active.slice().sort((a,b)=>((b.date||'')+(b.time||'')).localeCompare((a.date||'')+(a.time||''))); const m=sorted[0]; const ist=m.time?ukToIST(m.time):''; return esc(m.name||'')+(ist?' · '+ist+' IST':''); } withMs.sort((a,b)=>a.ms-b.ms); const m=withMs[0].m; const ist=m.time?ukToIST(m.time):''; return esc(m.name||'')+(ist?' · '+ist+' IST':''); })()}</span>
       <div class="acc-meta">
         <span class="sbadge sb-in-progress">${activeCount} scheduled</span>
@@ -7833,7 +7865,7 @@ function renderRemarksAccordion(){
     <div class="acc-header" onclick="toggleAccordion('remarks')">
       <span class="acc-icon">📝</span>
       <span class="acc-name">Notes</span>
-
+      <span class="acc-spacer"></span>
       <span class="acc-summary">${(()=>{ if(!active.length)return ''; const today=todayStr(); const sorted=[...active].sort((a,b)=>{ const da=a.deadline_date?Math.abs(new Date(a.deadline_date+'T00:00:00').getTime()-new Date(today+'T00:00:00').getTime()):Infinity; const db=b.deadline_date?Math.abs(new Date(b.deadline_date+'T00:00:00').getTime()-new Date(today+'T00:00:00').getTime()):Infinity; if(da!==db)return da-db; return (b.created||0)-(a.created||0); }); return esc((sorted[0].headline||sorted[0].text||'').slice(0,60)); })()}</span>
       <div class="acc-meta">
         <span class="sbadge sb-in-progress">${active.length} active</span>
@@ -9340,7 +9372,9 @@ function renderTravelSection(){
   return`<div class="accordion${isOpen?' acc-open':''}" id="acc-travel">
     <div class="acc-header" onclick="toggleAccordion('travel')">
       <span class="acc-icon">🗺</span>
-      <span class="acc-name">Travel &amp; Expenses</span>
+      <span class="acc-name acc-name-desktop">Travel &amp; Expenses</span>
+      <span class="acc-name acc-name-mobile">T&amp;E</span>
+      <span class="acc-spacer"></span>
       <span class="acc-summary" id="acc-travel-summary">${(()=>{
         if(allResolved) return 'All resolved';
         if(stories.length) return esc((stories[0].s.title||'').slice(0,32));
@@ -9583,6 +9617,7 @@ function renderLeavesSection(){
   const accHeaderL=`<div class="accordion${isOpenL?' acc-open':''}" id="acc-leaves">
     <div class="acc-header" onclick="toggleAccordion('leaves')">
       <span class="acc-icon">🌴</span><span class="acc-name">Leaves</span>
+      <span class="acc-spacer"></span>
       <span class="acc-summary">${(()=>{
         const ol=getOnLeaveToday();
         if(ol.length) return ol.slice(0,4).map(l=>(l.employeeName||'').split(' ')[0]).filter(Boolean).join(' · ');

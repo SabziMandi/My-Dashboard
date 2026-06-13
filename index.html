@@ -428,7 +428,8 @@ body {
   background: var(--surface3); border: 1px solid var(--border);
   padding: 2px 7px; border-radius: 4px;
 }
-.acc-summary { font-size: 12px; font-weight: 400; color: #888; font-family: var(--font); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.acc-summary { font-size: 12px; font-weight: 400; color: #888; font-family: var(--font); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; max-width: 320px; text-align: right; }
+.acc-spacer { flex: 1; min-width: 0; }
 .acc-chevron { color: var(--text3); font-size: 14px; transition: transform .22s; flex-shrink: 0; }
 .acc-chevron.open { transform: rotate(180deg); }
 .acc-body { display: none; border-top: 1px solid var(--border); padding: 16px 17px; background: var(--surface); }
@@ -4328,7 +4329,7 @@ function _addSlotInline(sec,id){
   render();
   setTimeout(()=>{
     showFieldRow(sec,null);
-    const bcastBody=document.getElementById('fsec-bcast'+sfx);
+    const bcastBody=document.getElementById('fsec-bcast-'+sfx);
     if(bcastBody&&!bcastBody.classList.contains('open')){
       bcastBody.classList.add('open');
       const hdr=bcastBody.previousElementSibling;
@@ -5384,6 +5385,7 @@ function renderAccordion(sec,archKey){
       <span class="acc-icon">${sec.icon}</span>
       <span class="acc-name">${esc(displayName)}</span>
       ${secObj.renameable&&!archKey?`<button class="btn btn-ghost btn-xs" style="flex-shrink:0;padding:2px 7px;font-size:10px;color:var(--text3)" onclick="event.stopPropagation();startRename('${sec.key}')" title="Rename section">✏ Rename</button>`:''}
+      <span class="acc-spacer"></span>
       <span class="acc-summary">${(()=>{
   const today=todayStr();
   if(sec.key==='upcoming'||secObj.isUpcoming){
@@ -5393,7 +5395,7 @@ function renderAccordion(sec,archKey){
     return esc(eligible[0].title||'');
   }
   const eligible=activeStories.filter(s=>s.status!=='on-hold'&&s.status!=='completed'&&s.status!=='not-done'&&s.status!=='shelved');
-  if(!eligible.length) return '';
+  if(!eligible.length) return sec.key==='requests'?'No pending requests':'';
   eligible.sort((a,b)=>(b.created||0)-(a.created||0));
   return esc(eligible[0].title||'');
 })()}</span>
@@ -6167,7 +6169,7 @@ function renderTasksSection(){
   const accHeader=`<div class="accordion${isOpen?' acc-open':''}" id="acc-tasks">
     <div class="acc-header" onclick="toggleAccordion('tasks')">
       <span class="acc-icon">☑</span><span class="acc-name">Tasks</span>
-
+      <span class="acc-spacer"></span>
       <span class="acc-summary">${(()=>{
         const today=todayStr();
         const todayMs=new Date(today+'T00:00:00').getTime();
@@ -6785,6 +6787,7 @@ function renderCombinedAccordion(archKey){
     <div class="acc-header" onclick="toggleAccordion('ibu')">
       <span class="acc-icon">📡</span>
       <span class="acc-name">Stories</span>
+      <span class="acc-spacer"></span>
       <span class="acc-summary">${(()=>{ if(!allActive.length)return 'No active stories'; const c=[...allActive].filter(s=>!['completed','not-done','on-hold','shelved'].includes(s.status)); if(!c.length)return 'No active stories'; c.sort((a,b)=>(b.created||0)-(a.created||0)); return esc(c[0].title||''); })()}</span>
       <div class="acc-meta">${(()=>{const _ac=allActive.filter(s=>!['completed','not-done','shelved'].includes(s.status)).length;return _ac===0?`<span class="sbadge sb-in-progress">0 active</span>`:'';})()}${_urgentBadge}${_progressBadge}${_carryBadge}</div>
       ${_filterChip}
@@ -7645,6 +7648,7 @@ function renderMeetingsSection(){
     <div class="acc-header" onclick="toggleAccordion('meetings')">
       <span class="acc-icon">📅</span>
       <span class="acc-name">Meetings</span>
+      <span class="acc-spacer"></span>
       <span class="acc-summary">${(()=>{ const active=(state.meetings||[]).filter(m=>m.status!=='done'&&m.status!=='cancelled'); if(!active.length)return ''; const withMs=active.map(m=>({m,ms:nextMeetingOccurrenceMs(m)})).filter(x=>x.ms<Infinity); if(!withMs.length){ const sorted=active.slice().sort((a,b)=>((b.date||'')+(b.time||'')).localeCompare((a.date||'')+(a.time||''))); const m=sorted[0]; const ist=m.time?ukToIST(m.time):''; return esc(m.name||'')+(ist?' · '+ist+' IST':''); } withMs.sort((a,b)=>a.ms-b.ms); const m=withMs[0].m; const ist=m.time?ukToIST(m.time):''; return esc(m.name||'')+(ist?' · '+ist+' IST':''); })()}</span>
       <div class="acc-meta">
         <span class="sbadge sb-in-progress">${activeCount} scheduled</span>
@@ -7833,7 +7837,7 @@ function renderRemarksAccordion(){
     <div class="acc-header" onclick="toggleAccordion('remarks')">
       <span class="acc-icon">📝</span>
       <span class="acc-name">Notes</span>
-
+      <span class="acc-spacer"></span>
       <span class="acc-summary">${(()=>{ if(!active.length)return ''; const today=todayStr(); const sorted=[...active].sort((a,b)=>{ const da=a.deadline_date?Math.abs(new Date(a.deadline_date+'T00:00:00').getTime()-new Date(today+'T00:00:00').getTime()):Infinity; const db=b.deadline_date?Math.abs(new Date(b.deadline_date+'T00:00:00').getTime()-new Date(today+'T00:00:00').getTime()):Infinity; if(da!==db)return da-db; return (b.created||0)-(a.created||0); }); return esc((sorted[0].headline||sorted[0].text||'').slice(0,60)); })()}</span>
       <div class="acc-meta">
         <span class="sbadge sb-in-progress">${active.length} active</span>
@@ -9341,11 +9345,12 @@ function renderTravelSection(){
     <div class="acc-header" onclick="toggleAccordion('travel')">
       <span class="acc-icon">🗺</span>
       <span class="acc-name">Travel &amp; Expenses</span>
+      <span class="acc-spacer"></span>
       <span class="acc-summary" id="acc-travel-summary">${(()=>{
         if(allResolved) return 'All resolved';
         if(stories.length) return esc((stories[0].s.title||'').slice(0,32));
-        if(_activeGrps.length){
-          const _gl=_activeGrps.map(g=>{const e=_teEntriesForGroup(g.groupId);const l=e.reduce((m,x)=>((x.updated||x.created||0)>(m.updated||m.created||0)?x:m),e[0]||{});return{g,t:l.updated||l.created||0};}).sort((a,b)=>b.t-a.t);
+        if(activeGroups2.length){
+          const _gl=activeGroups2.map(g=>{const e=_teEntriesForGroup(g.groupId);const l=e.reduce((m,x)=>((x.updated||x.created||0)>(m.updated||m.created||0)?x:m),e[0]||{});return{g,t:l.updated||l.created||0};}).sort((a,b)=>b.t-a.t);
           return esc(_gl[0]?.g?.groupLabel||'General');
         }
         return '';
@@ -9583,6 +9588,7 @@ function renderLeavesSection(){
   const accHeaderL=`<div class="accordion${isOpenL?' acc-open':''}" id="acc-leaves">
     <div class="acc-header" onclick="toggleAccordion('leaves')">
       <span class="acc-icon">🌴</span><span class="acc-name">Leaves</span>
+      <span class="acc-spacer"></span>
       <span class="acc-summary">${(()=>{
         const ol=getOnLeaveToday();
         if(ol.length) return ol.slice(0,4).map(l=>(l.employeeName||'').split(' ')[0]).filter(Boolean).join(' · ');

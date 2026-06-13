@@ -885,6 +885,8 @@ body {
 @keyframes slideIn { from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:translateY(0)} }
 .form-title { font-size: 13.5px; font-weight: 700; margin-bottom: 14px; color: var(--text); }
 .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.te-row { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; margin-bottom: 10px; }
+.te-row4 { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 9px; margin-bottom: 10px; }
 .fgroup { display: flex; flex-direction: column; gap: 4px; }
 .fgroup.full { grid-column: 1 / -1; }
 .fgroup.span2 { grid-column: span 2; }
@@ -1506,6 +1508,7 @@ button.tasks-tab-btn {
 
   /* Forms always single column */
   .form-grid { grid-template-columns: 1fr !important; }
+  .te-row, .te-row4 { grid-template-columns: 1fr !important; }
   .deadline-split { grid-template-columns: 1fr !important; }
   .fb-grid { grid-template-columns: 1fr !important; }
 
@@ -6842,7 +6845,7 @@ function renderCombinedAccordion(archKey){
   // Stories strip — most urgent active story
   const _storiesStrip=(()=>{
     const candidates=[...allActive].filter(s=>!['completed','not-done','on-hold','shelved'].includes(s.status));
-    if(!candidates.length) return '';
+    if(!candidates.length) return `<div class="acc-info-strip"><span style="width:5px;height:5px;border-radius:50%;background:var(--border2);flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:var(--text3);font-style:italic;font-family:var(--font);margin-left:5px">No active stories</span></div>`;
     candidates.sort((a,b)=>(b.created||0)-(a.created||0));
     const s=candidates[0];
     const dotCol=s.status==='urgent'?'#DC2626':s.status==='in-progress'?'#D97706':'#94a3b8';
@@ -6980,7 +6983,7 @@ function renderCombinedAccordion(archKey){
         const bodyContent=isOpen?renderCard(_subsec,s,_cardAK):`<div class="res-lazy" data-id="${s.id}" data-sec="${_subsec}" data-ak="${_cardAK||''}"></div>`;
         g+=`<div style="margin-bottom:5px"><div id="${rowId}" style="display:${isOpen?'none':'flex'};align-items:center;gap:8px;padding:7px 11px;background:var(--surface);border:1px solid var(--border);border-radius:7px;cursor:pointer" onclick="expandResolvedCard('${s.id}','${_subsec}','${_cardAK||''}');toggleCard('${s.id}');"><span style="width:6px;height:6px;border-radius:50%;background:var(--border2);display:inline-block;flex-shrink:0"></span><span style="font-size:12.5px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.title||'Untitled')}</span>${resolvedDate?`<span style="font-size:10px;color:var(--text3);flex-shrink:0">${resolvedDate}${postponeLabel}</span>`:''}<span style="font-size:11px;color:var(--border2);flex-shrink:0">▾</span></div><div id="${bodyId}" style="display:${isOpen?'block':'none'}">${bodyContent}</div></div>`;
       });
-      if(remaining>0){ const nb=Math.min(remaining,10); g+=`<div style="padding:4px 2px"><button class="btn btn-ghost btn-sm" onclick="ui_resolvedPages['${key}']=(ui_resolvedPages['${key}']||1)+1;render();event.stopPropagation()" style="color:var(--accent);border-color:rgba(207,102,64,.3);font-size:11.5px">Show ${nb} more <span style="opacity:.6;font-size:11px">(${remaining} remaining)</span></button></div>`; }
+      if(remaining>0){ const nb=Math.min(remaining,10); g+=`<div class="task-section-divider tsd-nodeadline" style="margin-top:2px" onclick="ui_resolvedPages['${key}']=(ui_resolvedPages['${key}']||1)+1;render();event.stopPropagation()">↓ Show ${nb} more <span class="tsd-count">(${remaining} remaining)</span><span class="tsd-chev">+</span></div>`; }
       g+='</div>'; // close groupBodyId
       g+='</div>'; return g;
     };
@@ -8694,11 +8697,11 @@ function _teSubmit(){
   }
 
   let data={};
-  if(type==='cab') data={from:g('from'),pickDate:g('pickdate'),pickTime:g('picktime'),to:g('to'),dropDate:g('dropdate'),dropTime:g('droptime'),driver:g('driver'),phone:g('phone'),cabNum:g('cabnum'),payment:g('payment'),paidBy:g('paidby'),cabNotes:(document.getElementById('te-cabnotes')?.value||'').trim()};
-  else if(type==='flight') data={direction:g('direction'),airline:g('airline'),flightNum:g('flightnum'),from:g('from'),to:g('to'),flightDate:g('flightdate'),flightTime:g('flighttime'),payment:g('payment'),paidBy:g('paidby'),flightNotes:(document.getElementById('te-flightnotes')?.value||'').trim()};
+  if(type==='cab') data={from:g('from'),pickDate:g('pickdate'),pickTime:g('picktime'),to:g('to'),dropDate:g('dropdate'),dropTime:g('droptime'),driver:g('driver'),phone:g('phone'),cabNum:g('cabnum'),cabCharge:g('charge'),cabTotal:g('cabtotal'),payment:g('payment'),paidBy:g('paidby'),cabNotes:(document.getElementById('te-cabnotes')?.value||'').trim()};
+  else if(type==='flight') data={direction:g('direction'),airline:g('airline'),flightNum:g('flightnum'),from:g('from'),to:g('to'),flightDate:g('flightdate'),flightTime:g('flighttime'),flightCost:g('flightcost'),payment:g('payment'),paidBy:g('paidby'),flightNotes:(document.getElementById('te-flightnotes')?.value||'').trim()};
   else if(type==='hotel') data={hotelName:g('hotel'),where:g('where'),checkIn:g('checkin'),checkOut:g('checkout'),priceDay:g('priceday'),priceTotal:g('pricetotal'),payment:g('payment'),paidBy:g('paidby'),hotelNotes:(document.getElementById('te-hotelnotes')?.value||'').trim()};
   else if(type==='expense') data={what:g('what'),when:g('when'),where:g('where'),amount:g('amount'),paidBy:g('paidby'),payment:g('payment'),claimed:g('claimed'),expenseNotes:(document.getElementById('te-expensenotes')?.value||'').trim()};
-  else if(type==='freelancer') data={fixerName:g('fixername'),where:g('where'),phone:g('phone'),email:g('email'),startDate:g('startdate'),endDate:g('enddate'),fixerDays:g('fixerdays'),rateDay:g('rateday'),fixerTotal:g('fixertotal'),payment:g('payment'),paidBy:g('paidby'),status:g('status'),fixerNotes:(document.getElementById('te-fixernotes')?.value||'').trim()};
+  else if(type==='freelancer') data={fixerName:g('fixername'),fixerRole:g('role'),where:g('where'),phone:g('phone'),email:g('email'),startDate:g('startdate'),endDate:g('enddate'),fixerDays:g('fixerdays'),rateDay:g('rateday'),fixerTotal:g('fixertotal'),payment:g('payment'),paidBy:g('paidby'),status:g('status'),fixerNotes:(document.getElementById('te-fixernotes')?.value||'').trim()};
   else if(type==='other') data={what:g('what'),when:g('when'),amount:g('amount'),paidBy:g('paidby'),payment:g('payment')||'unpaid',otherNotes:(document.getElementById('te-othernotes')?.value||'').trim()};
 
   // Capture any in-progress form state before reading values
@@ -8740,6 +8743,26 @@ function _teSubmit(){
 }
 
 
+function _teUpdateCabTotal(){
+  const pd=parseFloat(document.getElementById('te-charge')?.value)||0;
+  const sd=document.getElementById('te-pickdate')?.value;
+  const ed=document.getElementById('te-dropdate')?.value;
+  const tot=document.getElementById('te-cabtotal');
+  if(!tot) return;
+  if(pd&&sd){
+    const n=ed?Math.max(1,Math.round((new Date(ed+'T00:00:00')-new Date(sd+'T00:00:00'))/86400000)+1):1;
+    if(n>0){
+      const calcVal=Math.round(pd*n);
+      const curVal=parseFloat(String(tot.value||'').replace(/[^\d.]/g,''));
+      // Compare against the last value WE auto-filled (not the latest calc), so changing
+      // charge/dates re-computes, while a value the user typed — or a saved total on reopen
+      // (no _autoVal yet) — is preserved.
+      const ref=(tot._autoVal!==undefined)?tot._autoVal:calcVal;
+      const isManual=tot.value.trim()&&curVal>0&&Math.abs(curVal-ref)>0.5;
+      if(!isManual&&!tot._edited){ tot.value=calcVal; tot._autoVal=calcVal; }
+    }
+  }
+}
 function _teUpdateHotelTotal(){
   const pd=parseFloat(document.getElementById('te-priceday')?.value)||0;
   const ci=document.getElementById('te-checkin')?.value;
@@ -8751,9 +8774,11 @@ function _teUpdateHotelTotal(){
     if(n>0){
       const calcVal=Math.round(pd*n);
       const curVal=parseFloat(String(tot.value||'').replace(/[^\d.]/g,''));
-      // Protect manual override: if stored value meaningfully differs from calc, it was manually entered
-      const isManual=tot.value.trim()&&curVal>0&&Math.abs(curVal-calcVal)>0.5;
-      if(!isManual&&!tot._edited) tot.value=calcVal;
+      // Compare against the last value WE auto-filled so changing price/dates re-computes;
+      // a typed value or a saved total on reopen (no _autoVal yet) is preserved.
+      const ref=(tot._autoVal!==undefined)?tot._autoVal:calcVal;
+      const isManual=tot.value.trim()&&curVal>0&&Math.abs(curVal-ref)>0.5;
+      if(!isManual&&!tot._edited){ tot.value=calcVal; tot._autoVal=calcVal; }
     }
   }
 }
@@ -8770,9 +8795,11 @@ function _teUpdateFixerTotal(){
       const rate=parseFloat(document.getElementById('te-rateday')?.value)||0;
       const calcVal=Math.round(rate*n);
       const curVal=parseFloat(String(totEl.value||'').replace(/[^\d.]/g,''));
-      // Only auto-fill if: field is empty, OR user hasn't manually overridden (value matches calc)
-      const isManual=totEl.value.trim()&&curVal>0&&rate>0&&Math.abs(curVal-calcVal)>0.5;
-      if(!isManual&&!totEl._edited&&rate&&n>0) totEl.value=calcVal;
+      // Compare against the last value WE auto-filled so changing rate/dates re-computes;
+      // a typed value or a saved total on reopen (no _autoVal yet) is preserved.
+      const ref=(totEl._autoVal!==undefined)?totEl._autoVal:calcVal;
+      const isManual=totEl.value.trim()&&curVal>0&&rate>0&&Math.abs(curVal-ref)>0.5;
+      if(!isManual&&!totEl._edited&&rate&&n>0){ totEl.value=calcVal; totEl._autoVal=calcVal; }
     }
   }
 }
@@ -8827,15 +8854,49 @@ function _teBuildForm(){
   const payOpts=(cur)=>['account','bbc-direct','card','cash','unpaid','upi'].map(v=>`<option value="${v}"${(cur||'cash')===v?' selected':''}>${_payLabel(v)}</option>`).join('');
   const fi=(id,lbl,val,tp,ph,extra)=>`<div class="fgroup"><label class="flabel">${lbl}</label><input class="finput" id="te-${id}" type="${tp||'text'}" value="${esc(val||'')}" placeholder="${ph||''}" ${extra||''}></div>`;
   const fs=(id,lbl,opts)=>`<div class="fgroup"><label class="flabel">${lbl}</label><select class="fselect" id="te-${id}">${opts}</select></div>`;
+  const row=(...cells)=>`<div class="te-row">${cells.filter(Boolean).join('')}</div>`;
+  const row4=(...cells)=>`<div class="te-row4">${cells.filter(Boolean).join('')}</div>`;
+  const rem=(id,val,ph,lbl,mh)=>`<div class="fgroup"><label class="flabel">${lbl||'Remarks'}</label><textarea class="ftextarea" id="te-${id}" placeholder="${ph||''}" style="min-height:${mh||54}px;white-space:pre-wrap">${esc(val||'')}</textarea></div>`;
+  const autoField=(id,lbl,val,ph)=>`<div class="fgroup"><label class="flabel">${lbl} <span style="font-size:10px;color:var(--text3)">(auto)</span></label><input class="finput" id="te-${id}" value="${esc(val||'')}" placeholder="${ph||''}" oninput="this._edited=true"></div>`;
+  const _statusVals=['On field','Research'];
+  const statusOpts=`<option value=""${!ed.status?' selected':''}>— Select —</option>`+_statusVals.map(v=>`<option value="${v}"${ed.status===v?' selected':''}>${v}</option>`).join('')+((ed.status&&!_statusVals.includes(ed.status))?`<option value="${esc(ed.status)}" selected>${esc(ed.status)} (old)</option>`:'');
 
   let fields='';
-  if(type==='cab') fields=fi('from','From',ed.from,'','Pickup location')+fi('pickdate','Pick-up date',ed.pickDate||ed.when?.slice(0,10),'date','')+fi('picktime','Pick-up time',ed.pickTime||ed.when?.slice(11,16),'time','')+fi('to','To',ed.to,'','Drop-off location')+fi('dropdate','Drop-off date',ed.dropDate||ed.dropWhen?.slice(0,10),'date','')+fi('droptime','Drop-off time',ed.dropTime||ed.dropWhen?.slice(11,16),'time','')+fi('driver','Driver name',ed.driver,'','Name')+fi('phone','Driver phone',ed.phone,'','Phone number')+fi('cabnum','Cab number',ed.cabNum,'','Plate number')+fs('payment','Payment mode',payOpts(ed.payment))+fi('paidby','Paid by',ed.paidBy,'','Employee name')+`<div class="fgroup full"><label class="flabel">Remarks</label><textarea class="ftextarea" id="te-cabnotes" placeholder="Any notes, invoice reference, follow-up…" style="min-height:54px;white-space:pre-wrap">${esc(ed.cabNotes||'')}</textarea></div>`;
-  else if(type==='flight') fields=fs('direction','Direction',`<option value="outbound"${(ed.direction||'outbound')==='outbound'?' selected':''}>Outbound</option><option value="inbound"${ed.direction==='inbound'?' selected':''}>Inbound / Return</option>`)+fi('airline','Airline',ed.airline,'','e.g. Air India')+fi('flightnum','Flight number',ed.flightNum,'','e.g. AI202')+fi('from','From',ed.from,'','Departure airport')+fi('to','To',ed.to,'','Arrival airport')+fi('flightdate','Date',ed.flightDate||ed.when?.slice(0,10),'date','')+fi('flighttime','Time',ed.flightTime||ed.when?.slice(11,16),'time','')+fs('payment','Payment mode',payOpts(ed.payment))+fi('paidby','Paid by',ed.paidBy,'','Employee name')+`<div class="fgroup full"><label class="flabel">Remarks</label><textarea class="ftextarea" id="te-flightnotes" placeholder="Baggage, PNR, seat, any notes…" style="min-height:54px;white-space:pre-wrap">${esc(ed.flightNotes||'')}</textarea></div>`;
-  else if(type==='hotel') fields=fi('hotel','Hotel name',ed.hotelName,'','')+fi('where','Location',ed.where,'','City / address')+fi('checkin','Check-in',ed.checkIn,'date','','onchange="_teUpdateHotelTotal()"')+fi('checkout','Check-out',ed.checkOut,'date','','onchange="_teUpdateHotelTotal()"')+fi('priceday','Price per day',ed.priceDay,'','₹ or £','oninput="_teUpdateHotelTotal()"')+`<div class="fgroup"><label class="flabel">Price total <span style="font-size:10px;color:var(--text3)">(auto)</span></label><input class="finput" id="te-pricetotal" value="${esc(ed.priceTotal||'')}" placeholder="₹ or £" oninput="this._edited=true"></div>`+fs('payment','Payment mode',payOpts(ed.payment))+fi('paidby','Paid by',ed.paidBy,'','Employee name')+`<div class="fgroup full"><label class="flabel">Remarks</label><textarea class="ftextarea" id="te-hotelnotes" placeholder="Confirmation number, room type, any notes…" style="min-height:54px;white-space:pre-wrap">${esc(ed.hotelNotes||'')}</textarea></div>`;
-  else if(type==='expense') fields=fi('what','What',ed.what,'','Description of expense')+fi('when','Date',ed.when,'date','')+fi('where','Location / vendor',ed.where,'','Where was this spent?')+fi('amount','Amount',ed.amount,'','₹ or £')+fi('paidby','Paid by',ed.paidBy,'','Employee name')+fs('payment','Payment mode',payOpts(ed.payment))+fs('claimed','Expense claimed',`<option value="no"${(_teGetClaimed(editEntry||{}))!=='yes'?' selected':''}>Not claimed</option><option value="yes"${_teGetClaimed(editEntry||{})==='yes'?' selected':''}>Claimed</option>`)+`<div class="fgroup full"><div style="font-size:11px;color:var(--progress);background:rgba(217,119,6,.08);padding:5px 10px;border-radius:6px">⏳ "Not claimed" adds to unclaimed count in accordion header</div></div>`+`<div class="fgroup full"><label class="flabel">Remarks</label><textarea class="ftextarea" id="te-expensenotes" placeholder="Receipt reference, vendor details, any notes…" style="min-height:54px;white-space:pre-wrap">${esc(ed.expenseNotes||'')}</textarea></div>`;
-  else if(type==='freelancer') fields=fi('fixername','Name',ed.fixerName,'','Full name')+fi('where','Location / city',ed.where,'','City or area')+fi('phone','Phone',ed.phone,'','Phone number')+fi('email','Email',ed.email,'','email@ (optional)')+fi('startdate','Start date',ed.startDate,'date','')+fi('enddate','End date',ed.endDate,'date','','oninput="_teUpdateFixerTotal()"')+`<div class="fgroup"><label class="flabel">Days <span style="font-size:10px;color:var(--text3)">(auto)</span></label><input class="finput" id="te-fixerdays" value="${esc(ed.fixerDays||'')}" placeholder="—" readonly style="color:var(--text3)"></div>`+fi('rateday','Rate per day',ed.rateDay,'','e.g. 150 INR','oninput="_teUpdateFixerTotal()"')+`<div class="fgroup"><label class="flabel">Total <span style="font-size:10px;color:var(--text3)">(auto)</span></label><input class="finput" id="te-fixertotal" value="${esc(ed.fixerTotal||'')}" placeholder="—" oninput="this._edited=true"></div>`+fs('payment','Payment mode',payOpts(ed.payment))+fi('paidby','Paid by',ed.paidBy,'','Employee name')+fi('status','Status',ed.status,'','Active / Pending / Completed')+`<div class="fgroup full"><label class="flabel">Notes / other relevant details</label><textarea class="ftextarea" id="te-fixernotes" placeholder="Languages, specialisation, previous assignments, local contacts, security info…" style="min-height:72px;white-space:pre-wrap">${esc(ed.fixerNotes||'')}</textarea></div>`;
+  if(type==='cab') fields=
+    row(fi('from','From',ed.from,'','Pickup location'),fi('pickdate','Pick-up date',ed.pickDate||ed.when?.slice(0,10),'date','','onchange="_teUpdateCabTotal()"'),fi('picktime','Pick-up time',ed.pickTime||ed.when?.slice(11,16),'time',''))+
+    row(fi('to','To',ed.to,'','Drop-off location'),fi('dropdate','Drop-off date',ed.dropDate||ed.dropWhen?.slice(0,10),'date','','onchange="_teUpdateCabTotal()"'),fi('droptime','Drop-off time',ed.dropTime||ed.dropWhen?.slice(11,16),'time',''))+
+    row(fi('driver','Driver name',ed.driver,'','Name'),fi('phone','Driver phone',ed.phone,'','Phone number'),fi('cabnum','Cab number',ed.cabNum,'','Plate number'))+
+    row(fi('charge','Charge per day',ed.cabCharge,'','₹ or £','oninput="_teUpdateCabTotal()"'),autoField('cabtotal','Total',ed.cabTotal,'₹ or £'),fs('payment','Payment mode',payOpts(ed.payment)))+
+    row(fi('paidby','Paid by',ed.paidBy,'','Employee name'))+
+    rem('cabnotes',ed.cabNotes,'Any notes, invoice reference, follow-up…');
+  else if(type==='flight') fields=
+    row(fs('direction','Direction',`<option value="outbound"${(ed.direction||'outbound')==='outbound'?' selected':''}>Outbound</option><option value="inbound"${ed.direction==='inbound'?' selected':''}>Inbound / Return</option>`),fi('airline','Airline',ed.airline,'','e.g. Air India'),fi('flightnum','Flight number',ed.flightNum,'','e.g. AI202'))+
+    row(fi('from','From',ed.from,'','Departure airport'),fi('to','To',ed.to,'','Arrival airport'))+
+    row(fi('flightdate','Date',ed.flightDate||ed.when?.slice(0,10),'date',''),fi('flighttime','Time',ed.flightTime||ed.when?.slice(11,16),'time',''))+
+    row(fi('flightcost','Cost',ed.flightCost,'','₹ or £'),fs('payment','Payment mode',payOpts(ed.payment)),fi('paidby','Paid by',ed.paidBy,'','Employee name'))+
+    rem('flightnotes',ed.flightNotes,'Baggage, PNR, seat, any notes…');
+  else if(type==='hotel') fields=
+    row4(fi('hotel','Hotel name',ed.hotelName,'',''),fi('where','Location',ed.where,'','City / address'),fi('checkin','Check-in',ed.checkIn,'date','','onchange="_teUpdateHotelTotal()"'),fi('checkout','Check-out',ed.checkOut,'date','','onchange="_teUpdateHotelTotal()"'))+
+    row4(fi('priceday','Price per day',ed.priceDay,'','₹ or £','oninput="_teUpdateHotelTotal()"'),autoField('pricetotal','Price total',ed.priceTotal,'₹ or £'),fs('payment','Payment mode',payOpts(ed.payment)),fi('paidby','Paid by',ed.paidBy,'','Employee name'))+
+    rem('hotelnotes',ed.hotelNotes,'Confirmation number, room type, any notes…');
+  else if(type==='expense') fields=
+    row(fi('what','What',ed.what,'','Description of expense'),fi('when','Date',ed.when,'date',''),fi('where','Location / vendor',ed.where,'','Where was this spent?'))+
+    row(fi('amount','Amount',ed.amount,'','₹ or £'),fi('paidby','Paid by',ed.paidBy,'','Employee name'),fs('payment','Payment mode',payOpts(ed.payment)))+
+    row(fs('claimed','Expense claimed',`<option value="no"${(_teGetClaimed(editEntry||{}))!=='yes'?' selected':''}>Not claimed</option><option value="yes"${_teGetClaimed(editEntry||{})==='yes'?' selected':''}>Claimed</option>`))+
+    `<div class="fgroup"><div style="font-size:11px;color:var(--progress);background:rgba(217,119,6,.08);padding:5px 10px;border-radius:6px;margin-bottom:8px">⏳ "Not claimed" adds to unclaimed count in accordion header</div></div>`+
+    rem('expensenotes',ed.expenseNotes,'Receipt reference, vendor details, any notes…');
+  else if(type==='freelancer') fields=
+    row(fi('fixername','Name',ed.fixerName,'','Full name'),fi('role','Role',ed.fixerRole,'','Fixer / translator / driver…'),fi('where','Location',ed.where,'','City or area'))+
+    row(fi('phone','Phone',ed.phone,'','Phone number'),fi('email','Email',ed.email,'','email@ (optional)'))+
+    row(fi('startdate','Start date',ed.startDate,'date','','onchange="_teUpdateFixerTotal()"'),fi('enddate','End date',ed.endDate,'date','','onchange="_teUpdateFixerTotal()"'),`<div class="fgroup"><label class="flabel">Days <span style="font-size:10px;color:var(--text3)">(auto)</span></label><input class="finput" id="te-fixerdays" value="${esc(ed.fixerDays||'')}" placeholder="—" readonly style="color:var(--text3)"></div>`)+
+    row(fi('rateday','Rate per day',ed.rateDay,'','e.g. 150 INR','oninput="_teUpdateFixerTotal()"'),autoField('fixertotal','Total',ed.fixerTotal,'—'))+
+    row(fi('paidby','Paid by',ed.paidBy,'','Employee name'),fs('payment','Payment mode',payOpts(ed.payment)),fs('status','Status',statusOpts))+
+    rem('fixernotes',ed.fixerNotes,'Languages, specialisation, previous assignments, local contacts, security info…','Notes / other relevant details',72);
 
-  else if(type==='other') fields=fi('what','Description',ed.what,'','e.g. Satellite uplink, equipment hire…')+fi('when','Date',ed.when,'date','')+fi('amount','Amount',ed.amount,'','₹ / £ / $')+fi('paidby','Paid by',ed.paidBy,'','Name or petty cash')+fs('payment','Payment mode',payOpts(ed.payment))+`<div class="fgroup full"><label class="flabel">Remarks</label><textarea class="ftextarea" id="te-othernotes" placeholder="Invoice reference, contact details, follow-up actions…" style="min-height:64px;white-space:pre-wrap">${esc(ed.otherNotes||'')}</textarea></div>`;
+  else if(type==='other') fields=
+    row(fi('what','Description',ed.what,'','e.g. Satellite uplink, equipment hire…'),fi('when','Date',ed.when,'date',''),fi('amount','Amount',ed.amount,'','₹ / £ / $'))+
+    row(fi('paidby','Paid by',ed.paidBy,'','Name or petty cash'),fs('payment','Payment mode',payOpts(ed.payment)))+
+    rem('othernotes',ed.otherNotes,'Invoice reference, contact details, follow-up actions…',null,64);
 
   const typBtn=(t,ico,lbl)=>`<button type="button" onclick="_teSetType('${t}')" style="flex:1;padding:8px 4px;border:1px solid ${type===t?'var(--accent)':'var(--border)'};border-radius:7px;background:${type===t?'var(--accent)':'transparent'};color:${type===t?'#fff':'var(--text2)'};font-size:12px;cursor:pointer;font-family:var(--font)">${ico} ${lbl}</button>`;
 
@@ -8870,7 +8931,7 @@ function _teBuildForm(){
       </div>
     </div>
     <div style="border-top:1px solid var(--border);margin:4px 0 12px"></div>
-    <div class="form-grid">${fields}</div>
+    <div class="te-form-body">${fields}</div>
     <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center">
       <button class="btn btn-accent btn-sm" id="te-submit-btn" onclick="_teSubmit()">Save entry</button>
       <button class="btn btn-ghost btn-sm" onclick="_teCloseForm()">Cancel</button>
@@ -8978,15 +9039,15 @@ function _teRenderEntry(e){
   if(e.type==='cab'){
     const pick=(d.pickDate?_fmtD(d.pickDate):(d.when?.slice(0,10)?_fmtD(d.when.slice(0,10)):''))+(d.pickTime?' '+d.pickTime:d.when?.slice(11,16)?' '+d.when.slice(11,16):'');
     const drop=(d.dropDate?_fmtD(d.dropDate):(d.dropWhen?.slice(0,10)?_fmtD(d.dropWhen.slice(0,10)):''))+(d.dropTime?' '+d.dropTime:d.dropWhen?.slice(11,16)?' '+d.dropWhen.slice(11,16):'');
-    det=fld('From',d.from)+fld('Pick-up',pick)+fld('To',d.to)+fld('Drop-off',drop)+fld('Driver',d.driver+(d.phone?' · '+d.phone:''))+fld('Cab no.',d.cabNum)+fld('Payment',_payLabel(d.payment))+fld('Paid by',d.paidBy)+(d.cabNotes?fld('Remarks',d.cabNotes):'');
+    det=fld('From',d.from)+fld('Pick-up',pick)+fld('To',d.to)+fld('Drop-off',drop)+fld('Driver',d.driver+(d.phone?' · '+d.phone:''))+fld('Cab no.',d.cabNum)+fld('Charge/day',d.cabCharge)+fld('Total',d.cabTotal)+fld('Payment',_payLabel(d.payment))+fld('Paid by',d.paidBy)+(d.cabNotes?fld('Remarks',d.cabNotes):'');
   }
   else if(e.type==='flight'){
     const fl=(d.flightDate?_fmtD(d.flightDate):(d.when?.slice(0,10)?_fmtD(d.when.slice(0,10)):''))+(d.flightTime?' '+d.flightTime:d.when?.slice(11,16)?' '+d.when.slice(11,16):'');
-    det=fld('Direction',d.direction==='inbound'?'Inbound / Return':'Outbound')+fld('Airline',d.airline)+fld('Flight no.',d.flightNum)+fld('From',d.from)+fld('To',d.to)+fld('Date & time',fl)+fld('Payment',_payLabel(d.payment))+fld('Paid by',d.paidBy)+(d.flightNotes?fld('Remarks',d.flightNotes):'');
+    det=fld('Direction',d.direction==='inbound'?'Inbound / Return':'Outbound')+fld('Airline',d.airline)+fld('Flight no.',d.flightNum)+fld('From',d.from)+fld('To',d.to)+fld('Date & time',fl)+fld('Cost',d.flightCost)+fld('Payment',_payLabel(d.payment))+fld('Paid by',d.paidBy)+(d.flightNotes?fld('Remarks',d.flightNotes):'');
   }
   else if(e.type==='hotel') det=fld('Hotel',d.hotelName)+fld('Location',d.where)+fld('Check-in',_fmtD(d.checkIn))+fld('Check-out',_fmtD(d.checkOut))+fld('Price/day',d.priceDay)+fld('Total',d.priceTotal)+fld('Payment',_payLabel(d.payment))+fld('Paid by',d.paidBy)+(d.hotelNotes?fld('Remarks',d.hotelNotes):'');
   else if(e.type==='expense') det=fld('What',d.what)+fld('Date',_fmtD(d.when))+fld('Location',d.where)+fld('Amount',d.amount)+fld('Paid by',d.paidBy)+fld('Payment',_payLabel(d.payment))+fld('Claimed',_teGetClaimed(e)==='yes'?'✅ Yes':'⏳ Not yet')+(d.expenseNotes?fld('Remarks',d.expenseNotes):'');
-  else if(e.type==='freelancer') det=fld('Name',d.fixerName)+fld('Location',d.where)+fld('Phone',d.phone)+fld('Email',d.email)+fld('Start date',_fmtD(d.startDate))+fld('End date',_fmtD(d.endDate))+fld('Days',d.fixerDays)+fld('Rate / day',d.rateDay)+fld('Total',d.fixerTotal)+fld('Payment',_payLabel(d.payment))+fld('Paid by',d.paidBy)+fld('Status',d.status)+(d.fixerNotes?fld('Notes',d.fixerNotes):'');
+  else if(e.type==='freelancer') det=fld('Name',d.fixerName)+fld('Role',d.fixerRole)+fld('Location',d.where)+fld('Phone',d.phone)+fld('Email',d.email)+fld('Start date',_fmtD(d.startDate))+fld('End date',_fmtD(d.endDate))+fld('Days',d.fixerDays)+fld('Rate / day',d.rateDay)+fld('Total',d.fixerTotal)+fld('Payment',_payLabel(d.payment))+fld('Paid by',d.paidBy)+fld('Status',d.status)+(d.fixerNotes?fld('Notes',d.fixerNotes):'');
   else if(e.type==='other') det=fld('Description',d.what)+fld('Date',_fmtD(d.when))+fld('Amount',d.amount)+fld('Paid by',d.paidBy)+fld('Payment',_payLabel(d.payment))+(d.otherNotes?fld('Remarks',d.otherNotes):'');
 
   // Remarks — full inline CRUD panel
@@ -9424,9 +9485,18 @@ function renderTravelSection(){
   const summary=allResolved?'All resolved':stories.length?esc((stories[0].s.title||'').slice(0,32)):'';
 
   const travelStrip=(()=>{
-    if(!hasAnyEntries) return '';
+    if(!hasAnyEntries) return `<span style="width:5px;height:5px;border-radius:50%;background:var(--border2);flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:var(--text3);font-style:italic;font-family:var(--font);margin-left:5px">No entries yet</span>`;
     if(allResolved) return `<span style="font-size:10px;color:var(--text3);font-style:italic;font-family:var(--font);flex:1">All resolved</span>`;
-    if(!stories.length) return '';
+    if(!stories.length){
+      // No story-linked entries — surface the most-recent active General/unlinked group,
+      // mirroring the desktop summary so mobile isn't left blank when entries are unlinked.
+      if(!_activeGrps.length) return '';
+      const _gl=_activeGrps.map(g=>{const e=_teEntriesForGroup(g.groupId);const l=e.reduce((m,x)=>((x.updated||x.created||0)>(m.updated||m.created||0)?x:m),e[0]||{});return{g,t:l.updated||l.created||0};}).sort((a,b)=>b.t-a.t);
+      const _gLabel=esc((_gl[0]?.g?.groupLabel||'General').slice(0,32));
+      const _gDot=notClaimedCount?'#D97706':allClaimed?'#16A34A':'#94a3b8';
+      const _gMeta=_activeGrps.length>1?`<span style="font-size:10px;color:var(--text3);font-family:var(--font);flex-shrink:0;margin-left:4px">+${_activeGrps.length-1} more</span>`:'';
+      return `<span style="width:5px;height:5px;border-radius:50%;background:${_gDot};flex-shrink:0;display:inline-block"></span><span style="font-size:10px;color:var(--text2);font-style:italic;font-family:var(--font);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:5px">${_gLabel}</span>${_gMeta}`;
+    }
     const dotCol=notClaimedCount?'#D97706':allClaimed?'#16A34A':'#94a3b8';
     const firstStory=stories[0]?.s;
     let meta='';
@@ -9455,7 +9525,7 @@ function renderTravelSection(){
           const _gl=_activeGrps.map(g=>{const e=_teEntriesForGroup(g.groupId);const l=e.reduce((m,x)=>((x.updated||x.created||0)>(m.updated||m.created||0)?x:m),e[0]||{});return{g,t:l.updated||l.created||0};}).sort((a,b)=>b.t-a.t);
           return esc(_gl[0]?.g?.groupLabel||'General');
         }
-        return '';
+        return 'No entries yet'; // only reached when there are no entries at all (else All resolved / story / group above)
       })()}</span>
       <div class="acc-meta" id="acc-travel-meta">
         ${!hasAnyEntries?`<span class="sbadge sb-in-progress">0 unresolved</span>`:''}
@@ -9496,11 +9566,11 @@ function doExportTravelTxt(){
     grp.forEach(e=>{
       const d=e.data||{};
       lines.push(''); lines.push('  ['+(_typeName[e.type]||e.type).toUpperCase()+']');
-      if(e.type==='cab'){ if(d.from||d.to) lines.push(pad('  Route',[d.from,d.to].filter(Boolean).join(' → '))); if(d.when) lines.push(pad('  Pick-up',_fmtDT(d.when))); if(d.dropWhen) lines.push(pad('  Drop-off',_fmtDT(d.dropWhen))); if(d.driver) lines.push(pad('  Driver',d.driver+(d.phone?' ('+d.phone+')':''))); if(d.cabNum) lines.push(pad('  Cab no.',d.cabNum)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); }
-      else if(e.type==='flight'){ lines.push(pad('  Direction',d.direction==='inbound'?'Inbound / Return':'Outbound')); if(d.airline) lines.push(pad('  Airline',d.airline)); if(d.flightNum) lines.push(pad('  Flight no.',d.flightNum)); if(d.from||d.to) lines.push(pad('  Route',[d.from,d.to].filter(Boolean).join(' → '))); if(d.when) lines.push(pad('  When',_fmtDT(d.when))); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); }
+      if(e.type==='cab'){ if(d.from||d.to) lines.push(pad('  Route',[d.from,d.to].filter(Boolean).join(' → '))); const _pk=d.pickDate?[_fmtD(d.pickDate),d.pickTime].filter(Boolean).join(' '):(d.when?_fmtDT(d.when):''); const _dp=d.dropDate?[_fmtD(d.dropDate),d.dropTime].filter(Boolean).join(' '):(d.dropWhen?_fmtDT(d.dropWhen):''); if(_pk) lines.push(pad('  Pick-up',_pk)); if(_dp) lines.push(pad('  Drop-off',_dp)); if(d.driver) lines.push(pad('  Driver',d.driver+(d.phone?' ('+d.phone+')':''))); if(d.cabNum) lines.push(pad('  Cab no.',d.cabNum)); if(d.cabCharge) lines.push(pad('  Charge/day',d.cabCharge)); if(d.cabTotal) lines.push(pad('  Total',d.cabTotal)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); }
+      else if(e.type==='flight'){ lines.push(pad('  Direction',d.direction==='inbound'?'Inbound / Return':'Outbound')); if(d.airline) lines.push(pad('  Airline',d.airline)); if(d.flightNum) lines.push(pad('  Flight no.',d.flightNum)); if(d.from||d.to) lines.push(pad('  Route',[d.from,d.to].filter(Boolean).join(' → '))); const _fl=d.flightDate?[_fmtD(d.flightDate),d.flightTime].filter(Boolean).join(' '):(d.when?_fmtDT(d.when):''); if(_fl) lines.push(pad('  When',_fl)); if(d.flightCost) lines.push(pad('  Cost',d.flightCost)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); }
       else if(e.type==='hotel'){ if(d.hotelName) lines.push(pad('  Hotel',d.hotelName)); if(d.where) lines.push(pad('  Location',d.where)); if(d.checkIn) lines.push(pad('  Check-in',_fmtD(d.checkIn))); if(d.checkOut) lines.push(pad('  Check-out',_fmtD(d.checkOut))); if(d.priceDay) lines.push(pad('  Price/day',d.priceDay)); if(d.priceTotal) lines.push(pad('  Total',d.priceTotal)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); }
       else if(e.type==='expense'){ if(d.what) lines.push(pad('  What',d.what)); if(d.when) lines.push(pad('  Date',_fmtD(d.when))); if(d.where) lines.push(pad('  Location',d.where)); if(d.amount) lines.push(pad('  Amount',d.amount)); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); lines.push(pad('  Claimed',_teGetClaimed(e)==='yes'?'Yes':'No')); }
-      else if(e.type==='freelancer'){ if(d.fixerName) lines.push(pad('  Name',d.fixerName)); if(d.where) lines.push(pad('  Location',d.where)); if(d.phone) lines.push(pad('  Phone',d.phone)); if(d.startDate) lines.push(pad('  Start',_fmtD(d.startDate))); if(d.endDate) lines.push(pad('  End',_fmtD(d.endDate))); if(d.fixerDays) lines.push(pad('  Days',d.fixerDays)); if(d.rateDay) lines.push(pad('  Rate/day',d.rateDay)); if(d.fixerTotal) lines.push(pad('  Total',d.fixerTotal)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); if(d.fixerNotes) lines.push(pad('  Notes',d.fixerNotes)); }
+      else if(e.type==='freelancer'){ if(d.fixerName) lines.push(pad('  Name',d.fixerName)); if(d.fixerRole) lines.push(pad('  Role',d.fixerRole)); if(d.where) lines.push(pad('  Location',d.where)); if(d.phone) lines.push(pad('  Phone',d.phone)); if(d.email) lines.push(pad('  Email',d.email)); if(d.startDate) lines.push(pad('  Start',_fmtD(d.startDate))); if(d.endDate) lines.push(pad('  End',_fmtD(d.endDate))); if(d.fixerDays) lines.push(pad('  Days',d.fixerDays)); if(d.rateDay) lines.push(pad('  Rate/day',d.rateDay)); if(d.fixerTotal) lines.push(pad('  Total',d.fixerTotal)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); if(d.status) lines.push(pad('  Status',d.status)); if(d.fixerNotes) lines.push(pad('  Notes',d.fixerNotes)); }
       else if(e.type==='other'){ if(d.what) lines.push(pad('  Description',d.what)); if(d.when) lines.push(pad('  Date',_fmtD(d.when))); if(d.amount) lines.push(pad('  Amount',d.amount)); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); if(d.otherNotes) lines.push(pad('  Notes',d.otherNotes)); }
       (e.remarks||[]).forEach(r=>lines.push(pad('  Note',r.text)));
     });

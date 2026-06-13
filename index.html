@@ -1994,21 +1994,23 @@ function openSettingsModal(){
 function normaliseTime(raw){
   if(!raw) return '';
   const s=String(raw).trim();
+  // Build HH:MM only if within valid range, else treat as no time ('')
+  const mk=(h,mn)=>(h>23||mn>59)?'':p2(h)+':'+p2(mn);
   // Already HH:MM or H:MM
   let m=s.match(/^(\d{1,2}):(\d{2})$/);
-  if(m) return p2(+m[1])+':'+p2(+m[2]);
+  if(m) return mk(+m[1],+m[2]);
   // HH.MM or H.MM
   m=s.match(/^(\d{1,2})\.(\d{2})$/);
-  if(m) return p2(+m[1])+':'+p2(+m[2]);
+  if(m) return mk(+m[1],+m[2]);
   // 3-digit: 930 → 09:30
   m=s.match(/^(\d)(\d{2})$/);
-  if(m) return p2(+m[1])+':'+p2(+m[2]);
+  if(m) return mk(+m[1],+m[2]);
   // 4-digit: 1430 → 14:30
   m=s.match(/^(\d{2})(\d{2})$/);
-  if(m) return p2(+m[1])+':'+p2(+m[2]);
+  if(m) return mk(+m[1],+m[2]);
   // Bare hour: "9" or "14" → "09:00" / "14:00"
   m=s.match(/^(\d{1,2})$/);
-  if(m) return p2(+m[1])+':00';
+  if(m) return mk(+m[1],0);
   return '';
 }
 
@@ -2259,7 +2261,16 @@ function startRealtimeSync(){
         // Replace state object fields entirely
         Object.keys(state).forEach(k=>{ if(k!=='backupSnapshots') delete state[k]; });
         Object.assign(state,freshState);
+        if(!state.sections) state.sections={};
         SECTIONS.forEach(s=>{if(!state.sections[s.key])state.sections[s.key]=[];});
+        // Re-default top-level arrays/objects the incoming doc may not include, so
+        // navigating to any module after a force-sync can't hit an undefined array.
+        // Guarded with if(!state[k]) — only fills gaps, never overwrites synced data.
+        ['tasks','meetings','leaves','notes','travelEntries','travelDismissed',
+         'travelAutoResolved','travelGroupDismissed','travelGroupAutoResolved']
+          .forEach(k=>{ if(!state[k]) state[k]=[]; });
+        if(!state.deletedIds) state.deletedIds={};
+        if(!state.staffNames) state.staffNames={correspondents:[],producers:[],shootEdit:[]};
         window._syncInitialized = true;
         saveLocal(); render(); setSyncUI('live');
         // Block merge-back push for 30 seconds so we don't overwrite Firebase
@@ -2353,6 +2364,8 @@ function startRealtimeSync(){
       const localBackups=state.backupSnapshots; // backups are local-only
       const localLAD=state.lastActiveDate;      // never let cloud roll back lastActiveDate
       const localEodDismissed=state.eodDismissed; // keep whichever dismissal is more recent
+      const localRemarks=state.remarks;                  // free-text notes — newest edit wins (restored below)
+      const localRemarksUpdated=state.remarksUpdated||0; // 0 for legacy data, so remote wins on a tie
       const localDailyBackup=state.lastDailyBackup;
       const localWeeklyBackup=state.lastWeeklyBackup;
       const localMonthlyBackup=state.lastMonthlyBackup;
@@ -2374,6 +2387,14 @@ function startRealtimeSync(){
       // Keep whichever eodDismissed is more recent (today > older date > null)
       if(localEodDismissed && (!state.eodDismissed || localEodDismissed > state.eodDismissed))
         state.eodDismissed=localEodDismissed;
+      // Free-text notes: keep whichever device edited them most recently. Prevents a stale
+      // device pushing old notes from clobbering notes just typed on this device. On a tie
+      // (both 0 / legacy data with no timestamp) the remote value already applied wins —
+      // same as the previous behaviour, so this is backwards-compatible.
+      if(localRemarksUpdated > (state.remarksUpdated||0)){
+        state.remarks=localRemarks;
+        state.remarksUpdated=localRemarksUpdated;
+      }
       // Keep most recent backup timestamps
       if(localDailyBackup && (!state.lastDailyBackup || localDailyBackup > state.lastDailyBackup))
         state.lastDailyBackup=localDailyBackup;
@@ -3402,8 +3423,19 @@ function _computeFireAt(s){
       const ukMin=h*60+m;
       // midnight of that date in UTC
       const midnightUtc=new Date(dateStr+'T00:00:00Z').getTime();
-      // convert London local minutes to UTC minutes by subtracting London offset
-      const utcMin=ukMin-ukOffMin();
+      // London's offset on THE TARGET DATE (not today) — matters across a DST
+      // transition, where a reminder set in GMT for a BST date (or vice-versa)
+      // would otherwise be an hour off. Same hour-anchored approach as
+      // _londonOffsetMin(), evaluated at 12:00 UTC on the target date.
+      const offFor=(()=>{
+        try{
+          const d=new Date(dateStr+'T12:00:00Z');
+          const utcH=+d.toLocaleTimeString('en-GB',{hour:'2-digit',hour12:false,timeZone:'UTC'}).split(':')[0];
+          const lonH=+d.toLocaleTimeString('en-GB',{hour:'2-digit',hour12:false,timeZone:'Europe/London'}).split(':')[0];
+          return (((lonH-utcH)+24)%24)*60;
+        }catch(e){ return ukOffMin(); }
+      })();
+      const utcMin=ukMin-offFor;
       return midnightUtc+utcMin*60000;
     }catch(e){ return null; }
   };
@@ -4451,6 +4483,10 @@ function submitForm(sec,archKey){
       if(!data.location && existing.location) data.location=existing.location;
       if(!data.field_location && existing.field_location) data.field_location=existing.field_location;
       if(existing.travel) data.travel=existing.travel;
+      // Stories: the edit form has no legacy-remark input (it uses remarksList instead),
+      // so data.remarks reads '' on edit. Preserve the existing legacy remark instead of
+      // wiping it. Upcoming events DO have an editable remarks box, so leave them alone.
+      if(!isUpcoming && !data.remarks && existing.remarks) data.remarks=existing.remarks;
     }
     updateStory(sec,ui.editMap[k],data,archKey); toast('Updated ✓');
   }
@@ -4555,7 +4591,7 @@ function showFieldRow(sec,archKey){ updateLocationPlaceholder(sec,archKey); }
 
 
 function updateArchiveNotes(key,val){ /* archive removed */ }
-function updateRemarks(v){ state.remarks=v; saveAndPush(); }
+function updateRemarks(v){ state.remarks=v; state.remarksUpdated=Date.now(); saveAndPush(); }
 function reqNotif(){
   Notification.requestPermission().then(p=>{
     if(p==='granted'){
@@ -4721,6 +4757,7 @@ function render(){
   // Preserve any open form's values across the re-render
   const savedForm=captureFormState();
   const mc=document.getElementById('main-content'); if(!mc) return;
+  try{
   let html='<div class="content">';
   if(typeof Notification!=='undefined'&&Notification.permission==='default') html+=`<div class="notif-banner">⚠ Enable notifications for deadline reminders. <button class="btn btn-ghost btn-sm" onclick="reqNotif()">Enable</button></div>`;
   if(ui.view==='today')        html+=renderTodayHTML();
@@ -4741,6 +4778,12 @@ function render(){
   // so innerHTML replacement wipes it each time. Without this, the banner flashes
   // briefly at the 300ms setTimeout then disappears when Firebase sync triggers render().
   if(ui.view==='today') renderMonthlyBackupBanner();
+  }catch(e){
+    // A render exception must never freeze the board or break the sync callback that
+    // called render(). Data is untouched (render only reads state); log and notify.
+    console.error('render() failed:',e);
+    try{ toast('⚠ Display error — your data is safe. Reload the page if the screen looks stale.'); }catch(_){}
+  }
 }
 
 function injectDataLists(){
@@ -5101,7 +5144,7 @@ function renderTodayHTML(){
   if(shouldShowEOD()){
     const eodH=state.eodSettings?.hour||18;
     const _eodN=SECTIONS.filter(s=>!s.isUpcoming&&!s.hidden).reduce((a,s)=>a+(state.sections[s.key]||[]).filter(st=>!st._deleted&&!['completed','not-done','shelved','on-hold','postponed'].includes(st.status)).length,0);
-    html+=`<div style="background:var(--accent-bg);border:0.5px solid rgba(207,102,64,.25);border-radius:8px;padding:9px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
+    html+=`<div id="eod-banner" style="background:var(--accent-bg);border:0.5px solid rgba(207,102,64,.25);border-radius:8px;padding:9px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
       <span style="font-size:12.5px;color:var(--accent);font-family:var(--font);">${_eodN} stor${_eodN===1?'y':'ies'} still active — end of day approaching (${eodH}:00 IST)</span>
       <div style="display:flex;gap:6px;flex-shrink:0;">
         <button class="btn btn-ghost btn-sm" style="color:var(--accent);border-color:rgba(207,102,64,.3)" onclick="ui.openSections.add('ibu');render();setTimeout(()=>document.getElementById('acc-ibu')?.scrollIntoView({behavior:'smooth',block:'start'}),80)">Review</button>
@@ -7962,6 +8005,14 @@ let ui_leaveForm=false, ui_editLeaveId=null;
 let ui_openLeaves=new Set(), ui_showLeaveSettings=false, ui_showPastLeaves=false;
 let ui_leavesTab='status'; // 'status' | 'byPerson'
 let ui_openPersonLeaves=new Set(); // tracks expanded person cards in byPerson tab
+function togglePersonLeaves(el){
+  // Read the name from a data attribute (not interpolated into JS) so names
+  // containing an apostrophe (e.g. D'Souza) don't break the handler.
+  const name=el?.dataset?.person||'';
+  if(ui_openPersonLeaves.has(name)) ui_openPersonLeaves.delete(name);
+  else ui_openPersonLeaves.add(name);
+  render();
+}
 
 function leaveDays(from,to){
   if(!from||!to) return 0;
@@ -8669,14 +8720,12 @@ function _teSubmit(){
 
   // FIX: When editing an entry linked to a story, preserve the original storyId/storySec
   // even if the story is now inactive and no longer appears in the form dropdown.
+  // Story link comes straight from the dropdown. When a linked story isn't in the
+  // local archive, the form already re-adds it as a pre-selected fallback option
+  // (value=curStory), so storyId stays populated — the link is preserved. storyId is
+  // therefore only empty when the user deliberately picks "General / Unlinked", so we
+  // honour that choice rather than forcing the old link back on.
   let finalStoryId=storyId,finalStorySec=storySec,finalGroupId=groupId,finalGroupLabel=groupLabel;
-  if(_te.editId){
-    const origEntry=(state.travelEntries||[]).find(e=>e.id===_te.editId);
-    if(origEntry?.storyId&&!storyId){
-      finalStoryId=origEntry.storyId; finalStorySec=origEntry.storySec;
-      finalGroupId=null; finalGroupLabel=null;
-    }
-  }
   const entry={type,storyId:finalStoryId,storySec:finalStorySec,data,groupId:finalGroupId,groupLabel:finalGroupLabel};
   // Basic validation — require at least one meaningful field
   const hasContent=Object.values(data).some(v=>v&&String(v).trim());
@@ -9557,7 +9606,7 @@ function renderLeavesByPerson(leaves,today){
     // "from 1 Apr" — omit year if name is long (>18 chars)
     const fromLabel=name.length>18?`, ${eCount} entr${eCount===1?'y':'ies'} from 1 Apr`:`, ${eCount} entr${eCount===1?'y':'ies'} from 1 Apr ${fyYear}`;
     html+=`<div style="background:var(--surface);border:0.5px solid var(--border);border-radius:9px;margin-bottom:8px;overflow:hidden">
-      <div style="cursor:pointer" onclick="if(ui_openPersonLeaves.has('${esc(name)}'))ui_openPersonLeaves.delete('${esc(name)}');else ui_openPersonLeaves.add('${esc(name)}');render()">
+      <div style="cursor:pointer" data-person="${esc(name)}" onclick="togglePersonLeaves(this)">
         <div style="display:flex;align-items:center;gap:9px;padding:11px 12px 0">
           <div style="width:30px;height:30px;border-radius:50%;background:var(--surface2);border:0.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text2);flex-shrink:0;font-family:var(--font)">${esc(initials)}</div>
           <div style="flex:1;min-width:0;overflow:hidden">
@@ -10642,13 +10691,17 @@ function init(){
       },500);
     }
   });
-  // Fallback: re-establish sync if connection has been idle — but only when no form is open
+  // Fallback: re-establish sync if connection has been idle — but only when no form is open.
+  // This is only a safety net: real-time sync runs through the persistent onSnapshot listener
+  // (which Firestore keeps alive and auto-reconnects), plus visibilitychange re-subscribes on
+  // every tab focus. So an hourly cadence here keeps real-time sync instant while removing the
+  // per-minute merge/re-render/write-back churn.
   setInterval(()=>{
     if(fireDb&&document.visibilityState==='visible'){
       const hasOpenForm=ui.openForms.size>0||_te.open||ui_taskForm||ui_meetingForm||ui_leaveForm;
       if(!hasOpenForm) startRealtimeSync();
     }
-  }, 60000);
+  }, 60 * 60 * 1000);
   window.addEventListener('offline', ()=>{ if(fireDb) setSyncUI('offline'); });
   updateDateHeader(); render();
   renderOnLeavePill();
@@ -10701,6 +10754,16 @@ function init(){
     // Refresh the date header and backup banners periodically
     updateDateHeader();
     renderMonthlyBackupBanner();
+    // Keep the End-of-day banner correct on an idle tab now that the sync timer no
+    // longer forces a render every minute. Only re-render when the banner's actual
+    // presence disagrees with shouldShowEOD() — i.e. it needs to appear or disappear —
+    // and never while a form is open (would disrupt input). This stays cheap: no
+    // re-render on the steady state.
+    if(ui.view==='today'){
+      const hasOpenForm=ui.openForms.size>0||_te.open||ui_taskForm||ui_meetingForm||ui_leaveForm;
+      const bannerShown=!!document.getElementById('eod-banner');
+      if(!hasOpenForm && shouldShowEOD()!==bannerShown) render();
+    }
   }, 5 * 60 * 1000);
 }
 document.addEventListener('DOMContentLoaded', init);

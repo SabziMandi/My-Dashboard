@@ -9349,8 +9349,8 @@ function renderTravelSection(){
       <span class="acc-summary" id="acc-travel-summary">${(()=>{
         if(allResolved) return 'All resolved';
         if(stories.length) return esc((stories[0].s.title||'').slice(0,32));
-        if(activeGroups2.length){
-          const _gl=activeGroups2.map(g=>{const e=_teEntriesForGroup(g.groupId);const l=e.reduce((m,x)=>((x.updated||x.created||0)>(m.updated||m.created||0)?x:m),e[0]||{});return{g,t:l.updated||l.created||0};}).sort((a,b)=>b.t-a.t);
+        if(_activeGrps.length){
+          const _gl=_activeGrps.map(g=>{const e=_teEntriesForGroup(g.groupId);const l=e.reduce((m,x)=>((x.updated||x.created||0)>(m.updated||m.created||0)?x:m),e[0]||{});return{g,t:l.updated||l.created||0};}).sort((a,b)=>b.t-a.t);
           return esc(_gl[0]?.g?.groupLabel||'General');
         }
         return '';

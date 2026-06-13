@@ -4334,13 +4334,15 @@ function _addSlotInline(sec,id){
   render();
   setTimeout(()=>{
     showFieldRow(sec,null);
-    // Close People section if open
-    const peopleBody=document.getElementById('fsec-people-'+sfx);
-    if(peopleBody&&!peopleBody.classList.contains('hidden')){
-      peopleBody.classList.add('hidden');
-      const hdr=peopleBody.previousElementSibling;
-      if(hdr){ const chev=hdr.querySelector('.fsec-chev'); if(chev) chev.classList.remove('open'); }
-    }
+    // Close People and Deadline sections
+    ['fsec-people-'+sfx,'fsec-dl-'+sfx].forEach(bid=>{
+      const el=document.getElementById(bid);
+      if(el&&!el.classList.contains('hidden')){
+        el.classList.add('hidden');
+        const hdr=el.previousElementSibling;
+        if(hdr){ const chev=hdr.querySelector('.fsec-chev'); if(chev) chev.classList.remove('open'); }
+      }
+    });
     // Open Broadcast section
     const bcastBody=document.getElementById('fsec-bcast-'+sfx);
     if(bcastBody&&!bcastBody.classList.contains('open')){
@@ -4362,13 +4364,15 @@ function editStory(sec,id,archKey){
   setTimeout(()=>{
     const sfx='-'+sec+(archKey?'-arch':'');
     showFieldRow(sec,archKey);
-    // Close People section if open
-    const peopleBody=document.getElementById('fsec-people-'+sfx);
-    if(peopleBody&&!peopleBody.classList.contains('hidden')){
-      peopleBody.classList.add('hidden');
-      const hdr=peopleBody.previousElementSibling;
-      if(hdr){ const chev=hdr.querySelector('.fsec-chev'); if(chev) chev.classList.remove('open'); }
-    }
+    // Close People and Deadline sections
+    ['fsec-people-'+sfx,'fsec-dl-'+sfx].forEach(bid=>{
+      const el=document.getElementById(bid);
+      if(el&&!el.classList.contains('hidden')){
+        el.classList.add('hidden');
+        const hdr=el.previousElementSibling;
+        if(hdr){ const chev=hdr.querySelector('.fsec-chev'); if(chev) chev.classList.remove('open'); }
+      }
+    });
     // Open Broadcast section
     const bcastBody=document.getElementById('fsec-bcast-'+sfx);
     if(bcastBody&&!bcastBody.classList.contains('open')){

@@ -4334,6 +4334,14 @@ function _addSlotInline(sec,id){
   render();
   setTimeout(()=>{
     showFieldRow(sec,null);
+    // Close People section if open
+    const peopleBody=document.getElementById('fsec-people-'+sfx);
+    if(peopleBody&&!peopleBody.classList.contains('hidden')){
+      peopleBody.classList.add('hidden');
+      const hdr=peopleBody.previousElementSibling;
+      if(hdr){ const chev=hdr.querySelector('.fsec-chev'); if(chev) chev.classList.remove('open'); }
+    }
+    // Open Broadcast section
     const bcastBody=document.getElementById('fsec-bcast-'+sfx);
     if(bcastBody&&!bcastBody.classList.contains('open')){
       bcastBody.classList.add('open');
@@ -4354,6 +4362,14 @@ function editStory(sec,id,archKey){
   setTimeout(()=>{
     const sfx='-'+sec+(archKey?'-arch':'');
     showFieldRow(sec,archKey);
+    // Close People section if open
+    const peopleBody=document.getElementById('fsec-people-'+sfx);
+    if(peopleBody&&!peopleBody.classList.contains('hidden')){
+      peopleBody.classList.add('hidden');
+      const hdr=peopleBody.previousElementSibling;
+      if(hdr){ const chev=hdr.querySelector('.fsec-chev'); if(chev) chev.classList.remove('open'); }
+    }
+    // Open Broadcast section
     const bcastBody=document.getElementById('fsec-bcast-'+sfx);
     if(bcastBody&&!bcastBody.classList.contains('open')){
       bcastBody.classList.add('open');
@@ -10297,7 +10313,7 @@ function renderForm(sec,archKey){
         const open=isEdit&&hasPeople;
         const peopleParts=[editStoryObj?.correspondent,editStoryObj?.producer,editStoryObj?.shoot_edit,editStoryObj?.req_name].filter(Boolean);
         const summary=peopleParts.slice(0,3).join(' · ')||'';
-        const bid='fsec-people-${sfx}';
+        const bid=`fsec-people-${sfx}`;
         return `<div class="fsec-header" onclick="(function(t){const b=document.getElementById('${bid}');const c=t.querySelector('.fsec-chev');const isHidden=b.classList.contains('hidden');b.classList.toggle('hidden',!isHidden);c.classList.toggle('open',isHidden);})(this)">
             <span class="fsec-label">People &amp; request</span>
             <span class="fsec-summary">${summary}</span>
@@ -10334,7 +10350,7 @@ function renderForm(sec,archKey){
         const open=isEdit&&hasDl;
         const dlParts=[editStoryObj?.deadline_date?_fmtD(editStoryObj.deadline_date):'',editStoryObj?.deadline_uk||'',editStoryObj?.location||'',editStoryObj?.field_location||''].filter(Boolean);
         const summary=dlParts.slice(0,3).join(' · ')||'';
-        const bid='fsec-dl-${sfx}';
+        const bid=`fsec-dl-${sfx}`;
         return `<div class="fsec-header" onclick="(function(t){const b=document.getElementById('${bid}');const c=t.querySelector('.fsec-chev');const isHidden=b.classList.contains('hidden');b.classList.toggle('hidden',!isHidden);c.classList.toggle('open',isHidden);})(this)">
             <span class="fsec-label">Deadline &amp; location</span>
             <span class="fsec-summary">${summary}</span>
@@ -10357,7 +10373,7 @@ function renderForm(sec,archKey){
       <!-- ── Accordion 3: Status & Reminder ── -->
       ${(()=>{
         const summary=[editStoryObj?.status||'',editStoryObj?.reminder&&editStoryObj.reminder!=='off'?'Reminder: '+editStoryObj.reminder:''].filter(Boolean).join(' · ')||'';
-        const bid='fsec-sr-${sfx}';
+        const bid=`fsec-sr-${sfx}`;
         return `<div class="fsec-header" onclick="(function(t){const b=document.getElementById('${bid}');const c=t.querySelector('.fsec-chev');const isHidden=b.classList.contains('hidden');b.classList.toggle('hidden',!isHidden);c.classList.toggle('open',isHidden);})(this)">
             <span class="fsec-label">Status &amp; reminder</span>
             <span class="fsec-summary">${summary}</span>
@@ -10388,7 +10404,18 @@ function renderForm(sec,archKey){
       <!-- ── Accordion 4: Broadcast Times ── -->
       ${(()=>{
         const hasSlots=existingSlots&&existingSlots.length>0;
-        const slotSummary=hasSlots?(existingSlots[0].programme||'')+(existingSlots[0].bst?' · '+existingSlots[0].bst+' BST':''):'';
+        const slotSummary=(()=>{
+          if(!hasSlots) return '';
+          const today=todayStr();
+          // Prefer slot with nearest upcoming dl_date; fall back to nearest past; then first slot
+          const withDl=existingSlots.filter(t=>t.dl_date);
+          const upcoming=withDl.filter(t=>t.dl_date>=today).sort((a,b)=>a.dl_date.localeCompare(b.dl_date));
+          const past=withDl.filter(t=>t.dl_date<today).sort((a,b)=>b.dl_date.localeCompare(a.dl_date));
+          const best=upcoming[0]||past[0]||existingSlots[0];
+          const platStr=best.plat||best.lbl||'';
+          const dlStr=best.dl_date?(' · '+fmtDate(best.dl_date)+(best.dl_uk?' '+best.dl_uk+' '+ukLabel():'')):'';
+          return esc((platStr||best.prog||'').slice(0,32))+esc(dlStr);
+        })();
         const bid=`fsec-bcast-${sfx}`;
         return `<div class="fsec-header" onclick="(function(t){const b=document.getElementById('${bid}');const c=t.querySelector('.fsec-chev');const isOpen=b.classList.contains('open');b.classList.toggle('open',!isOpen);c.classList.toggle('open',!isOpen);})(this)">
             <span class="fsec-label">Broadcast times</span>
@@ -10409,7 +10436,7 @@ function renderForm(sec,archKey){
         const firstLine=latestRemark.split('\n')[0].slice(0,60)+(latestRemark.length>60?'…':'');
         const hasLinks=!!(editStoryObj?.links);
         const summary=firstLine||(hasLinks?'Has links':'');
-        const bid='fsec-rl-${sfx}';
+        const bid=`fsec-rl-${sfx}`;
         return `<div class="fsec-header" onclick="(function(t){const b=document.getElementById('${bid}');const c=t.querySelector('.fsec-chev');const isOpen=b.classList.contains('open');b.classList.toggle('open',!isOpen);c.classList.toggle('open',!isOpen);})(this)">
             <span class="fsec-label">Remarks &amp; links</span>
             <span class="fsec-summary">${summary}</span>

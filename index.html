@@ -4351,13 +4351,17 @@ function editStory(sec,id,archKey){
   ui.openForms.add(k); ui.editMap[k]=id;
   if(!ui.openSections.has(sec)) ui.openSections.add(sec);
   render();
-  // Values are now inlined in the form HTML via editStoryObj — no setTimeout needed.
-  // Just scroll to the form and restore location field visibility.
   setTimeout(()=>{
     const sfx='-'+sec+(archKey?'-arch':'');
     showFieldRow(sec,archKey);
+    const bcastBody=document.getElementById('fsec-bcast-'+sfx);
+    if(bcastBody&&!bcastBody.classList.contains('open')){
+      bcastBody.classList.add('open');
+      const hdr=bcastBody.previousElementSibling;
+      if(hdr){ const chev=hdr.querySelector('.fsec-chev'); if(chev) chev.classList.add('open'); }
+    }
     document.getElementById('story-form-'+sec+(archKey?'-arch':''))?.scrollIntoView({behavior:'smooth',block:'start'});
-  }, 0);
+  }, 60);
 }
 function submitForm(sec,archKey){
   const sfx='-'+sec+(archKey?'-arch':'');
@@ -10385,7 +10389,7 @@ function renderForm(sec,archKey){
       ${(()=>{
         const hasSlots=existingSlots&&existingSlots.length>0;
         const slotSummary=hasSlots?(existingSlots[0].programme||'')+(existingSlots[0].bst?' · '+existingSlots[0].bst+' BST':''):'';
-        const bid='fsec-bcast-${sfx}';
+        const bid=`fsec-bcast-${sfx}`;
         return `<div class="fsec-header" onclick="(function(t){const b=document.getElementById('${bid}');const c=t.querySelector('.fsec-chev');const isOpen=b.classList.contains('open');b.classList.toggle('open',!isOpen);c.classList.toggle('open',!isOpen);})(this)">
             <span class="fsec-label">Broadcast times</span>
             <span class="fsec-summary">${slotSummary}</span>

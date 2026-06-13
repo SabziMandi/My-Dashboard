@@ -3220,7 +3220,6 @@ function deleteStory(sec,id,archKey){
   const filtered=arr.filter(s=>s.id!==id);
   state.sections[sec]=filtered;
   ui.openCards.delete(id); ui.complForms.delete(id);
-  cancelReminder(id);
   saveAndPush(); render();
 }
 function doMoveSelect(fromSec, id, archKey, selectEl){
@@ -5800,23 +5799,11 @@ function addTask(data){
     state.archive[today].tasksLog.push({...t});
   }
   saveAndPush();
-  if(t.reminder&&t.reminder!=='off') scheduleReminder({...t, _type:'task', id:'task-'+t.id});
 }
 function updateTask(id,data){
   if(!state.tasks) return;
   const i=state.tasks.findIndex(t=>t.id===id);
-  if(i<0) return;
-  state.tasks[i]={...state.tasks[i],...data, updated:Date.now()};
-  saveAndPush();
-  // Cancel existing SW timer then reschedule based on the fully-merged task.
-  // If status is terminal or reminder is off, cancel only.
-  const merged=state.tasks[i];
-  const prefixedId='task-'+id;
-  if(merged.taskStatus==='done'||merged.taskStatus==='not-done'||!merged.reminder||merged.reminder==='off'){
-    cancelReminder(prefixedId);
-  } else {
-    scheduleReminder({...merged, _type:'task', id:prefixedId});
-  }
+  if(i>=0){ state.tasks[i]={...state.tasks[i],...data, updated:Date.now()}; saveAndPush(); }
 }
 function deleteTask(id){
   const task=(state.tasks||[]).find(t=>t.id===id); if(!task) return;
@@ -5837,7 +5824,6 @@ function deleteTask(id){
   if(!state.deletedIds.tasks) state.deletedIds.tasks=[];
   if(!state.deletedIds.tasks.includes(id)) state.deletedIds.tasks.push(id);
   ui_openTasks.delete(id);
-  cancelReminder('task-'+id);
   saveAndPush(); render();
 }
 function nextRecurrenceDate(task){
@@ -7063,24 +7049,12 @@ let ui_editMeetingRemarkId={}; // meetingId → remarkId
 
 function addMeeting(data){
   if(!state.meetings) state.meetings=[];
-  const m={...data, id:genId(), created:Date.now(), remarks:[]};
-  state.meetings.push(m);
+  state.meetings.push({...data, id:genId(), created:Date.now(), remarks:[]});
   saveAndPush();
-  if(m.reminder&&m.reminder!=='off') scheduleReminder({...m, _type:'meeting', id:'meeting-'+m.id, title:m.name||'Meeting'});
 }
 function updateMeeting(id,data){
   const i=(state.meetings||[]).findIndex(m=>m.id===id);
-  if(i<0) return;
-  state.meetings[i]={...state.meetings[i],...data, updated:Date.now()};
-  saveAndPush();
-  // Cancel then reschedule based on merged state. Terminal statuses cancel only.
-  const merged=state.meetings[i];
-  const prefixedId='meeting-'+id;
-  if(merged.status==='done'||merged.status==='cancelled'||!merged.reminder||merged.reminder==='off'){
-    cancelReminder(prefixedId);
-  } else {
-    scheduleReminder({...merged, _type:'meeting', id:prefixedId, title:merged.name||'Meeting'});
-  }
+  if(i>=0){ state.meetings[i]={...state.meetings[i],...data, updated:Date.now()}; saveAndPush(); }
 }
 function deleteMeeting(id){
   state.meetings=(state.meetings||[]).filter(m=>m.id!==id);
@@ -7088,7 +7062,6 @@ function deleteMeeting(id){
   if(!state.deletedIds.meetings) state.deletedIds.meetings=[];
   if(!state.deletedIds.meetings.includes(id)) state.deletedIds.meetings.push(id);
   ui_openMeetings.delete(id);
-  cancelReminder('meeting-'+id);
   saveAndPush(); render();
 }
 function addMeetingRemark(id, text){
@@ -9371,8 +9344,8 @@ function renderTravelSection(){
       <span class="acc-summary" id="acc-travel-summary">${(()=>{
         if(allResolved) return 'All resolved';
         if(stories.length) return esc((stories[0].s.title||'').slice(0,32));
-        if(activeGroups2.length){
-          const _gl=activeGroups2.map(g=>{const e=_teEntriesForGroup(g.groupId);const l=e.reduce((m,x)=>((x.updated||x.created||0)>(m.updated||m.created||0)?x:m),e[0]||{});return{g,t:l.updated||l.created||0};}).sort((a,b)=>b.t-a.t);
+        if(_activeGrps.length){
+          const _gl=_activeGrps.map(g=>{const e=_teEntriesForGroup(g.groupId);const l=e.reduce((m,x)=>((x.updated||x.created||0)>(m.updated||m.created||0)?x:m),e[0]||{});return{g,t:l.updated||l.created||0};}).sort((a,b)=>b.t-a.t);
           return esc(_gl[0]?.g?.groupLabel||'General');
         }
         return '';

@@ -21,7 +21,6 @@ self.addEventListener('install', event => {
 
 // ── Activate ───────────────────────────────────────────────────────────────
 self.addEventListener('activate', event => {
-  // Delete any old caches from previous versions
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
@@ -78,8 +77,6 @@ self.addEventListener('fetch', event => {
 const _timers = {};
 
 // ── IndexedDB helpers ──────────────────────────────────────────────────────
-// Reminders are persisted so they survive the SW being killed by the browser.
-// On every SW startup we re-arm any entries whose fireAt is still in the future.
 const IDB_NAME = 'bbc-dash-reminders';
 const IDB_STORE = 'reminders';
 const IDB_VERSION = 1;
@@ -87,9 +84,7 @@ const IDB_VERSION = 1;
 function _idbOpen() {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(IDB_NAME, IDB_VERSION);
-    req.onupgradeneeded = e => {
-      e.target.result.createObjectStore(IDB_STORE, { keyPath: 'id' });
-    };
+    req.onupgradeneeded = e => { e.target.result.createObjectStore(IDB_STORE, { keyPath: 'id' }); };
     req.onsuccess = e => resolve(e.target.result);
     req.onerror = e => reject(e.target.error);
   });
@@ -127,33 +122,23 @@ function _idbGetAll() {
   }));
 }
 
-// ── Arm a single reminder in memory ───────────────────────────────────────
 function _armTimer(reminder) {
   const { id, title, body, fireAt } = reminder;
   const delay = fireAt - Date.now();
-  if (delay <= 0) {
-    _idbDelete(id).catch(() => {});
-    return;
-  }
+  if (delay <= 0) { _idbDelete(id).catch(() => {}); return; }
   clearTimeout(_timers[id]);
   _timers[id] = setTimeout(() => {
     self.registration.showNotification(title || 'BBC Dashboard', {
-      body: body || '',
-      icon: './icon-192.png',
-      badge: './icon-192.png',
-      tag: id,
-      requireInteraction: false,
+      body: body || '', icon: './icon-192.png', badge: './icon-192.png',
+      tag: id, requireInteraction: false,
     });
     delete _timers[id];
     _idbDelete(id).catch(() => {});
   }, Math.min(delay, 2147483647));
 }
 
-// ── Re-arm all persisted reminders on SW startup ───────────────────────────
 function _reArmAll() {
-  return _idbGetAll().then(records => {
-    records.forEach(r => _armTimer(r));
-  }).catch(() => {});
+  return _idbGetAll().then(records => { records.forEach(r => _armTimer(r)); }).catch(() => {});
 }
 
 self.addEventListener('message', event => {
@@ -185,10 +170,7 @@ self.addEventListener('message', event => {
   }
 
   if (data.type === 'CANCEL_ALL') {
-    Object.keys(_timers).forEach(id => {
-      clearTimeout(_timers[id]);
-      delete _timers[id];
-    });
+    Object.keys(_timers).forEach(id => { clearTimeout(_timers[id]); delete _timers[id]; });
     _idbClear().catch(() => {});
     event.ports[0]?.postMessage({ ok: true });
     return;

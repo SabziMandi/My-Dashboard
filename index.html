@@ -9022,11 +9022,13 @@ function _teRenderEntry(e){
   const payL=_payLabel(d.payment);
   if(e.type==='cab'){
     const pick=(d.pickDate?_fmtDShort(d.pickDate):d.when?.slice(0,10)?_fmtDShort(d.when.slice(0,10)):'')+(d.pickTime?' '+d.pickTime:d.when?.slice(11,16)?' '+d.when.slice(11,16):'');
-    sum=esc(d.from||'')+(d.to?' → '+esc(d.to):'')+( pick?' · '+pick:'');
+    const _ct=(()=>{const ex=parseFloat(String(d.cabTotal||'').replace(/[^\d.]/g,''));if(ex>0)return ex;const r=parseFloat(String(d.cabCharge||'').replace(/[^\d.]/g,''))||0;if(r>0){const sd=d.pickDate?new Date(d.pickDate+'T00:00:00'):null,ed2=d.dropDate?new Date(d.dropDate+'T00:00:00'):null;const days=(sd&&ed2)?Math.max(1,Math.round((ed2-sd)/86400000)+1):1;return r*days;}const m=String(d.amount||'').match(/[0-9]+(?:\.[0-9]+)?/);return m?parseFloat(m[0]):0;})();
+    sum=esc(d.from||'')+(d.to?' → '+esc(d.to):'')+( pick?' · '+pick:'')+(_ct>0?' · Rs '+_ct.toLocaleString('en-IN'):'');
   }
   else if(e.type==='flight'){
     const fl=(d.flightDate?_fmtDShort(d.flightDate):d.when?.slice(0,10)?_fmtDShort(d.when.slice(0,10)):'')+(d.flightTime?' '+d.flightTime:d.when?.slice(11,16)?' '+d.when.slice(11,16):'');
-    sum=(d.direction==='inbound'?'↩ In':'→ Out')+': '+esc(d.from||'')+(d.to?' → '+esc(d.to):'')+( fl?' · '+fl:'');
+    const _fc=(()=>{const ex=parseFloat(String(d.flightCost||'').replace(/[^\d.]/g,''));if(ex>0)return ex;const m=String(d.amount||'').match(/[0-9]+(?:\.[0-9]+)?/);return m?parseFloat(m[0]):0;})();
+    sum=(d.direction==='inbound'?'↩ In':'→ Out')+': '+esc(d.from||'')+(d.to?' → '+esc(d.to):'')+( fl?' · '+fl:'')+(_fc>0?' · Rs '+_fc.toLocaleString('en-IN'):'');
   }
   else if(e.type==='hotel'){ const _ht=(()=>{const ex=parseFloat(String(d.priceTotal||'').replace(/[^\d.]/g,''));if(ex>0)return ex;const r=parseFloat(String(d.priceDay||'').replace(/[^\d.]/g,''));if(!r)return 0;const ci=d.checkIn?new Date(d.checkIn+'T00:00:00'):null,co=d.checkOut?new Date(d.checkOut+'T00:00:00'):null;const n=(ci&&co)?Math.max(0,Math.round((co-ci)/86400000)):0;return r*n;})(); sum=esc(d.hotelName||d.where||'')+( d.checkIn?' · '+_fmtDShort(d.checkIn):'')+( d.checkOut?' – '+_fmtDShort(d.checkOut):'')+(d.payment&&d.payment!=='unpaid'?' · ✅':' · ⏳')+(_ht>0?' · Rs '+_ht.toLocaleString('en-IN'):''); }
   else if(e.type==='expense') sum=esc(d.what||'')+( d.amount?' · '+esc(d.amount):'')+(_teGetClaimed(e)==='yes'?' · ✅':' · ⏳');
@@ -9155,8 +9157,29 @@ function _teBookingTotal(entries){
       const flTotal=parseFloat(String(d.fixerTotal||'').replace(/[^\d.]/g,''));
       const flCalc=(parseFloat(String(d.rateDay||'').replace(/[^\d.]/g,''))||0)*(parseFloat(d.fixerDays)||0);
       amt=flTotal>0?flTotal:(flCalc>0?flCalc:0);
+    } else if(e.type==='cab'){
+      // Use explicit cabTotal first; fall back to cabCharge × days; then legacy amount
+      const explicit=parseFloat(String(d.cabTotal||'').replace(/[^\d.]/g,''));
+      if(explicit>0){ amt=explicit; }
+      else {
+        const rate=parseFloat(String(d.cabCharge||'').replace(/[^\d.]/g,''))||0;
+        if(rate>0){
+          const sd=d.pickDate?new Date(d.pickDate+'T00:00:00'):null;
+          const ed=d.dropDate?new Date(d.dropDate+'T00:00:00'):null;
+          const days=(sd&&ed)?Math.max(1,Math.round((ed-sd)/86400000)+1):1;
+          amt=rate*days;
+        } else {
+          const m=String(d.amount||'').match(/[0-9]+(?:\.[0-9]+)?/); // legacy migrated cabs
+          amt=m?parseFloat(m[0]):0;
+        }
+      }
+    } else if(e.type==='flight'){
+      // Use explicit flightCost first; then legacy amount
+      const fc=parseFloat(String(d.flightCost||'').replace(/[^\d.]/g,''));
+      if(fc>0){ amt=fc; }
+      else { const m=String(d.amount||'').match(/[0-9]+(?:\.[0-9]+)?/); amt=m?parseFloat(m[0]):0; }
     } else {
-      // cab, flight, other — use amount field if present
+      // other — use amount field if present
       const m=String(d.amount||'').match(/[0-9]+(?:\.[0-9]+)?/);
       amt=m?parseFloat(m[0]):0;
     }

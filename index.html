@@ -2606,20 +2606,24 @@ function _buildBackupTxt(label){
   lines.push('='.repeat(60));
   lines.push('');
   SECTIONS.filter(function(s){return !s.hidden;}).forEach(function(sec){
-    const stories=(state.sections[sec.key]||[]).filter(function(s){return !s._deleted;});
+    // For the combined ibu section, also include state.sections.other (hidden companion)
+    var raw=sec.isCombined
+      ? (state.sections[sec.key]||[]).concat(state.sections.other||[])
+      : (state.sections[sec.key]||[]);
+    var stories=raw.filter(function(s){return !s._deleted;});
     if(!stories.length) return;
     lines.push('-'.repeat(40));
     lines.push(sec.icon+' '+sec.name.toUpperCase()+' ('+stories.length+')');
     lines.push('-'.repeat(40));
     stories.forEach(function(s){lines.push(storyToText(s)); lines.push('');});
   });
-  if((state.tasks||[]).length){
-    lines.push(''); lines.push('-'.repeat(40)); lines.push('TASKS ('+state.tasks.length+')'); lines.push('-'.repeat(40));
-    state.tasks.forEach(function(t){lines.push(taskToText(t)); lines.push('');});
+  if((state.tasks||[]).filter(function(t){return !t._deleted;}).length){
+    lines.push(''); lines.push('-'.repeat(40)); lines.push('TASKS'); lines.push('-'.repeat(40));
+    state.tasks.filter(function(t){return !t._deleted;}).forEach(function(t){lines.push(taskToText(t)); lines.push('');});
   }
-  if((state.meetings||[]).length){
+  if((state.meetings||[]).filter(function(m){return !m._deleted;}).length){
     lines.push(''); lines.push('-'.repeat(40)); lines.push('MEETINGS'); lines.push('-'.repeat(40));
-    state.meetings.forEach(function(m){lines.push(meetingToText(m)); lines.push('');});
+    state.meetings.filter(function(m){return !m._deleted;}).forEach(function(m){lines.push(meetingToText(m)); lines.push('');});
   }
   if((state.notes||[]).filter(function(n){return !n._deleted;}).length){
     lines.push(''); lines.push('-'.repeat(40)); lines.push('NOTES'); lines.push('-'.repeat(40));
@@ -2628,6 +2632,33 @@ function _buildBackupTxt(label){
       if(n.text) lines.push(n.text);
       lines.push('Status: '+(n.status||'active')); lines.push('');
     });
+  }
+  if((state.leaves||[]).filter(function(l){return !l._deleted;}).length){
+    lines.push(''); lines.push('-'.repeat(40)); lines.push('LEAVES'); lines.push('-'.repeat(40));
+    state.leaves.filter(function(l){return !l._deleted;}).forEach(function(l){
+      lines.push('  '+(l.employeeName||'Unknown')+' — '+(l.leaveType||'')+' ['+l.status+']');
+      lines.push('  '+_fmtD(l.dateFrom)+' to '+_fmtD(l.dateTo));
+      if(l.reason) lines.push('  Reason: '+l.reason);
+      lines.push('');
+    });
+  }
+  var _bkTravel=(state.travelEntries||[]).filter(function(e){return !e._deleted;});
+  if(_bkTravel.length){
+    lines.push(''); lines.push('-'.repeat(40)); lines.push('TRAVEL & EXPENSES ('+_bkTravel.length+' entries)'); lines.push('-'.repeat(40));
+    _bkTravel.forEach(function(e){
+      var d=e.data||{};
+      var label=(_typeName[e.type]||e.type).toUpperCase();
+      var detail='';
+      if(e.type==='cab') detail=[d.from,d.to].filter(Boolean).join(' → ')+(d.pickDate?' · '+_fmtDShort(d.pickDate):d.when?' · '+_fmtDShort(d.when.slice(0,10)):'');
+      else if(e.type==='flight') detail=(d.direction==='inbound'?'Inbound':'Outbound')+' '+(d.from||'')+(d.to?' → '+d.to:'')+(d.airline?' · '+d.airline:'');
+      else if(e.type==='hotel') detail=(d.hotelName||d.where||'')+(d.checkIn?' · '+_fmtDShort(d.checkIn):'')+(d.checkOut?' – '+_fmtDShort(d.checkOut):'');
+      else if(e.type==='expense') detail=(d.what||'')+(d.amount?' · '+d.amount:'')+(_teGetClaimed(e)==='yes'?' · claimed':'');
+      else if(e.type==='freelancer'||e.type==='fixer') detail=(d.fixerName||'')+(d.where?' · '+d.where:'')+(d.fixerTotal?' · '+d.fixerTotal:'');
+      else if(e.type==='other') detail=(d.what||'')+(d.amount?' · '+d.amount:'');
+      var storyTag=e.storyId?(function(){ var ss=[].concat(state.sections.ibu||[],state.sections.other||[],state.sections.requests||[],state.sections.upcoming||[]).find(function(x){return x.id===e.storyId;}); return ss?' ['+ss.title+']':''; })():'[General]';
+      lines.push('  '+(_typeIco[e.type]||'')+'  '+label+': '+detail+storyTag);
+    });
+    lines.push('');
   }
   if(state.remarks){ lines.push(''); lines.push('-'.repeat(40)); lines.push('REMARKS'); lines.push('-'.repeat(40)); lines.push(state.remarks); }
   return lines.join('\n');
@@ -2643,6 +2674,7 @@ function _makeBackupData(type, period){
     notes:JSON.parse(JSON.stringify(state.notes||[])),
     leaves:JSON.parse(JSON.stringify(state.leaves||[])),
     travelEntries:JSON.parse(JSON.stringify(state.travelEntries||[])),
+    travelDismissed:JSON.parse(JSON.stringify(state.travelDismissed||[])),
     employees:JSON.parse(JSON.stringify(state.employees||[])),
     staffNames:JSON.parse(JSON.stringify(state.staffNames||{})),
     sectionNames:JSON.parse(JSON.stringify(state.sectionNames||{})),
@@ -3650,18 +3682,18 @@ function storyToText(s){
   if(s.links)    ln.push('  Links         : '+s.links);
   if(s.completion_note)  ln.push('  Done notes    : '+s.completion_note);
   if(s.completion_links) ln.push('  Done links    : '+s.completion_links);
-  const storyTravel=(state.travelEntries||[]).filter(e=>e.storyId===s.id);
+  const storyTravel=(state.travelEntries||[]).filter(e=>e.storyId===s.id&&!e._deleted);
   if(storyTravel.length){
     ln.push('  Travel:');
     storyTravel.forEach(e=>{
       const d=e.data||{};
-      const icons={cab:'🚕',flight:'✈️',hotel:'🏨',expense:'💳',freelancer:'🧑‍💼'};
+      const icons={cab:'🚕',flight:'✈️',hotel:'🏨',expense:'💳',freelancer:'🧑‍💼',fixer:'🧑‍💼',other:'📦'};
       ln.push('    '+(icons[e.type]||'')+' '+(_typeName[e.type]||e.type).toUpperCase());
-      if(e.type==='cab'&&d.from) ln.push('      '+(d.from||'')+(d.to?' → '+d.to:'')+(d.when?' @ '+_fmtDT(d.when):'')+(d.driver?' Driver: '+d.driver+(d.phone?' '+d.phone:''):''));
-      if(e.type==='flight') ln.push('      '+(d.direction||'outbound')+' '+(d.from||'')+(d.to?' → '+d.to:'')+(d.when?' @ '+_fmtDT(d.when):''));
+      if(e.type==='cab'&&(d.from||d.to)) ln.push('      '+(d.from||'')+(d.to?' → '+d.to:'')+(d.pickDate?' @ '+_fmtD(d.pickDate)+(d.pickTime?' '+d.pickTime:''):d.when?' @ '+_fmtDT(d.when):'')+(d.driver?' Driver: '+d.driver+(d.phone?' '+d.phone:''):''));
+      if(e.type==='flight') ln.push('      '+(d.direction||'outbound')+' '+(d.from||'')+(d.to?' → '+d.to:'')+(d.flightDate?' @ '+_fmtD(d.flightDate)+(d.flightTime?' '+d.flightTime:''):d.when?' @ '+_fmtDT(d.when):''));
       if(e.type==='hotel') ln.push('      '+(d.hotelName||'')+(d.where?', '+d.where:'')+(d.checkIn?' In:'+_fmtD(d.checkIn):'')+(d.checkOut?' Out:'+_fmtD(d.checkOut):''));
       if(e.type==='expense') ln.push('      '+(d.what||'')+(d.amount?' '+d.amount:'')+(d.paidBy?' by '+d.paidBy:''));
-      if(e.type==='freelancer') ln.push('      '+(d.fixerName||'')+(d.where?', '+d.where:'')+(d.startDate?' '+_fmtD(d.startDate):'')+(d.endDate?' – '+_fmtD(d.endDate):'')+(d.fixerTotal?' Total:'+d.fixerTotal:'')+(d.paidBy?' by '+d.paidBy:''));
+      if(e.type==='freelancer'||e.type==='fixer') ln.push('      '+(d.fixerName||'')+(d.where?', '+d.where:'')+(d.startDate?' '+_fmtD(d.startDate):'')+(d.endDate?' – '+_fmtD(d.endDate):'')+(d.fixerTotal?' Total:'+d.fixerTotal:'')+(d.paidBy?' by '+d.paidBy:''));
     });
   }
   return ln.join('\n');
@@ -3681,11 +3713,12 @@ function buildFullText(){
   });
 
   // Active notes
-  if((state.notes||[]).length){
+  if((state.notes||[]).filter(n=>!n._deleted).length){
     ln.push('NOTES'); ln.push(hr);
-    state.notes.forEach(n=>{
+    state.notes.filter(n=>!n._deleted).forEach(n=>{
       const status=n.status==='done'?'[DONE]':n.status==='pass'||n.status==='passed'?'[PASSED]':'[ACTIVE]';
-      ln.push('  '+status+' '+n.text);
+      ln.push('  '+status+' '+(n.headline||''));
+      if(n.text) ln.push('    '+n.text);
       if(n.deadline_date) ln.push('  Deadline : '+n.deadline_date);
       if(n.carriedForward) ln.push('  Carried  : '+n.carriedDays+'d');
       ln.push('');
@@ -3694,9 +3727,9 @@ function buildFullText(){
   }
 
   // Tasks
-  if((state.tasks||[]).length){
+  if((state.tasks||[]).filter(t=>!t._deleted).length){
     ln.push('TASKS'); ln.push(hr);
-    state.tasks.forEach(t=>{
+    state.tasks.filter(t=>!t._deleted).forEach(t=>{
       const status=t.taskStatus==='done'?'[DONE]':t.taskStatus==='not-done'?'[NOT DONE]':t.taskStatus==='transferred'?'[TRANSFERRED]':'[PENDING]';
       ln.push('  '+status+' '+(t.title||'Untitled'));
       if(t.deadline_date) ln.push('  Deadline : '+t.deadline_date);
@@ -3706,20 +3739,41 @@ function buildFullText(){
     ln.push('');
   }
 
+  // Meetings
+  if((state.meetings||[]).filter(m=>!m._deleted).length){
+    ln.push('MEETINGS'); ln.push(hr);
+    state.meetings.filter(m=>!m._deleted).forEach(m=>{
+      ln.push(meetingToText(m)); ln.push('');
+    });
+    ln.push('');
+  }
+
   // Leaves
-  if((state.leaves||[]).length){
+  if((state.leaves||[]).filter(l=>!l._deleted).length){
     ln.push('LEAVES'); ln.push(hr);
-    const fmtDate=d=>d?new Date(d+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'}):d;
-    state.leaves.forEach(l=>{
+    const _fmtLeave=d=>d?new Date(d+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'}):d;
+    state.leaves.filter(l=>!l._deleted).forEach(l=>{
       ln.push('  '+(l.employeeName||'Unknown')+' — '+(l.leaveType||'')+' ['+l.status+']');
-      ln.push('  From : '+fmtDate(l.dateFrom));
-      ln.push('  To   : '+fmtDate(l.dateTo));
+      ln.push('  From : '+_fmtLeave(l.dateFrom));
+      ln.push('  To   : '+_fmtLeave(l.dateTo));
       if(l.reason) ln.push('  Note : '+l.reason);
       ln.push('');
     });
     ln.push('');
   }
 
+  // Travel & Expenses
+  const _allTravel=(state.travelEntries||[]).filter(e=>!e._deleted);
+  if(_allTravel.length){
+    ln.push('TRAVEL & EXPENSES'); ln.push(hr);
+    const _byStory={};
+    _allTravel.forEach(e=>{ const k=e.storyId||'__general'; if(!_byStory[k]) _byStory[k]=[]; _byStory[k].push(e); });
+    const _teSummary=(e)=>{ const d=e.data||{}; if(e.type==='cab') return [d.from,d.to].filter(Boolean).join(' → ')+(d.pickDate?' · '+_fmtDShort(d.pickDate):d.when?' · '+_fmtDShort(d.when.slice(0,10)):''); if(e.type==='flight') return (d.direction==='inbound'?'Inbound':'Outbound')+' '+(d.from||'')+(d.to?' → '+d.to:'')+(d.airline?' · '+d.airline:''); if(e.type==='hotel') return (d.hotelName||d.where||'')+(d.checkIn?' · in '+_fmtDShort(d.checkIn):'')+(d.checkOut?' out '+_fmtDShort(d.checkOut):''); if(e.type==='expense') return (d.what||'')+(d.amount?' · '+d.amount:'')+(_teGetClaimed(e)==='yes'?' · claimed':''); if(e.type==='freelancer'||e.type==='fixer') return (d.fixerName||'')+(d.where?' · '+d.where:'')+(d.fixerTotal?' · '+d.fixerTotal:''); if(e.type==='other') return (d.what||'')+(d.amount?' · '+d.amount:''); return ''; };
+    _teGetStories().forEach(({s})=>{ const grp=_byStory[s.id]; if(!grp) return; ln.push('  ▸ '+(s.title||'Untitled')); grp.forEach(e=>{ ln.push('    '+(_typeIco[e.type]||'')+'  '+(_typeName[e.type]||e.type)+' — '+_teSummary(e)); }); ln.push(''); });
+    const _gen=_byStory['__general'];
+    if(_gen){ ln.push('  ▸ General / Unlinked'); _gen.forEach(e=>{ ln.push('    '+(_typeIco[e.type]||'')+'  '+(_typeName[e.type]||e.type)+' — '+_teSummary(e)); }); ln.push(''); }
+    ln.push('');
+  }
 
   return ln.join('\n');
 }
@@ -3743,11 +3797,16 @@ function doExportJSON(){
     meetings:    state.meetings||[],
     notes:       state.notes||[],
     leaves:      state.leaves||[],
+    travelEntries: state.travelEntries||[],
+    travelDismissed: state.travelDismissed||[],
     employees:   state.employees||[],
     staffNames:  state.staffNames||{},
     sectionNames:state.sectionNames||{},
     customPlatformLabels: state.customPlatformLabels||[],
     deletedIds:  state.deletedIds||{},
+    eodSettings: state.eodSettings||{},
+    weeklyBackupSettings: state.weeklyBackupSettings||{},
+    monthlyBackupSettings: state.monthlyBackupSettings||{},
     backupSnapshots: {weekly:[],monthly:[],yearly:[]}, // snapshots are local-only, not exported
     lastMonthlyBackup: state.lastMonthlyBackup||null,
   };
@@ -3811,11 +3870,16 @@ function handleImportFile(input){
       state.meetings    = data.meetings    || [];
       state.notes       = data.notes       || [];
       state.leaves      = data.leaves      || [];
+      state.travelEntries = data.travelEntries || [];
+      state.travelDismissed = data.travelDismissed || [];
       state.employees   = data.employees   || state.employees;
       state.staffNames  = data.staffNames  || state.staffNames;
       state.sectionNames= data.sectionNames|| {};
       state.customPlatformLabels = data.customPlatformLabels || [];
       state.deletedIds  = data.deletedIds  || {};
+      if(data.eodSettings)          state.eodSettings          = data.eodSettings;
+      if(data.weeklyBackupSettings)  state.weeklyBackupSettings  = data.weeklyBackupSettings;
+      if(data.monthlyBackupSettings) state.monthlyBackupSettings = data.monthlyBackupSettings;
       Object.assign(state, preserved);
       SECTIONS.forEach(s=>{ if(!state.sections[s.key]) state.sections[s.key]=[]; });
       saveLocal(); // save locally first
@@ -3948,14 +4012,14 @@ function taskToText(t){
   return ln.join('\n');
 }
 function doEmailTasks(){
-  const tasks=state.tasks||[];
+  const tasks=(state.tasks||[]).filter(t=>!t._deleted);
   if(!tasks.length){ toast('No tasks to email'); return; }
   const lines=['TASKS','─'.repeat(44),''];
   tasks.forEach(t=>{lines.push(taskToText(t));lines.push('');});
   sendMailto('[My Dashboard] Tasks — '+new Date().toLocaleDateString('en-GB'), lines.join('\n'));
 }
 function doExportTasksTxt(){
-  const tasks=state.tasks||[];
+  const tasks=(state.tasks||[]).filter(t=>!t._deleted);
   if(!tasks.length){ toast('No tasks to export'); return; }
   const lines=['TASKS','─'.repeat(48),''];
   tasks.forEach(t=>{lines.push(taskToText(t));lines.push('');});
@@ -3967,7 +4031,7 @@ function doExportTasksTxt(){
 }
 
 function doEmailMeetings(){
-  const meetings=state.meetings||[];
+  const meetings=(state.meetings||[]).filter(m=>!m._deleted);
   if(!meetings.length){ toast('No meetings to email'); return; }
   const hr='─'.repeat(44);
   const lines=['MEETINGS',hr,''];
@@ -3975,7 +4039,7 @@ function doEmailMeetings(){
   sendMailto('[My Dashboard] Meetings — '+new Date().toLocaleDateString('en-GB'), lines.join('\n'));
 }
 function doExportMeetingsTxt(){
-  const meetings=state.meetings||[];
+  const meetings=(state.meetings||[]).filter(m=>!m._deleted);
   if(!meetings.length){ toast('No meetings to export'); return; }
   const hr='─'.repeat(48);
   const lines=['MEETINGS',hr,''];
@@ -3987,7 +4051,7 @@ function doExportMeetingsTxt(){
   toast('Meetings exported ✓');
 }
 function doEmailNotes(){
-  const notes=state.notes||[];
+  const notes=(state.notes||[]).filter(n=>!n._deleted);
   if(!notes.length){ toast('No notes to email'); return; }
   const hr='─'.repeat(44);
   const lines=['NOTES',hr,''];
@@ -4000,7 +4064,7 @@ function doEmailNotes(){
   sendMailto('[My Dashboard] Notes — '+new Date().toLocaleDateString('en-GB'), lines.join('\n'));
 }
 function doExportNotesTxt(){
-  const notes=state.notes||[];
+  const notes=(state.notes||[]).filter(n=>!n._deleted);
   if(!notes.length){ toast('No notes to export'); return; }
   const hr='─'.repeat(48);
   const lines=['NOTES',hr,''];
@@ -4018,7 +4082,7 @@ function doExportNotesTxt(){
   toast('Notes exported ✓');
 }
 function doEmailLeaves(){
-  const leaves=state.leaves||[];
+  const leaves=(state.leaves||[]).filter(l=>!l._deleted);
   if(!leaves.length){ toast('No leaves to email'); return; }
   const today=todayStr();
   const hr='─'.repeat(44);
@@ -4030,7 +4094,7 @@ function doEmailLeaves(){
   sendMailto('[My Dashboard] Leaves — '+new Date().toLocaleDateString('en-GB'), lines.join('\n'));
 }
 function doExportLeavesTxt(){
-  const leaves=state.leaves||[];
+  const leaves=(state.leaves||[]).filter(l=>!l._deleted);
   if(!leaves.length){ toast('No leaves to export'); return; }
   const today=todayStr();
   const hr='─'.repeat(48);
@@ -9568,7 +9632,7 @@ function toggleTravelSeg(eid){ _teToggle(eid); }
 
 // ── Export / Email ────────────────────────────────────────
 function doExportTravelTxt(){
-  const entries=state.travelEntries||[];
+  const entries=(state.travelEntries||[]).filter(e=>!e._deleted);
   if(!entries.length){ toast('No travel entries to export'); return; }
   const hr='─'.repeat(48);
   const pad=(l,v)=>v?(l+':').padEnd(18)+v:'';
@@ -9593,14 +9657,27 @@ function doExportTravelTxt(){
       else if(e.type==='flight'){ lines.push(pad('  Direction',d.direction==='inbound'?'Inbound / Return':'Outbound')); if(d.airline) lines.push(pad('  Airline',d.airline)); if(d.flightNum) lines.push(pad('  Flight no.',d.flightNum)); if(d.from||d.to) lines.push(pad('  Route',[d.from,d.to].filter(Boolean).join(' → '))); const _fl=d.flightDate?[_fmtD(d.flightDate),d.flightTime].filter(Boolean).join(' '):(d.when?_fmtDT(d.when):''); if(_fl) lines.push(pad('  When',_fl)); if(d.flightCost) lines.push(pad('  Cost',d.flightCost)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); }
       else if(e.type==='hotel'){ if(d.hotelName) lines.push(pad('  Hotel',d.hotelName)); if(d.where) lines.push(pad('  Location',d.where)); if(d.checkIn) lines.push(pad('  Check-in',_fmtD(d.checkIn))); if(d.checkOut) lines.push(pad('  Check-out',_fmtD(d.checkOut))); if(d.priceDay) lines.push(pad('  Price/day',d.priceDay)); if(d.priceTotal) lines.push(pad('  Total',d.priceTotal)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); }
       else if(e.type==='expense'){ if(d.what) lines.push(pad('  What',d.what)); if(d.when) lines.push(pad('  Date',_fmtD(d.when))); if(d.where) lines.push(pad('  Location',d.where)); if(d.amount) lines.push(pad('  Amount',d.amount)); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); lines.push(pad('  Claimed',_teGetClaimed(e)==='yes'?'Yes':'No')); }
-      else if(e.type==='freelancer'){ if(d.fixerName) lines.push(pad('  Name',d.fixerName)); if(d.fixerRole) lines.push(pad('  Role',d.fixerRole)); if(d.where) lines.push(pad('  Location',d.where)); if(d.phone) lines.push(pad('  Phone',d.phone)); if(d.email) lines.push(pad('  Email',d.email)); if(d.startDate) lines.push(pad('  Start',_fmtD(d.startDate))); if(d.endDate) lines.push(pad('  End',_fmtD(d.endDate))); if(d.fixerDays) lines.push(pad('  Days',d.fixerDays)); if(d.rateDay) lines.push(pad('  Rate/day',d.rateDay)); if(d.fixerTotal) lines.push(pad('  Total',d.fixerTotal)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); if(d.status) lines.push(pad('  Status',d.status)); if(d.fixerNotes) lines.push(pad('  Notes',d.fixerNotes)); }
+      else if(e.type==='freelancer'||e.type==='fixer'){ if(d.fixerName) lines.push(pad('  Name',d.fixerName)); if(d.fixerRole) lines.push(pad('  Role',d.fixerRole)); if(d.where) lines.push(pad('  Location',d.where)); if(d.phone) lines.push(pad('  Phone',d.phone)); if(d.email) lines.push(pad('  Email',d.email)); if(d.startDate) lines.push(pad('  Start',_fmtD(d.startDate))); if(d.endDate) lines.push(pad('  End',_fmtD(d.endDate))); if(d.fixerDays) lines.push(pad('  Days',d.fixerDays)); if(d.rateDay) lines.push(pad('  Rate/day',d.rateDay)); if(d.fixerTotal) lines.push(pad('  Total',d.fixerTotal)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); if(d.status) lines.push(pad('  Status',d.status)); if(d.fixerNotes) lines.push(pad('  Notes',d.fixerNotes)); }
       else if(e.type==='other'){ if(d.what) lines.push(pad('  Description',d.what)); if(d.when) lines.push(pad('  Date',_fmtD(d.when))); if(d.amount) lines.push(pad('  Amount',d.amount)); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); if(d.otherNotes) lines.push(pad('  Notes',d.otherNotes)); }
       (e.remarks||[]).forEach(r=>lines.push(pad('  Note',r.text)));
     });
   });
   // General entries
   const gen=byStory['__general'];
-  if(gen){ lines.push(''); lines.push('GENERAL'); lines.push(hr); gen.forEach(e=>{ /* same as above */ }); }
+  if(gen){
+    lines.push(''); lines.push('GENERAL / UNLINKED'); lines.push(hr);
+    gen.forEach(e=>{
+      const d=e.data||{};
+      lines.push(''); lines.push('  ['+(_typeName[e.type]||e.type).toUpperCase()+']');
+      if(e.type==='cab'){ if(d.from||d.to) lines.push(pad('  Route',[d.from,d.to].filter(Boolean).join(' → '))); const _pk=d.pickDate?[_fmtD(d.pickDate),d.pickTime].filter(Boolean).join(' '):(d.when?_fmtDT(d.when):''); const _dp=d.dropDate?[_fmtD(d.dropDate),d.dropTime].filter(Boolean).join(' '):(d.dropWhen?_fmtDT(d.dropWhen):''); if(_pk) lines.push(pad('  Pick-up',_pk)); if(_dp) lines.push(pad('  Drop-off',_dp)); if(d.driver) lines.push(pad('  Driver',d.driver+(d.phone?' ('+d.phone+')':''))); if(d.cabNum) lines.push(pad('  Cab no.',d.cabNum)); if(d.cabCharge) lines.push(pad('  Charge/day',d.cabCharge)); if(d.cabTotal) lines.push(pad('  Total',d.cabTotal)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); }
+      else if(e.type==='flight'){ lines.push(pad('  Direction',d.direction==='inbound'?'Inbound / Return':'Outbound')); if(d.airline) lines.push(pad('  Airline',d.airline)); if(d.flightNum) lines.push(pad('  Flight no.',d.flightNum)); if(d.from||d.to) lines.push(pad('  Route',[d.from,d.to].filter(Boolean).join(' → '))); const _fl=d.flightDate?[_fmtD(d.flightDate),d.flightTime].filter(Boolean).join(' '):(d.when?_fmtDT(d.when):''); if(_fl) lines.push(pad('  When',_fl)); if(d.flightCost) lines.push(pad('  Cost',d.flightCost)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); }
+      else if(e.type==='hotel'){ if(d.hotelName) lines.push(pad('  Hotel',d.hotelName)); if(d.where) lines.push(pad('  Location',d.where)); if(d.checkIn) lines.push(pad('  Check-in',_fmtD(d.checkIn))); if(d.checkOut) lines.push(pad('  Check-out',_fmtD(d.checkOut))); if(d.priceDay) lines.push(pad('  Price/day',d.priceDay)); if(d.priceTotal) lines.push(pad('  Total',d.priceTotal)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); }
+      else if(e.type==='expense'){ if(d.what) lines.push(pad('  What',d.what)); if(d.when) lines.push(pad('  Date',_fmtD(d.when))); if(d.where) lines.push(pad('  Location',d.where)); if(d.amount) lines.push(pad('  Amount',d.amount)); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); lines.push(pad('  Claimed',_teGetClaimed(e)==='yes'?'Yes':'No')); }
+      else if(e.type==='freelancer'||e.type==='fixer'){ if(d.fixerName) lines.push(pad('  Name',d.fixerName)); if(d.fixerRole) lines.push(pad('  Role',d.fixerRole)); if(d.where) lines.push(pad('  Location',d.where)); if(d.phone) lines.push(pad('  Phone',d.phone)); if(d.email) lines.push(pad('  Email',d.email)); if(d.startDate) lines.push(pad('  Start',_fmtD(d.startDate))); if(d.endDate) lines.push(pad('  End',_fmtD(d.endDate))); if(d.fixerDays) lines.push(pad('  Days',d.fixerDays)); if(d.rateDay) lines.push(pad('  Rate/day',d.rateDay)); if(d.fixerTotal) lines.push(pad('  Total',d.fixerTotal)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); if(d.status) lines.push(pad('  Status',d.status)); if(d.fixerNotes) lines.push(pad('  Notes',d.fixerNotes)); }
+      else if(e.type==='other'){ if(d.what) lines.push(pad('  Description',d.what)); if(d.when) lines.push(pad('  Date',_fmtD(d.when))); if(d.amount) lines.push(pad('  Amount',d.amount)); if(d.paidBy) lines.push(pad('  Paid by',d.paidBy)); if(d.payment) lines.push(pad('  Payment',_payLabel(d.payment))); if(d.otherNotes) lines.push(pad('  Notes',d.otherNotes)); }
+      (e.remarks||[]).forEach(r=>lines.push(pad('  Note',r.text)));
+    });
+  }
 
   lines.push(''); lines.push(hr); lines.push('Generated by My Dashboard');
   const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
@@ -9610,7 +9687,7 @@ function doExportTravelTxt(){
 }
 
 function doEmailTravel(){
-  const entries=state.travelEntries||[];
+  const entries=(state.travelEntries||[]).filter(e=>!e._deleted);
   if(!entries.length){ toast('No travel entries to email'); return; }
   const lines=['TRAVEL & EXPENSES',''];
   const byStory={};
@@ -9618,10 +9695,23 @@ function doEmailTravel(){
   _teGetStories().forEach(({s})=>{
     const grp=byStory[s.id]; if(!grp) return;
     lines.push((s.title||'Untitled').toUpperCase());
-    grp.forEach(e=>{ const d=e.data||{}; let line='  '+(_typeIco[e.type]||''); if(e.type==='cab') line+=' '+[d.from,d.to].filter(Boolean).join(' → ')+(d.when?' · '+_fmtDShort(d.when.slice(0,10)):''); else if(e.type==='flight') line+=' '+(d.direction==='inbound'?'↩':' →')+' '+(d.from||'')+(d.to?' → '+d.to:''); else if(e.type==='hotel') line+=' '+(d.hotelName||d.where||'')+(d.checkIn?' · '+_fmtDShort(d.checkIn):''); else if(e.type==='expense') line+=' '+(d.what||'')+(d.amount?' · '+d.amount:'')+(_teGetClaimed(e)==='yes'?' · ✅':' · ⏳'); else if(e.type==='freelancer') line+=' '+(d.fixerName||'')+(d.where?' · '+d.where:'')+(d.fixerTotal?' · '+d.fixerTotal:'')+((d.payment&&d.payment!=='unpaid')?' · ✅':' · ⏳'); else if(e.type==='other') line+=' '+(d.what||'')+(d.amount?' · '+d.amount:'')+(d.when?' · '+_fmtDShort(d.when):''); lines.push(line); });
+    grp.forEach(e=>{ const d=e.data||{}; let line='  '+(_typeIco[e.type]||''); if(e.type==='cab') line+=' '+[d.from,d.to].filter(Boolean).join(' → ')+(d.pickDate?' · '+_fmtDShort(d.pickDate):d.when?' · '+_fmtDShort(d.when.slice(0,10)):''); else if(e.type==='flight') line+=' '+(d.direction==='inbound'?'↩':' →')+' '+(d.from||'')+(d.to?' → '+d.to:''); else if(e.type==='hotel') line+=' '+(d.hotelName||d.where||'')+(d.checkIn?' · '+_fmtDShort(d.checkIn):''); else if(e.type==='expense') line+=' '+(d.what||'')+(d.amount?' · '+d.amount:'')+(_teGetClaimed(e)==='yes'?' · ✅':' · ⏳'); else if(e.type==='freelancer'||e.type==='fixer') line+=' '+(d.fixerName||'')+(d.where?' · '+d.where:'')+(d.fixerTotal?' · '+d.fixerTotal:'')+((d.payment&&d.payment!=='unpaid')?' · ✅':' · ⏳'); else if(e.type==='other') line+=' '+(d.what||'')+(d.amount?' · '+d.amount:'')+(d.when?' · '+_fmtDShort(d.when):''); lines.push(line); });
     lines.push('');
   });
-  const gen=byStory['__general']; if(gen){ lines.push('GENERAL'); gen.forEach(e=>{ const d=e.data||{}; lines.push('  '+(_typeIco[e.type]||'')+' '+(d.what||d.from||d.hotelName||'')); }); }
+  const gen=byStory['__general'];
+  if(gen){
+    lines.push('GENERAL');
+    gen.forEach(e=>{
+      const d=e.data||{}; let line='  '+(_typeIco[e.type]||'');
+      if(e.type==='cab') line+=' '+[d.from,d.to].filter(Boolean).join(' → ')+(d.pickDate?' · '+_fmtDShort(d.pickDate):d.when?' · '+_fmtDShort(d.when.slice(0,10)):'');
+      else if(e.type==='flight') line+=' '+(d.direction==='inbound'?'↩':'→')+' '+(d.from||'')+(d.to?' → '+d.to:'');
+      else if(e.type==='hotel') line+=' '+(d.hotelName||d.where||'')+(d.checkIn?' · '+_fmtDShort(d.checkIn):'');
+      else if(e.type==='expense') line+=' '+(d.what||'')+(d.amount?' · '+d.amount:'')+(_teGetClaimed(e)==='yes'?' · ✅':' · ⏳');
+      else if(e.type==='freelancer'||e.type==='fixer') line+=' '+(d.fixerName||'')+(d.where?' · '+d.where:'')+(d.fixerTotal?' · '+d.fixerTotal:'')+((d.payment&&d.payment!=='unpaid')?' · ✅':' · ⏳');
+      else if(e.type==='other') line+=' '+(d.what||'')+(d.amount?' · '+d.amount:'')+(d.when?' · '+_fmtDShort(d.when):'');
+      lines.push(line);
+    });
+  }
   sendMailto('[My Dashboard] Travel & Expenses — '+new Date().toLocaleDateString('en-GB'), lines.join('\n'));
 }
 

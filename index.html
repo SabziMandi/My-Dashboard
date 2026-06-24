@@ -2642,22 +2642,30 @@ function _buildBackupTxt(label){
       lines.push('');
     });
   }
-  var _bkTravel=(state.travelEntries||[]).filter(function(e){return !e._deleted;});
-  if(_bkTravel.length){
-    lines.push(''); lines.push('-'.repeat(40)); lines.push('TRAVEL & EXPENSES ('+_bkTravel.length+' entries)'); lines.push('-'.repeat(40));
-    _bkTravel.forEach(function(e){
-      var d=e.data||{};
-      var label=(_typeName[e.type]||e.type).toUpperCase();
-      var detail='';
-      if(e.type==='cab') detail=[d.from,d.to].filter(Boolean).join(' → ')+(d.pickDate?' · '+_fmtDShort(d.pickDate):d.when?' · '+_fmtDShort(d.when.slice(0,10)):'');
-      else if(e.type==='flight') detail=(d.direction==='inbound'?'Inbound':'Outbound')+' '+(d.from||'')+(d.to?' → '+d.to:'')+(d.airline?' · '+d.airline:'');
-      else if(e.type==='hotel') detail=(d.hotelName||d.where||'')+(d.checkIn?' · '+_fmtDShort(d.checkIn):'')+(d.checkOut?' – '+_fmtDShort(d.checkOut):'');
-      else if(e.type==='expense') detail=(d.what||'')+(d.amount?' · '+d.amount:'')+(_teGetClaimed(e)==='yes'?' · claimed':'');
-      else if(e.type==='freelancer'||e.type==='fixer') detail=(d.fixerName||'')+(d.where?' · '+d.where:'')+(d.fixerTotal?' · '+d.fixerTotal:'');
-      else if(e.type==='other') detail=(d.what||'')+(d.amount?' · '+d.amount:'');
-      var storyTag=e.storyId?(function(){ var ss=[].concat(state.sections.ibu||[],state.sections.other||[],state.sections.requests||[],state.sections.upcoming||[]).find(function(x){return x.id===e.storyId;}); return ss?' ['+ss.title+']':''; })():'[General]';
-      lines.push('  '+(_typeIco[e.type]||'')+'  '+label+': '+detail+storyTag);
-    });
+  // Travel & Expenses — general/unlinked entries only.
+  // Story-linked entries are already rendered inside each story block above via storyToText.
+  var _bkAllTravel=(state.travelEntries||[]).filter(function(e){return !e._deleted;});
+  var _bkLinkedCount=_bkAllTravel.filter(function(e){return !!e.storyId;}).length;
+  var _bkTravel=_bkAllTravel.filter(function(e){return !e.storyId;});
+  if(_bkAllTravel.length){
+    lines.push(''); lines.push('-'.repeat(40));
+    lines.push('TRAVEL & EXPENSES ('+_bkAllTravel.length+' total)'); lines.push('-'.repeat(40));
+    if(_bkLinkedCount) lines.push('  '+_bkLinkedCount+' entr'+(_bkLinkedCount===1?'y':'ies')+' linked to stories — see story blocks above.');
+    if(_bkTravel.length){
+      lines.push('  General / Unlinked:');
+      _bkTravel.forEach(function(e){
+        var d=e.data||{};
+        var label=(_typeName[e.type]||e.type).toUpperCase();
+        var detail='';
+        if(e.type==='cab') detail=[d.from,d.to].filter(Boolean).join(' → ')+(d.pickDate?' · '+_fmtDShort(d.pickDate):d.when?' · '+_fmtDShort(d.when.slice(0,10)):'');
+        else if(e.type==='flight') detail=(d.direction==='inbound'?'Inbound':'Outbound')+' '+(d.from||'')+(d.to?' → '+d.to:'')+(d.airline?' · '+d.airline:'');
+        else if(e.type==='hotel') detail=(d.hotelName||d.where||'')+(d.checkIn?' · '+_fmtDShort(d.checkIn):'')+(d.checkOut?' – '+_fmtDShort(d.checkOut):'');
+        else if(e.type==='expense') detail=(d.what||'')+(d.amount?' · '+d.amount:'')+(_teGetClaimed(e)==='yes'?' · claimed':'');
+        else if(e.type==='freelancer'||e.type==='fixer') detail=(d.fixerName||'')+(d.where?' · '+d.where:'')+(d.fixerTotal?' · '+d.fixerTotal:'');
+        else if(e.type==='other') detail=(d.what||'')+(d.amount?' · '+d.amount:'');
+        lines.push('  '+(_typeIco[e.type]||'')+'  '+label+': '+detail);
+      });
+    }
     lines.push('');
   }
   if(state.remarks){ lines.push(''); lines.push('-'.repeat(40)); lines.push('REMARKS'); lines.push('-'.repeat(40)); lines.push(state.remarks); }
@@ -3694,6 +3702,7 @@ function storyToText(s){
       if(e.type==='hotel') ln.push('      '+(d.hotelName||'')+(d.where?', '+d.where:'')+(d.checkIn?' In:'+_fmtD(d.checkIn):'')+(d.checkOut?' Out:'+_fmtD(d.checkOut):''));
       if(e.type==='expense') ln.push('      '+(d.what||'')+(d.amount?' '+d.amount:'')+(d.paidBy?' by '+d.paidBy:''));
       if(e.type==='freelancer'||e.type==='fixer') ln.push('      '+(d.fixerName||'')+(d.where?', '+d.where:'')+(d.startDate?' '+_fmtD(d.startDate):'')+(d.endDate?' – '+_fmtD(d.endDate):'')+(d.fixerTotal?' Total:'+d.fixerTotal:'')+(d.paidBy?' by '+d.paidBy:''));
+      if(e.type==='other') ln.push('      '+(d.what||'')+(d.amount?' '+d.amount:'')+(d.paidBy?' by '+d.paidBy:''));
     });
   }
   return ln.join('\n');
@@ -3762,16 +3771,16 @@ function buildFullText(){
     ln.push('');
   }
 
-  // Travel & Expenses
+  // Travel & Expenses — general/unlinked entries only.
+  // Story-linked entries are already rendered inside each story block above via storyToText.
   const _allTravel=(state.travelEntries||[]).filter(e=>!e._deleted);
   if(_allTravel.length){
     ln.push('TRAVEL & EXPENSES'); ln.push(hr);
-    const _byStory={};
-    _allTravel.forEach(e=>{ const k=e.storyId||'__general'; if(!_byStory[k]) _byStory[k]=[]; _byStory[k].push(e); });
+    const _linkedCount=_allTravel.filter(e=>e.storyId).length;
+    if(_linkedCount) ln.push('  ('+_linkedCount+' entr'+(+_linkedCount===1?'y':'ies')+' linked to stories — see story blocks above)');
     const _teSummary=(e)=>{ const d=e.data||{}; if(e.type==='cab') return [d.from,d.to].filter(Boolean).join(' → ')+(d.pickDate?' · '+_fmtDShort(d.pickDate):d.when?' · '+_fmtDShort(d.when.slice(0,10)):''); if(e.type==='flight') return (d.direction==='inbound'?'Inbound':'Outbound')+' '+(d.from||'')+(d.to?' → '+d.to:'')+(d.airline?' · '+d.airline:''); if(e.type==='hotel') return (d.hotelName||d.where||'')+(d.checkIn?' · in '+_fmtDShort(d.checkIn):'')+(d.checkOut?' out '+_fmtDShort(d.checkOut):''); if(e.type==='expense') return (d.what||'')+(d.amount?' · '+d.amount:'')+(_teGetClaimed(e)==='yes'?' · claimed':''); if(e.type==='freelancer'||e.type==='fixer') return (d.fixerName||'')+(d.where?' · '+d.where:'')+(d.fixerTotal?' · '+d.fixerTotal:''); if(e.type==='other') return (d.what||'')+(d.amount?' · '+d.amount:''); return ''; };
-    _teGetStories().forEach(({s})=>{ const grp=_byStory[s.id]; if(!grp) return; ln.push('  ▸ '+(s.title||'Untitled')); grp.forEach(e=>{ ln.push('    '+(_typeIco[e.type]||'')+'  '+(_typeName[e.type]||e.type)+' — '+_teSummary(e)); }); ln.push(''); });
-    const _gen=_byStory['__general'];
-    if(_gen){ ln.push('  ▸ General / Unlinked'); _gen.forEach(e=>{ ln.push('    '+(_typeIco[e.type]||'')+'  '+(_typeName[e.type]||e.type)+' — '+_teSummary(e)); }); ln.push(''); }
+    const _gen=_allTravel.filter(e=>!e.storyId);
+    if(_gen.length){ ln.push('  ▸ General / Unlinked'); _gen.forEach(e=>{ ln.push('    '+(_typeIco[e.type]||'')+'  '+(_typeName[e.type]||e.type)+' — '+_teSummary(e)); }); ln.push(''); }
     ln.push('');
   }
 

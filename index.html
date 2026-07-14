@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BBC Dashboard nd_v5 | built 2026-05-24 -->
+<!-- My Dashboard nd_v5 | built 2026-07-12 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1724,7 +1724,7 @@ button.tasks-tab-btn {
     <!-- Desktop search bar (hidden by default, opens as row 4) -->
     <div class="hide-mobile" id="desktop-search-bar" style="display:none;border-top:1px solid var(--border);background:var(--surface2);padding:0;">
       <div style="max-width:1200px;margin:0 auto;padding:8px 22px 0;">
-      <input class="header-search" id="search-input" type="search" placeholder="Search title, correspondent, producer, shoot-edit, location, remarks…" oninput="onSearch(this.value)" autocomplete="off" style="width:100%">
+      <input class="header-search" id="search-input" type="search" placeholder="Search stories, tasks, meetings, leaves, notes, travel, dates…" oninput="onSearch(this.value)" autocomplete="off" style="width:100%">
       <div style="display:flex;gap:6px;padding:6px 0 8px;flex-wrap:wrap;align-items:center;">
         <span class="filter-label">Filter:</span>
         <button class="fpill fa" onclick="setFilter('all',this)">All</button>
@@ -1783,7 +1783,7 @@ button.tasks-tab-btn {
     </div>
     <!-- Search section (shown when 🔍 tapped) — always below collapsible -->
     <div class="mobile-search-section" id="mobile-search-section">
-      <input class="header-search" id="search-input-mobile" type="search" placeholder="Search stories, people, remarks…" oninput="onSearch(this.value)" autocomplete="off">
+      <input class="header-search" id="search-input-mobile" type="search" placeholder="Search stories, tasks, travel, dates…" oninput="onSearch(this.value)" autocomplete="off">
       <div class="mobile-filter-pills" id="mobile-filter-pills">
         <button class="fpill fa" id="mfpill-all" onclick="mobileSetFilter('all',this)">All</button>
         <button class="fpill fu" id="mfpill-urgent" onclick="mobileSetFilter('urgent',this)"><span class="badge-dot" style="background:#B91C1C"></span>Urgent</button>
@@ -1955,13 +1955,9 @@ function openSettingsModal(){
       <label class="flabel">Reminder time (IST)</label>
       <select class="fselect" id="wb-hour-sel">${hrs.map(h=>`<option value="${h}"${h===wb.hour?' selected':''}>${h}:00 IST</option>`).join('')}</select>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
       <input type="checkbox" id="wb-enabled" ${wb.enabled?'checked':''} style="width:15px;height:15px;cursor:pointer">
       <label for="wb-enabled" style="font-size:13px;color:var(--text);cursor:pointer">Enable weekly backup reminder</label>
-    </div>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
-      <input type="checkbox" id="wb-workdays" ${wb.workDaysOnly?'checked':''} style="width:15px;height:15px;cursor:pointer">
-      <label for="wb-workdays" style="font-size:13px;color:var(--text);cursor:pointer">Working days only (Mon–Fri)</label>
     </div>
     <div style="height:1px;background:var(--border);margin-bottom:18px;"></div>
     <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.9px;margin-bottom:8px;">Monthly Backup Reminder</div>
@@ -1981,7 +1977,7 @@ function openSettingsModal(){
     <div class="modal-footer">
       <button class="btn btn-accent btn-sm" onclick="
         state.eodSettings={enabled:document.getElementById('eod-enabled').checked,hour:parseInt(document.getElementById('eod-hour-sel').value),workDaysOnly:document.getElementById('eod-workdays').checked};
-        state.weeklyBackupSettings={enabled:document.getElementById('wb-enabled').checked,hour:parseInt(document.getElementById('wb-hour-sel').value),workDaysOnly:document.getElementById('wb-workdays').checked};
+        state.weeklyBackupSettings={enabled:document.getElementById('wb-enabled').checked,hour:parseInt(document.getElementById('wb-hour-sel').value),workDaysOnly:((state.weeklyBackupSettings||{}).workDaysOnly??true)};
         state.monthlyBackupSettings={enabled:document.getElementById('mb-enabled').checked,hour:parseInt(document.getElementById('mb-hour-sel').value),workDaysOnly:document.getElementById('mb-workdays').checked};
         saveAndPush();document.getElementById('settings-modal').remove();toast('Settings saved ✓');">Save</button>
       <button class="btn btn-ghost btn-sm" onclick="document.getElementById('settings-modal').remove()">Cancel</button>
@@ -2683,6 +2679,11 @@ function _makeBackupData(type, period){
     leaves:JSON.parse(JSON.stringify(state.leaves||[])),
     travelEntries:JSON.parse(JSON.stringify(state.travelEntries||[])),
     travelDismissed:JSON.parse(JSON.stringify(state.travelDismissed||[])),
+    travelAutoResolved:JSON.parse(JSON.stringify(state.travelAutoResolved||[])),
+    travelGroupDismissed:JSON.parse(JSON.stringify(state.travelGroupDismissed||[])),
+    travelGroupAutoResolved:JSON.parse(JSON.stringify(state.travelGroupAutoResolved||[])),
+    travelGeneralDismissed:!!state.travelGeneralDismissed,
+    remarksUpdated:state.remarksUpdated||0,
     employees:JSON.parse(JSON.stringify(state.employees||[])),
     staffNames:JSON.parse(JSON.stringify(state.staffNames||{})),
     sectionNames:JSON.parse(JSON.stringify(state.sectionNames||{})),
@@ -3582,19 +3583,8 @@ function getStories(sec,archKey,includeShelved){
   if(!includeShelved) a=a.filter(s=>s.status!=='shelved');
   if(ui.search){
     const q=ui.search.toLowerCase();
-    a=a.filter(s=>
-      (s.title||'').toLowerCase().includes(q)||
-      (s.correspondent||'').toLowerCase().includes(q)||
-      (s.producer||'').toLowerCase().includes(q)||
-      (s.shoot_edit||'').toLowerCase().includes(q)||
-      (s.location||'').toLowerCase().includes(q)||
-      (s.field_location||'').toLowerCase().includes(q)||
-      (s.remarks||'').toLowerCase().includes(q)||
-      (s.req_name||'').toLowerCase().includes(q)||
-      (s.req_team||'').toLowerCase().includes(q)||
-      (s.detail||'').toLowerCase().includes(q)||
-      (s.links||'').toLowerCase().includes(q)
-    );
+    // Single canonical matcher — same fields, multi-keyword AND and date matching as the Search view
+    a=a.filter(s=>storyMatchesSearch(s,q));
   }
   if(ui.filter==='working')  return a.filter(s=>s.mode==='working');
   if(ui.filter==='watching') return a.filter(s=>s.mode==='watching');
@@ -3808,6 +3798,11 @@ function doExportJSON(){
     leaves:      state.leaves||[],
     travelEntries: state.travelEntries||[],
     travelDismissed: state.travelDismissed||[],
+    travelAutoResolved: state.travelAutoResolved||[],
+    travelGroupDismissed: state.travelGroupDismissed||[],
+    travelGroupAutoResolved: state.travelGroupAutoResolved||[],
+    travelGeneralDismissed: !!state.travelGeneralDismissed,
+    remarksUpdated: state.remarksUpdated||0,
     employees:   state.employees||[],
     staffNames:  state.staffNames||{},
     sectionNames:state.sectionNames||{},
@@ -3881,6 +3876,11 @@ function handleImportFile(input){
       state.leaves      = data.leaves      || [];
       state.travelEntries = data.travelEntries || [];
       state.travelDismissed = data.travelDismissed || [];
+      state.travelAutoResolved = data.travelAutoResolved || [];
+      state.travelGroupDismissed = data.travelGroupDismissed || [];
+      state.travelGroupAutoResolved = data.travelGroupAutoResolved || [];
+      state.travelGeneralDismissed = data.travelGeneralDismissed || false;
+      state.remarksUpdated = data.remarksUpdated || (data.remarks?Date.now():0);
       state.employees   = data.employees   || state.employees;
       state.staffNames  = data.staffNames  || state.staffNames;
       state.sectionNames= data.sectionNames|| {};
@@ -3908,11 +3908,14 @@ function handleImportFile(input){
   reader.readAsText(file);
 }
 function sendMailto(subject, bodyText){
-  const MAX=1800;
-  let body=bodyText;
-  let truncated=false;
-  if(body.length>MAX){ body=body.slice(0,MAX)+'\n\n[... truncated — use Export .txt for full version]'; truncated=true; }
-  const href='mailto:?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+  // mailto links beyond ~2000 chars get silently truncated by mail clients —
+  // for long bodies, skip mailto entirely and open the copy dialog with the FULL text.
+  const MAX=2000;
+  if(bodyText.length>MAX){
+    showEmailFallback(subject, bodyText, true);
+    return;
+  }
+  const href='mailto:?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(bodyText);
   // Try window.open first (works in most browsers), then anchor click
   let opened=false;
   try {
@@ -3930,17 +3933,17 @@ function sendMailto(subject, bodyText){
   }
   // Always show fallback copy dialog so user can paste manually if mail client didn't open
   setTimeout(()=>{ showEmailFallback(subject,bodyText); },400);
-  if(truncated) toast('Body was long — full version is in Export .txt');
 }
-function showEmailFallback(subject,body){
-  // Fallback: show copy dialog if mailto is blocked
+function showEmailFallback(subject,body,tooLong){
+  // Fallback: show copy dialog if mailto is blocked, or directly when the body
+  // is too long for a reliable mailto link (full text always shown here)
   if(document.getElementById('email-fallback-modal')) return;
   // Store body on window so the button can access it without encoding issues
   window._emailFallbackBody=body;
   const m=document.createElement('div'); m.className='modal-bg'; m.id='email-fallback-modal';
   m.innerHTML=`<div class="modal" onclick="event.stopPropagation()" style="max-width:620px">
     <h2>✉ Email Content</h2>
-    <p class="modal-sub">Your browser blocked the email link. Copy the text below and paste it into your email client.</p>
+    <p class="modal-sub">${tooLong?'This email is too long for a direct mail link. Copy the full text below and paste it into your email client — nothing has been cut.':'Your browser blocked the email link. Copy the text below and paste it into your email client.'}</p>
     <div style="margin-bottom:10px">
       <div class="flabel" style="margin-bottom:4px">Subject</div>
       <input class="finput" value="${esc(subject)}" readonly onclick="this.select()">
@@ -4699,6 +4702,8 @@ function repairStory(id){
   // Write clean state directly to Firebase — bypasses merge
   saveLocal();
   const raw=JSON.parse(localStorage.getItem('nd_v5'));
+  // Strip local-only fields — same rule as pushToCloud (repair must not leak archive/backups to Firestore)
+  delete raw.backupSnapshots; delete raw.archive; delete raw.lastActiveDate;
   fireDb.collection('nd').doc('data').set(raw).then(function(){
     toast('Story repaired ✓ — mobile will show it on next sync');
     render();
@@ -4883,6 +4888,15 @@ function injectDataLists(){
 
 /* ── Tab Date Navigator — shown inside Notes / Tasks standalone views ── */
 
+// Raw + formatted date text so "2026-04-17", "17 apr", "17 april 2026" and the weekday all match
+function _dateSearchText(ds){
+  if(!ds) return '';
+  const core=String(ds).slice(0,10);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(core)) return String(ds);   // 'YYYY-MM' month keys etc. — raw only
+  const d=new Date(core+'T00:00:00');
+  if(isNaN(d)) return String(ds);
+  return ds+' '+d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'})+' '+d.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+}
 function storyMatchesSearch(s, q){
   const fields=[
     s.title, s.correspondent, s.producer, s.shoot_edit,
@@ -4890,9 +4904,12 @@ function storyMatchesSearch(s, q){
     s.req_team, s.detail, s.links,
     (s.remarksList||[]).map(r=>r.text).join(' '),
     s.completion_note,
+    _dateSearchText(s.deadline_date),
+    _dateSearchText(s.expected_date),
+    _dateSearchText(s.expected_date_to),
   ].map(f=>(f||'').toLowerCase()).join(' ');
   // Support multi-keyword: all words must match somewhere in combined fields
-  return q.trim().split(/\s+/).filter(Boolean).every(word=>fields.includes(word));
+  return q.trim().split(/\s+/).filter(Boolean).every(word=>fields.includes(word.toLowerCase()));
 }
 function sectionMatchesSearch(sec, q){
   // Allow searching by section name — e.g. "stories", "requests", "note"
@@ -4904,6 +4921,7 @@ function sectionMatchesSearch(sec, q){
     tasks:['task','tasks'],
     leaves:['leave','leaves'],
     meetings:['meeting','meetings'],
+    travel:['travel','expense','expenses'],
   };
   for(const [key,terms] of Object.entries(secMap)){
     if(terms.some(t=>t.includes(q)||q.includes(t))) return key;
@@ -4934,7 +4952,7 @@ function renderSearchHTML(){
   // ── Stories ──
   SECTIONS.forEach(sec=>{
     if(sec.isUpcoming) return;
-    const arr=(state.sections[sec.key]||[]).filter(s=>!s._deleted);
+    const arr=(state.sections[sec.key]||[]).filter(s=>!s._deleted&&s.status!=='shelved'); // shelved stories surface in their own group below
     // Active first (urgent/in-progress), then others, then terminal — within each tier newest updated first
     arr.sort((a,b)=>{
       const tier=s=>(['urgent','in-progress'].includes(s.status)?0:['completed','not-done','shelved'].includes(s.status)?2:1);
@@ -4960,18 +4978,20 @@ function renderSearchHTML(){
   const allMatch=(text)=>words.every(w=>text.toLowerCase().includes(w));
 
   // Notes — updated desc
-  if(secHit==='notes'||(state.notes||[]).some(n=>allMatch((n.headline||'')+(n.text||'')))){
+  const _nStr=n=>(n.headline||'')+' '+(n.text||'')+' '+_dateSearchText(n.deadline_date);
+  if(secHit==='notes'||(state.notes||[]).some(n=>allMatch(_nStr(n)))){
     (state.notes||[])
-      .filter(n=>!n._deleted&&(secHit==='notes'||allMatch((n.headline||'')+(n.text||''))))
+      .filter(n=>!n._deleted&&(secHit==='notes'||allMatch(_nStr(n))))
       .sort((a,b)=>(b.updated||b.created||0)-(a.updated||a.created||0))
       .forEach(n=>{
         results.push({dateKey:'_notes',dateLabel:'Notes',sec:'notes',secLabel:'Note',note:n,type:'note'});
       });
   }
   // Tasks — deadline_date asc, nulls last
-  if(secHit==='tasks'||(state.tasks||[]).some(t=>!t._deleted&&allMatch((t.title||'')+' '+(t.notes||'')))){
+  const _tStr=t=>(t.title||'')+' '+(t.notes||'')+' '+_dateSearchText(t.deadline_date);
+  if(secHit==='tasks'||(state.tasks||[]).some(t=>!t._deleted&&allMatch(_tStr(t)))){
     (state.tasks||[])
-      .filter(t=>!t._deleted&&(secHit==='tasks'||allMatch((t.title||'')+' '+(t.notes||''))))
+      .filter(t=>!t._deleted&&(secHit==='tasks'||allMatch(_tStr(t))))
       .sort((a,b)=>{
         if(!a.deadline_date&&!b.deadline_date) return 0;
         if(!a.deadline_date) return 1;
@@ -4983,22 +5003,58 @@ function renderSearchHTML(){
       });
   }
   // Leaves — dateFrom asc
-  if(secHit==='leaves'||(state.leaves||[]).some(l=>!l._deleted&&allMatch((l.employeeName||'')+' '+(l.reason||'')))){
+  const _lStr=l=>(l.employeeName||'')+' '+(l.reason||'')+' '+_dateSearchText(l.dateFrom)+' '+_dateSearchText(l.dateTo);
+  if(secHit==='leaves'||(state.leaves||[]).some(l=>!l._deleted&&allMatch(_lStr(l)))){
     (state.leaves||[])
-      .filter(l=>!l._deleted&&(secHit==='leaves'||allMatch((l.employeeName||'')+' '+(l.reason||''))))
+      .filter(l=>!l._deleted&&(secHit==='leaves'||allMatch(_lStr(l))))
       .sort((a,b)=>(a.dateFrom||'').localeCompare(b.dateFrom||''))
       .forEach(l=>{
         results.push({dateKey:'_leaves',dateLabel:'Leaves',sec:'leaves',secLabel:'Leave Tracker',leave:l,type:'leave'});
       });
   }
   // Meetings — date asc, soonest first
-  const _mStr=m=>[m.name,m.agenda,typeof m.remarks==='string'?m.remarks:Array.isArray(m.remarks)?m.remarks.map(r=>r.text||'').join(' '):''].join(' ');
+  const _mStr=m=>[m.name,m.agenda,typeof m.remarks==='string'?m.remarks:Array.isArray(m.remarks)?m.remarks.map(r=>r.text||'').join(' '):'',_dateSearchText(m.date)].join(' ');
   if(secHit==='meetings'||(state.meetings||[]).some(m=>!m._deleted&&allMatch(_mStr(m)))){
     (state.meetings||[])
       .filter(m=>!m._deleted&&(secHit==='meetings'||allMatch(_mStr(m))))
       .sort((a,b)=>(a.date||'').localeCompare(b.date||''))
       .forEach(m=>{
         results.push({dateKey:'_meetings',dateLabel:'Meetings',sec:'meetings',secLabel:'Meeting',meeting:m,type:'meeting'});
+      });
+  }
+  // Travel & Expenses — all live entries (active + resolved/hidden), most recent activity first
+  const _teStoryTitle=e=>{
+    if(!e.storyId) return '';
+    for(const k of ['ibu','other','requests']){
+      const st=(state.sections[k]||[]).find(x=>x.id===e.storyId&&!x._deleted);
+      if(st) return st.title||'';
+    }
+    return '';
+  };
+  const _teStr=e=>{
+    const d=e.data||{};
+    return [
+      _typeName[e.type]||e.type, _teStoryTitle(e), e.groupLabel,
+      d.from,d.to,d.driver,d.phone,d.cabNum,d.cabCharge,d.cabTotal,d.cabNotes,
+      d.airline,d.flightNum,d.flightCost,d.flightNotes,d.direction,
+      d.hotelName,d.where,d.priceDay,d.priceTotal,d.hotelNotes,
+      d.what,d.amount,d.expenseNotes,
+      d.fixerName,d.fixerRole,d.email,d.rateDay,d.fixerDays,d.fixerTotal,d.status,d.fixerNotes,
+      d.otherNotes,d.paidBy,d.payment?_payLabel(d.payment):'',
+      (e.remarks||[]).map(r=>r.text||'').join(' '),
+      d.pickTime,d.flightTime,d.dropTime,
+      _dateSearchText(d.pickDate),_dateSearchText(d.dropDate),_dateSearchText(d.flightDate),
+      _dateSearchText(d.checkIn),_dateSearchText(d.checkOut),
+      _dateSearchText(d.startDate),_dateSearchText(d.endDate),
+      _dateSearchText(d.when),_dateSearchText(d.dropWhen),
+    ].filter(Boolean).join(' ');
+  };
+  if(secHit==='travel'||(state.travelEntries||[]).some(e=>!e._deleted&&allMatch(_teStr(e)))){
+    (state.travelEntries||[])
+      .filter(e=>!e._deleted&&(secHit==='travel'||allMatch(_teStr(e))))
+      .sort((a,b)=>(b.updated||b.created||0)-(a.updated||a.created||0))
+      .forEach(e=>{
+        results.push({dateKey:'_travel',dateLabel:'Travel & Expenses',sec:'travel',secLabel:'Travel',travel:e,type:'travel'});
       });
   }
   // Shelved — most recently shelved first
@@ -5017,7 +5073,7 @@ function renderSearchHTML(){
 
 
   // Group by date key — explicit order: today, upcoming, notes, tasks, meetings, leaves, shelved, then archive newest→oldest
-  const moduleOrder=['today','_upcoming','_notes','_tasks','_meetings','_leaves','_shelved'];
+  const moduleOrder=['today','_upcoming','_notes','_tasks','_meetings','_leaves','_travel','_shelved'];
   const allKeys=[...new Set(results.map(r=>r.dateKey))];
   const archiveDateKeys=allKeys.filter(k=>!moduleOrder.includes(k)).sort((a,b)=>b.localeCompare(a));
   const orderedDates=[...moduleOrder.filter(k=>allKeys.includes(k)),...archiveDateKeys];
@@ -5040,14 +5096,17 @@ function renderSearchHTML(){
     dateResults.forEach(r=>{
       if(r.type==='story'&&r.story){
         const s=r.story;
-        const dot2=col=>`<span class="badge-dot" style="background:${col}"></span>`; const sbL=s.status==='urgent'?dot2('#B91C1C')+'Urgent':s.status==='in-progress'?dot2('#B45309')+'In progress':s.status==='completed'?dot2('#15803D')+'Done':s.status==='not-done'?dot2('#475569')+'Not done':s.status==='on-hold'?dot2('#7C3AED')+'On hold':'';
+        const dot2=col=>`<span class="badge-dot" style="background:${col}"></span>`; const sbL=s.status==='urgent'?dot2('#B91C1C')+'Urgent':s.status==='in-progress'?dot2('#B45309')+'In progress':s.status==='completed'?dot2('#15803D')+'Done':s.status==='not-done'?dot2('#475569')+'Not done':s.status==='on-hold'?dot2('#7C3AED')+'On hold':s.status==='postponed'?dot2('#0369A1')+'Postponed':'';
         const secBadge=r.sec==='ibu'||r.sec==='other'?'Stories':r.secLabel;
+        const _rowDate=r.sec==='upcoming'
+          ?(s.expected_date?(s.expected_type==='month'?new Date(s.expected_date+'-01T00:00:00').toLocaleDateString('en-GB',{month:'long',year:'numeric'}):fmtDate(s.expected_date)):(s.deadline_date?fmtDate(s.deadline_date):''))
+          :(s.deadline_date?fmtDate(s.deadline_date):'');
         const _rgKey=s.status==='completed'?'done':s.status==='not-done'?'not-done':s.status==='on-hold'?'on-hold':s.status==='postponed'?'postponed':s.status==='shelved'?'shelved':'';
         html+=`<div style="display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;"
           onclick="goToStory('${s.id}','${r.sec==='other'?'ibu':r.sec}')">
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.title||'Untitled')}</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--font)">${secBadge}${s.correspondent?' · '+esc(s.correspondent):''}${sbL?' · '+sbL:''}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--font)">${secBadge}${s.correspondent?' · '+esc(s.correspondent):''}${_rowDate?' · '+_rowDate:''}${sbL?' · '+sbL:''}</div>
           </div>
           <span style="font-size:11px;color:var(--text3);flex-shrink:0">›</span>
         </div>`;
@@ -5057,19 +5116,20 @@ function renderSearchHTML(){
           onclick="goToNote('${n.id}')">
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(n.headline||n.text||'Untitled note')}</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--font)">Note${n.status!=='active'?' · '+(n.status==='done'?'✅ Done':'↪ Passed'):''}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--font)">Note${n.deadline_date?' · Due '+fmtDate(n.deadline_date):''}${n.status!=='active'?' · '+(n.status==='done'?'✅ Done':'↪ Passed'):''}</div>
           </div>
           <span style="font-size:11px;color:var(--text3);flex-shrink:0">›</span>
         </div>`;
       } else if(r.type==='task'&&r.task){
         const t=r.task;
-        const st=t.taskStatus==='done'?'✅':t.taskStatus==='not-done'?'⚫':'⏳';
+        const st=t.taskStatus==='done'?'✅':t.taskStatus==='not-done'?'⚫':t.taskStatus==='transferred'?'↪':t.taskStatus==='postponed-to'?'⏸':'⏳';
+        const stLbl=t.taskStatus==='done'?' · Done':t.taskStatus==='not-done'?' · Not done':t.taskStatus==='transferred'?(' · Transferred'+(t.transferredTo?' → '+fmtDate(t.transferredTo):'')):t.taskStatus==='postponed-to'?(' · Postponed'+(t.postponeTo?' → '+fmtDate(t.postponeTo):'')):'';
         html+=`<div style="display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;"
           onclick="goToTask('${t.id}')">
           <span style="font-size:15px">${st}</span>
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.title||'Untitled')}</div>
-            <div style="font-size:11px;color:var(--text3);font-family:var(--font)">Task${t.deadline_date?' · '+fmtDate(t.deadline_date):''}</div>
+            <div style="font-size:11px;color:var(--text3);font-family:var(--font)">Task${t.deadline_date?' · '+fmtDate(t.deadline_date):''}${stLbl}</div>
           </div>
           <span style="font-size:11px;color:var(--text3);flex-shrink:0">›</span>
         </div>`;
@@ -5079,19 +5139,45 @@ function renderSearchHTML(){
           onclick="goToLeave('${l.id}')">
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:600;color:var(--text)">${esc(l.employeeName||'Unknown')}</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--font)">${fmtDate(l.dateFrom)} → ${fmtDate(l.dateTo)} · ${l.status==='approved'?`<span class="badge-dot" style="background:#15803D"></span>Approved`:`<span class="badge-dot" style="background:#B45309"></span>Pending`}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--font)">${fmtDate(l.dateFrom)} → ${fmtDate(l.dateTo)} · ${l.status==='approved'?`<span class="badge-dot" style="background:#15803D"></span>Approved`:`<span class="badge-dot" style="background:#B45309"></span>Pending`}${l.dateTo&&l.dateTo<today?' · Past':''}</div>
           </div>
           <span style="font-size:11px;color:var(--text3);flex-shrink:0">›</span>
         </div>`;
       } else if(r.type==='meeting'&&r.meeting){
         const m=r.meeting;
-        const mDate=m.date?fmtDate(m.date):'';
-        const mTime=m.time_uk?m.time_uk+' '+ukLabel():'';
+        const mDate=m.date?fmtDate(m.date):(m.isRecurring?'Recurring':'');
+        const mTime=m.time?m.time+' '+ukLabel()+' · '+ukToIST(m.time)+' IST':'';
+        const mLbl=m.status==='done'?' · Done':m.status==='cancelled'?' · Cancelled':'';
         html+=`<div style="display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;border-left:3px solid var(--border);cursor:pointer;-webkit-tap-highlight-color:transparent;"
           onclick="goToMeeting('${m.id}')">
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.name||'Untitled meeting')}</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--font)">Meeting${mDate?' · '+mDate:''}${mTime?' · '+mTime:''}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--font)">Meeting${mDate?' · '+mDate:''}${mTime?' · '+mTime:''}${mLbl}</div>
+          </div>
+          <span style="font-size:11px;color:var(--text3);flex-shrink:0">›</span>
+        </div>`;
+      } else if(r.type==='travel'&&r.travel){
+        const e2=r.travel; const d2=e2.data||{};
+        const ico=_typeIco[e2.type]||'📦';
+        const tName=_typeName[e2.type]||e2.type;
+        const _sum=(()=>{
+          if(e2.type==='cab') return [d2.from,d2.to].filter(Boolean).join(' → ')||d2.driver||'';
+          if(e2.type==='flight') return (d2.direction==='inbound'?'Inbound ':'Outbound ')+([d2.from,d2.to].filter(Boolean).join(' → ')||d2.airline||'');
+          if(e2.type==='hotel') return d2.hotelName||d2.where||'';
+          if(e2.type==='expense') return (d2.what||'')+(d2.amount?' · '+d2.amount:'');
+          if(e2.type==='freelancer'||e2.type==='fixer') return (d2.fixerName||'')+(d2.where?' · '+d2.where:'');
+          return (d2.what||'')+(d2.amount?' · '+d2.amount:'');
+        })();
+        const _pd=d2.pickDate||d2.flightDate||d2.checkIn||d2.startDate||(d2.when?String(d2.when).slice(0,10):'');
+        const _title2=_teStoryTitle(e2);
+        const ctx=_title2?'📡 '+_title2:(e2.groupLabel&&e2.groupLabel!=='General'?'🗂 '+e2.groupLabel:(e2.storyId?'':'General'));
+        const resState=_teResolvedState(e2);
+        html+=`<div style="display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;"
+          onclick="goToTravel('${e2.id}')">
+          <span style="font-size:15px">${ico}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(_sum||tName)}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--font)">${tName}${ctx?' · '+esc(ctx):''}${_pd?' · '+fmtDate(_pd):''}${resState?' · '+resState:''}</div>
           </div>
           <span style="font-size:11px;color:var(--text3);flex-shrink:0">›</span>
         </div>`;
@@ -5202,6 +5288,19 @@ function goToLeave(id){
 }
 function goToMeeting(id){
   _searchNav('meetings',id,()=>{ ui_openMeetings.add(id); });
+}
+function goToTravel(id){
+  const e=(state.travelEntries||[]).find(x=>x.id===id&&!x._deleted);
+  const sid=e?(e.storyId?e.storyId:'grp:'+(e.groupId||'__default')):null;
+  _searchNav('today',id,()=>{
+    ui.openSections=new Set(['travel']);
+    ui_teResolvedOpen=true;              // entry may live in the Resolved section
+    if(e) _teOpen[e.id]=true;            // expand the entry's detail block
+    if(sid){
+      ui_teBookingsOpen[sid]=true; ui_teExpensesOpen[sid]=true;
+      ui_teBookingsPage[sid]=9999; ui_teExpensesPage[sid]=9999;   // defeat pagination so the row is in the DOM
+    }
+  });
 }
 function clearSearch(){
   ui.search=''; ui.view='today';
@@ -6881,7 +6980,7 @@ function renderCombinedAccordion(archKey){
   // Apply search + global filter
   const applyFilter=(arr)=>{
     let a=[...arr];
-    if(ui.search){ const q=ui.search.toLowerCase(); a=a.filter(s=>(s.title||'').toLowerCase().includes(q)||(s.correspondent||'').toLowerCase().includes(q)||(s.producer||'').toLowerCase().includes(q)||(s.shoot_edit||'').toLowerCase().includes(q)||(s.remarks||'').toLowerCase().includes(q)); }
+    if(ui.search){ const q=ui.search.toLowerCase(); a=a.filter(s=>storyMatchesSearch(s,q)); }
     if(ui.filter==='working')  return a.filter(s=>s.mode==='working');
     if(ui.filter==='watching') return a.filter(s=>s.mode==='watching');
     if(ui.filter!=='all')      return a.filter(s=>s.status===ui.filter);
@@ -7046,7 +7145,7 @@ function renderCombinedAccordion(archKey){
       let g=`<div style="margin-bottom:6px"><div class="task-section-divider tsd-resolved" style="margin-top:4px" onclick="ui._resolvedGroupOpen['${key}']=!ui._resolvedGroupOpen['${key}'];const gb=document.getElementById('${groupBodyId}');const gc=document.getElementById('rg-chev-${key}');if(gb)gb.style.display=ui._resolvedGroupOpen['${key}']?'block':'none';if(gc)gc.textContent=ui._resolvedGroupOpen['${key}']?'▾':'▸'"><span class="tsd-dot"></span>${label} <span class="tsd-count">(${arr.length})</span><span id="rg-chev-${key}" class="tsd-chev">${isGOpen?'▾':'▸'}</span></div><div id="${groupBodyId}" style="display:${isGOpen?'block':'none'}">`;
       visible.forEach(s=>{
         const resolvedDate=s.deadline_date?new Date(s.deadline_date+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'';
-        const postponeLabel=s.status==='postponed'&&s.postponedTo?` → ${new Date(s.postponedTo+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'})}`:'';
+        const postponeLabel=s.status==='postponed'&&s.postponeTo?` → ${new Date(s.postponeTo+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'})}`:'';
         const isOpen=ui.openCards.has(s.id);
         const rowId='res-row-'+s.id, bodyId='res-body-'+s.id;
         const _cardAK=s._archiveDate||archKey||null;
@@ -8298,6 +8397,19 @@ function saveStaffNames(){
 // ── UI state ──────────────────────────────────────────────
 let _te={open:false,type:'cab',storyId:null,storySec:null,editId:null}; // form state
 let _teOpen={};   // entryId → expanded bool
+/** 'resolved' | 'hidden' | '' — whether this entry's story/group sits in the Resolved section */
+function _teResolvedState(e){
+  if(e.storyId){
+    if((state.travelAutoResolved||[]).includes(e.storyId)) return 'resolved';
+    if((state.travelDismissed||[]).includes(e.storyId)) return 'hidden';
+    return '';
+  }
+  const gid=e.groupId||'__default';
+  if((state.travelGroupAutoResolved||[]).includes(gid)) return 'resolved';
+  if((state.travelGroupDismissed||[]).includes(gid)) return 'hidden';
+  if(gid==='__default'&&state.travelGeneralDismissed) return 'hidden';
+  return '';
+}
 let _teDismissed=null; // mirror of state.travelDismissed for quick access
 
 // ── Helpers ───────────────────────────────────────────────
@@ -9128,7 +9240,7 @@ function _teRenderEntry(e){
   // Remarks — full inline CRUD panel
   const remHTML=_teBuildEntryRemarksHTML(e);
 
-  return`<div style="border:1px solid var(--border);border-left:3px solid ${col};border-radius:7px;margin-bottom:6px">
+  return`<div data-id="${e.id}" style="border:1px solid var(--border);border-left:3px solid ${col};border-radius:7px;margin-bottom:6px">
     <div style="display:flex;align-items:center;gap:9px;padding:9px 12px;cursor:pointer;${isOpen?'background:var(--surface2)':''}" onclick="_teToggle('${e.id}');event.stopPropagation()">
       <span style="font-size:16px;flex-shrink:0;width:22px;text-align:center">${_typeIco[e.type]||'📦'}</span>
       <span style="font-size:12px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${sum||'(no details)'}</span>
@@ -9355,7 +9467,7 @@ function _teRenderBody(){
     const bookPayBadge=bookUnpaid?`<span class="sbadge sb-in-progress">${bookUnpaid} unpaid</span>`:(bookTotal>0?`<span class="sbadge" style="background:rgba(79,70,229,.07);color:var(--week);border:0.5px solid rgba(79,70,229,.25);font-weight:600;font-size:11px">Rs ${bookTotal.toLocaleString('en-IN')}</span>`:'')+'';
     const deadlineStr='';
     const claimBadge=unclaimed?`<span class="sbadge sb-in-progress"><span class="badge-dot" style="background:var(--progress)"></span>${unclaimed} unclaimed</span>`:'';
-    html+=`<div style="margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden"><div style="display:flex;align-items:center;gap:7px;padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap"><span style="font-size:13px">📡</span><span style="font-size:13px;font-weight:600;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:80px">${esc(s.title||'Untitled')}</span>${deadlineStr}${bookPayBadge}${claimBadge}<button onclick="_teDismissStory('${s.id}')" style="padding:2px 7px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--text3);cursor:pointer;flex-shrink:0;margin-left:auto" title="Hide from this list">✕ Hide</button></div><div style="padding:10px 13px;display:flex;flex-direction:column;gap:8px">${_teSubAccordion(s.id,sec)}</div></div>`;
+    html+=`<div data-te-story="${s.id}" style="margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden"><div style="display:flex;align-items:center;gap:7px;padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap"><span style="font-size:13px">📡</span><span style="font-size:13px;font-weight:600;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:80px">${esc(s.title||'Untitled')}</span>${deadlineStr}${bookPayBadge}${claimBadge}<button onclick="_teDismissStory('${s.id}')" style="padding:2px 7px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:transparent;color:var(--text3);cursor:pointer;flex-shrink:0;margin-left:auto" title="Hide from this list">✕ Hide</button></div><div style="padding:10px 13px;display:flex;flex-direction:column;gap:8px">${_teSubAccordion(s.id,sec)}</div></div>`;
   });
   // Safety net: entries linked to a story not found in the active stories list.
   // These are "syncing" stories (found in Firestore but not yet in local archive).
@@ -9382,7 +9494,7 @@ function _teRenderBody(){
       const titleHtml=knownTitle
         ?`<span style="font-size:13px;font-weight:600;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:80px">${esc(knownTitle)}</span>`
         :`<span style="font-size:13px;font-weight:600;color:var(--text2);flex:1">Story <span style="font-size:11px;font-weight:400;color:var(--text3)">(syncing…)</span></span>`;
-      html+=`<div style="margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+      html+=`<div data-te-story="${sid}" style="margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
         <div style="display:flex;align-items:center;gap:7px;padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap">
           <span style="font-size:13px">📡</span>
           ${titleHtml}
@@ -9411,7 +9523,7 @@ function _teRenderBody(){
         :(grpExp.length?`<span class="sbadge sb-completed"><span class="badge-dot" style="background:var(--done)"></span>Claimed</span>`:'');
       const grpIcon=gid==='__default'?'📋':'🗂';
       // Pass groupId into _teSubAccordion via a synthetic key prefixed 'grp:'
-      html+=`<div style="margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+      html+=`<div data-te-group="${esc(gid)}" style="margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden">
         <div style="display:flex;align-items:center;gap:7px;padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap">
           <span style="font-size:13px">${grpIcon}</span>
           <span style="font-size:13px;font-weight:600;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(glbl)}</span>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- My Dashboard nd_v5 | built 2026-07-12 -->
+<!-- My Dashboard nd_v5 | built 2026-07-14 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -7047,7 +7047,7 @@ function renderCombinedAccordion(archKey){
       <span class="acc-name">Stories</span>
       <span class="acc-spacer"></span>
       <span class="acc-summary">${(()=>{ if(!allActive.length)return 'No active stories'; const c=[...allActive].filter(s=>!['completed','not-done','on-hold','shelved'].includes(s.status)); if(!c.length)return 'No active stories'; c.sort((a,b)=>(b.created||0)-(a.created||0)); return esc(c[0].title||''); })()}</span>
-      <div class="acc-meta">${(()=>{const _ac=allActive.filter(s=>!['completed','not-done','shelved'].includes(s.status)).length;return _ac===0?`<span class="sbadge sb-in-progress">0 active</span>`:'';})()}${_urgentBadge}${_progressBadge}${_carryBadge}</div>
+      <div class="acc-meta">${(()=>{const _ac=allActive.filter(s=>!['on-hold','postponed'].includes(s.status)).length;return `<span class="sbadge sb-in-progress">${_ac} active</span>`;})()}${_urgentBadge}${_progressBadge}${_carryBadge}</div>
       ${_filterChip}
       <span class="acc-chevron${isOpen?' open':''}" id="acc-chev-ibu">▾</span>
     </div>

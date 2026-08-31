@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- My Dashboard nd_v5 | built 2026-07-14 -->
+<!-- My Dashboard nd_v5 | built 2026-08-31 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -820,6 +820,33 @@ body {
 .sremark-inline-form textarea::placeholder { color: var(--text3); }
 /* Leave remarks CRUD */
 .leave-remarks-section { margin: 8px 0 4px; padding-top: 8px; border-top: 1px solid var(--border); }
+/* ── Concurrent / overlapping leave (Aug 2026) ── */
+.lv-conc-count { display:inline-flex; align-items:center; justify-content:center; min-width:15px; height:15px; padding:0 4px; border-radius:20px; background:var(--urgent); color:#fff; font-size:9.5px; font-weight:700; font-family:var(--mono); letter-spacing:0; }
+.lv-concurrent { display:flex; align-items:flex-start; gap:7px; padding:7px 10px; margin-bottom:8px; border-radius:var(--radius); background:var(--urgent-bg); border:0.5px solid rgba(220,38,38,.25); }
+.lv-conc-ico { font-size:12px; flex-shrink:0; line-height:1.5; }
+.lv-conc-txt { font-size:11.5px; color:var(--text2); line-height:1.5; }
+.lv-conc-txt b { color:var(--urgent); font-weight:600; }
+.lv-overlap { border:0.5px solid var(--border); border-radius:var(--radius); background:var(--surface2); padding:8px 10px; margin-bottom:9px; }
+.lv-overlap-hdr { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--progress); font-family:var(--mono); margin-bottom:5px; }
+.lv-overlap-row { display:flex; align-items:baseline; gap:8px; padding:3px 0; border-top:0.5px dashed var(--border); }
+.lv-overlap-row:first-of-type { border-top:0; }
+.lv-overlap-when { font-size:11px; font-family:var(--mono); color:var(--text2); flex-shrink:0; }
+.lv-overlap-who { font-size:11.5px; color:var(--text3); flex:1; line-height:1.45; }
+.lv-overlap-more { font-size:10.5px; color:var(--text3); font-style:italic; padding-top:4px; }
+@media (max-width: 720px) { .lv-overlap-row { flex-direction:column; gap:1px; } .lv-overlap-who { font-size:11px; } }
+/* ── Export / email range picker (Aug 2026) ── */
+.rp-presets { display: flex; gap: 5px; margin-bottom: 12px; flex-wrap: wrap; }
+.rp-preset { font-size: 11px; padding: 3px 10px; border-radius: 20px; background: transparent; color: var(--text2); border: 0.5px solid var(--border); font-family: var(--font); cursor: pointer; }
+.rp-preset:hover { border-color: var(--accent); color: var(--accent); }
+.rp-list { border-top: 0.5px solid var(--border); padding-top: 4px; max-height: 46vh; overflow-y: auto; }
+.rp-row { display: flex; align-items: center; gap: 9px; padding: 6px 0; cursor: pointer; }
+.rp-box { width: 16px; height: 16px; border-radius: 4px; border: 1px solid var(--border2); background: var(--surface2); flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; line-height: 1; }
+.rp-box.on { background: var(--accent); border-color: var(--accent); }
+.rp-lbl { font-size: 13px; color: var(--text2); flex: 1; }
+.rp-num { font-size: 11px; color: var(--text3); font-family: var(--mono); flex-shrink: 0; }
+.rp-foot { border-top: 0.5px solid var(--border); margin-top: 11px; padding-top: 11px; display: flex; align-items: center; gap: 8px; }
+.rp-count { font-size: 11.5px; color: var(--text3); flex: 1; }
+@media (max-width: 720px) { .rp-row { padding: 8px 0; } .rp-lbl { font-size: 13.5px; } .rp-list { max-height: 42vh; } }
 .leave-remark-entry { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px dashed var(--border); }
 .leave-remark-entry:last-of-type { border-bottom: none; }
 .leave-remark-text { font-size: 12.5px; color: var(--text2); line-height: 1.45; flex: 1; white-space: pre-wrap; }
@@ -2098,6 +2125,10 @@ function loadLocal(){
     });
     state._typeMigrated=true;
   }
+  if(!state._upcomingRemarksMigrated){
+    _migrateUpcomingRemarks();
+    state._upcomingRemarksMigrated=true;
+  }
   if(!state.deletedIds)      state.deletedIds={};
   if(!state.staffNames)      state.staffNames={correspondents:[],producers:[],shootEdit:[]};
   if(!state.staffNames.correspondents) state.staffNames.correspondents=[];
@@ -2666,6 +2697,21 @@ function _buildBackupTxt(label){
   }
   if(state.remarks){ lines.push(''); lines.push('-'.repeat(40)); lines.push('REMARKS'); lines.push('-'.repeat(40)); lines.push(state.remarks); }
   return lines.join('\n');
+}
+/* Lifts an Upcoming event's legacy free-text remark into remarksList so it
+   renders and edits like every other module's. Idempotent: it dedupes, and
+   once moved the legacy string is empty so a second pass is a no-op.
+   The `remarks` FIELD itself is retained (Rule 14) — only the value moves.
+   Called flag-gated from loadLocal, and unconditionally after an import. */
+function _migrateUpcomingRemarks(){
+  ((state.sections||{}).upcoming||[]).forEach(ev=>{
+    const legacy=String(ev.remarks||'').trim();
+    if(!legacy) return;
+    if(!Array.isArray(ev.remarksList)) ev.remarksList=[];
+    const dup=ev.remarksList.some(r=>String(r.text||'').trim()===legacy);
+    if(!dup) ev.remarksList.unshift({id:genId(),text:legacy,created:ev.created||Date.now()});
+    ev.remarks='';
+  });
 }
 function _makeBackupData(type, period){
   return {
@@ -3891,6 +3937,7 @@ function handleImportFile(input){
       if(data.monthlyBackupSettings) state.monthlyBackupSettings = data.monthlyBackupSettings;
       Object.assign(state, preserved);
       SECTIONS.forEach(s=>{ if(!state.sections[s.key]) state.sections[s.key]=[]; });
+      _migrateUpcomingRemarks(); // imported file may predate the remarksList move
       saveLocal(); // save locally first
       document.getElementById('import-modal')?.remove();
       document.getElementById('backups-modal')?.remove();
@@ -4023,15 +4070,15 @@ function taskToText(t){
   if(t.isRecurring) ln.push('  Recurs   : '+(t.recurDaysOfWeek?.length?'every '+t.recurDaysOfWeek.join('/'):(t.recurFreq||'recurring')));
   return ln.join('\n');
 }
-function doEmailTasks(){
-  const tasks=(state.tasks||[]).filter(t=>!t._deleted);
+function doEmailTasks(idSet){
+  const tasks=(state.tasks||[]).filter(t=>!t._deleted&&(!idSet||idSet.has(t.id)));
   if(!tasks.length){ toast('No tasks to email'); return; }
   const lines=['TASKS','─'.repeat(44),''];
   tasks.forEach(t=>{lines.push(taskToText(t));lines.push('');});
   sendMailto('[My Dashboard] Tasks — '+new Date().toLocaleDateString('en-GB'), lines.join('\n'));
 }
-function doExportTasksTxt(){
-  const tasks=(state.tasks||[]).filter(t=>!t._deleted);
+function doExportTasksTxt(idSet){
+  const tasks=(state.tasks||[]).filter(t=>!t._deleted&&(!idSet||idSet.has(t.id)));
   if(!tasks.length){ toast('No tasks to export'); return; }
   const lines=['TASKS','─'.repeat(48),''];
   tasks.forEach(t=>{lines.push(taskToText(t));lines.push('');});
@@ -4042,16 +4089,16 @@ function doExportTasksTxt(){
   toast('Tasks exported ✓');
 }
 
-function doEmailMeetings(){
-  const meetings=(state.meetings||[]).filter(m=>!m._deleted);
+function doEmailMeetings(idSet){
+  const meetings=(state.meetings||[]).filter(m=>!m._deleted&&(!idSet||idSet.has(m.id)));
   if(!meetings.length){ toast('No meetings to email'); return; }
   const hr='─'.repeat(44);
   const lines=['MEETINGS',hr,''];
   [...meetings].sort((a,b)=>((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||''))).forEach(m=>{ lines.push(meetingToText(m)); lines.push(''); });
   sendMailto('[My Dashboard] Meetings — '+new Date().toLocaleDateString('en-GB'), lines.join('\n'));
 }
-function doExportMeetingsTxt(){
-  const meetings=(state.meetings||[]).filter(m=>!m._deleted);
+function doExportMeetingsTxt(idSet){
+  const meetings=(state.meetings||[]).filter(m=>!m._deleted&&(!idSet||idSet.has(m.id)));
   if(!meetings.length){ toast('No meetings to export'); return; }
   const hr='─'.repeat(48);
   const lines=['MEETINGS',hr,''];
@@ -4062,8 +4109,8 @@ function doExportMeetingsTxt(){
   document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href);
   toast('Meetings exported ✓');
 }
-function doEmailNotes(){
-  const notes=(state.notes||[]).filter(n=>!n._deleted);
+function doEmailNotes(idSet){
+  const notes=(state.notes||[]).filter(n=>!n._deleted&&(!idSet||idSet.has(n.id)));
   if(!notes.length){ toast('No notes to email'); return; }
   const hr='─'.repeat(44);
   const lines=['NOTES',hr,''];
@@ -4075,8 +4122,8 @@ function doEmailNotes(){
   });
   sendMailto('[My Dashboard] Notes — '+new Date().toLocaleDateString('en-GB'), lines.join('\n'));
 }
-function doExportNotesTxt(){
-  const notes=(state.notes||[]).filter(n=>!n._deleted);
+function doExportNotesTxt(idSet){
+  const notes=(state.notes||[]).filter(n=>!n._deleted&&(!idSet||idSet.has(n.id)));
   if(!notes.length){ toast('No notes to export'); return; }
   const hr='─'.repeat(48);
   const lines=['NOTES',hr,''];
@@ -4093,8 +4140,8 @@ function doExportNotesTxt(){
   document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href);
   toast('Notes exported ✓');
 }
-function doEmailLeaves(){
-  const leaves=(state.leaves||[]).filter(l=>!l._deleted);
+function doEmailLeaves(idSet){
+  const leaves=(state.leaves||[]).filter(l=>!l._deleted&&(!idSet||idSet.has(l.id)));
   if(!leaves.length){ toast('No leaves to email'); return; }
   const today=todayStr();
   const hr='─'.repeat(44);
@@ -4105,8 +4152,8 @@ function doEmailLeaves(){
   if(past.length){ lines.push('PAST LEAVES'); past.forEach(l=>{ lines.push('  '+l.employeeName+' — '+l.leaveType+' '+l.dateFrom+' to '+l.dateTo); lines.push(''); }); }
   sendMailto('[My Dashboard] Leaves — '+new Date().toLocaleDateString('en-GB'), lines.join('\n'));
 }
-function doExportLeavesTxt(){
-  const leaves=(state.leaves||[]).filter(l=>!l._deleted);
+function doExportLeavesTxt(idSet){
+  const leaves=(state.leaves||[]).filter(l=>!l._deleted&&(!idSet||idSet.has(l.id)));
   if(!leaves.length){ toast('No leaves to export'); return; }
   const today=todayStr();
   const hr='─'.repeat(48);
@@ -4126,6 +4173,304 @@ function doExportLeavesTxt(){
   toast('Leaves exported ✓');
 }
 
+/* ════════════════════════════════════════
+   EXPORT / EMAIL RANGE PICKER  (added Aug 2026)
+   One shared modal serving all eight accordions.
+   Buckets are per-module and mutually exclusive: every live
+   item lands in exactly one bucket, so the live counts always
+   add up to the module total.
+   Selection is remembered per module for the SESSION ONLY —
+   deliberately never written to state, so Rule 23 restore
+   parity is untouched.
+════════════════════════════════════════ */
+let _rpLastSel={};   // module key → [bucketKeys]  (session only, never persisted)
+
+function _rpDayDiff(ds,today){
+  if(!ds) return null;
+  const a=new Date(String(ds).slice(0,10)+'T00:00:00').getTime();
+  const b=new Date(today+'T00:00:00').getTime();
+  if(isNaN(a)) return null;
+  return Math.round((a-b)/86400000);
+}
+
+/* ── Upcoming Events: true date span ──────────────────────
+   Fixes three long-standing bucket bugs:
+   1. month-type events stored as 'YYYY-MM' compared shorter-
+      than 'YYYY-MM-DD' and read as expired all month long;
+   2. expected_date_to was never consulted, so a live multi-day
+      event was filed as expired the day after it started;
+   3. the Overdue bucket was unreachable.
+   _upRange returns the real {start,end} for any expected_type. */
+function _upRange(s){
+  const raw=String(s.expected_date||'').trim();
+  if(!raw) return null;
+  const isMonth = s.expected_type==='month' || /^\d{4}-\d{2}$/.test(raw);
+  if(isMonth){
+    const ym=raw.slice(0,7);
+    const y=+ym.slice(0,4), m=+ym.slice(5,7);
+    if(!y||!m||m>12) return null;
+    return { start: ym+'-01', end: ym+'-'+p2(new Date(y,m,0).getDate()) };
+  }
+  const start=raw.slice(0,10);
+  let end=String(s.expected_date_to||'').slice(0,10)||start;
+  if(end<start) end=start;
+  return { start, end };
+}
+function _upIsMonthType(s){
+  return s.expected_type==='month' || /^\d{4}-\d{2}$/.test(String(s.expected_date||'').trim());
+}
+function _upIsExpired(s,today){
+  if(s.status==='completed') return false;
+  const r=_upRange(s);
+  return !!(r && r.end < today);
+}
+/* Single source of truth for which group an upcoming event belongs to. */
+function _upBucket(s,today){
+  if(s.status==='completed') return 'completed';
+  const r=_upRange(s);
+  if(!r) return 'nodate';
+  if(r.end < today) return 'expired';
+  if(s.deadline_date && s.deadline_date < today) return 'overdue';
+  if(r.start <= today) return 'today';          // starts today, or spans today
+  if(_upIsMonthType(s)) return 'upcoming';      // a whole month is never "tomorrow"
+  const diff=_rpDayDiff(r.start,today);
+  if(diff===1) return 'tomorrow';
+  return 'upcoming';
+}
+
+function _rpStoryBucket(s,today){
+  const st=s.status||'';
+  if(st==='completed'||st==='on-hold'||st==='not-done'||st==='postponed'||st==='shelved') return st;
+  const diff=_rpDayDiff(s.deadline_date,today);
+  if(diff===null) return 'nodate';
+  if(diff<0) return 'overdue';
+  if(diff===0) return 'today';
+  if(diff===1) return 'tomorrow';
+  return 'upcoming';
+}
+function _rpTaskBucket(t,today){
+  const ts=t.taskStatus||'pending';
+  if(ts==='done') return 'done';
+  if(ts==='not-done') return 'not-done';
+  const diff=_rpDayDiff(t.deadline_date,today);
+  if(diff===null) return 'nodate';
+  if(diff<0) return 'overdue';
+  if(diff===0) return 'today';
+  if(diff===1) return 'tomorrow';
+  return 'upcoming';
+}
+function _rpNoteBucket(n,today){
+  const st=n.status||'active';
+  if(st==='done') return 'done';
+  if(st==='pass'||st==='passed') return 'passed';
+  const diff=_rpDayDiff(n.deadline_date,today);
+  if(diff===null) return 'nodate';
+  if(diff<0) return 'overdue';
+  if(diff===0) return 'today';
+  if(diff===1) return 'tomorrow';
+  return 'upcoming';
+}
+function _rpMeetingBucket(m,today){
+  const st=m.status||'scheduled';
+  if(st==='done'||st==='cancelled') return 'donecancelled';
+  // Recurring meetings carry date:'' (§4.5) — without their own bucket they
+  // would belong to no date group and vanish from every export.
+  if(m.isRecurring||!m.date) return 'recurring';
+  const diff=_rpDayDiff(m.date,today);
+  if(diff===null) return 'recurring';
+  if(diff<0) return 'past';
+  if(diff===0) return 'today';
+  if(diff===1) return 'tomorrow';
+  return 'upcoming';
+}
+function _rpLeaveBucket(l,today){
+  const from=l.dateFrom||'';
+  const to=_leaveEnd(l);
+  if(!from) return 'upcoming';
+  if(to<today) return 'past';
+  if(from<=today) return 'onleave';
+  return 'upcoming';
+}
+function _rpTravelBucket(e){
+  if(_teResolvedState(e)) return 'resolved';
+  if(e.type==='expense') return _teGetClaimed(e)==='yes'?'settled':'unclaimed';
+  const pay=(e.data||{}).payment||'';
+  return (pay&&pay!=='unpaid')?'settled':'unpaid';
+}
+
+const _RP_MODULES={
+  ibu:{
+    title:'Stories',
+    buckets:[
+      {k:'overdue',l:'Overdue',def:true},{k:'today',l:'Today',def:true},
+      {k:'tomorrow',l:'Tomorrow',def:true},{k:'upcoming',l:'Upcoming',def:true},
+      {k:'nodate',l:'No deadline',def:true},{k:'completed',l:'Done',def:false},
+      {k:'on-hold',l:'On hold',def:false},{k:'not-done',l:'Not done',def:false},
+      {k:'postponed',l:'Postponed',def:false},{k:'shelved',l:'Shelved',def:false}],
+    items(){ return [...(state.sections.ibu||[]),...(state.sections.other||[])].filter(s=>!s._deleted); },
+    bucket:_rpStoryBucket,
+    run(mode,ids){ mode==='email'?doEmailSection('ibu',null,ids):doExportSectionTxt('ibu',null,ids); }
+  },
+  requests:{
+    title:'Requests for Future',
+    buckets:[
+      {k:'overdue',l:'Overdue',def:true},{k:'today',l:'Today',def:true},
+      {k:'tomorrow',l:'Tomorrow',def:true},{k:'upcoming',l:'Upcoming',def:true},
+      {k:'nodate',l:'No deadline',def:true},{k:'completed',l:'Done',def:false},
+      {k:'on-hold',l:'On hold',def:false},{k:'not-done',l:'Not done',def:false},
+      {k:'postponed',l:'Postponed',def:false},{k:'shelved',l:'Shelved',def:false}],
+    items(){ return (state.sections.requests||[]).filter(s=>!s._deleted); },
+    bucket:_rpStoryBucket,
+    run(mode,ids){ mode==='email'?doEmailSection('requests',null,ids):doExportSectionTxt('requests',null,ids); }
+  },
+  upcoming:{
+    title:'Upcoming Events',
+    buckets:[
+      {k:'overdue',l:'Overdue',def:true},{k:'today',l:'Today',def:true},
+      {k:'tomorrow',l:'Tomorrow',def:true},{k:'upcoming',l:'Upcoming',def:true},
+      {k:'nodate',l:'No date',def:true},{k:'expired',l:'Expired',def:false},
+      {k:'completed',l:'Completed',def:false}],
+    items(){ return (state.sections.upcoming||[]).filter(s=>!s._deleted); },
+    bucket:_upBucket,
+    run(mode,ids){ mode==='email'?doEmailSection('upcoming',null,ids):doExportSectionTxt('upcoming',null,ids); }
+  },
+  tasks:{
+    title:'Tasks',
+    buckets:[
+      {k:'overdue',l:'Overdue',def:true},{k:'today',l:'Today',def:true},
+      {k:'tomorrow',l:'Tomorrow',def:true},{k:'upcoming',l:'Upcoming',def:true},
+      {k:'nodate',l:'No deadline',def:true},{k:'done',l:'Done',def:false},
+      {k:'not-done',l:'Not done',def:false}],
+    items(){ return (state.tasks||[]).filter(t=>!t._deleted); },
+    bucket:_rpTaskBucket,
+    run(mode,ids){ mode==='email'?doEmailTasks(ids):doExportTasksTxt(ids); }
+  },
+  notes:{
+    title:'Notes',
+    buckets:[
+      {k:'overdue',l:'Overdue',def:true},{k:'today',l:'Today',def:true},
+      {k:'tomorrow',l:'Tomorrow',def:true},{k:'upcoming',l:'Upcoming',def:true},
+      {k:'nodate',l:'No deadline',def:true},{k:'done',l:'Done',def:false},
+      {k:'passed',l:'Passed',def:false}],
+    items(){ return (state.notes||[]).filter(n=>!n._deleted); },
+    bucket:_rpNoteBucket,
+    run(mode,ids){ mode==='email'?doEmailNotes(ids):doExportNotesTxt(ids); }
+  },
+  meetings:{
+    title:'Meetings',
+    buckets:[
+      {k:'today',l:'Today',def:true},{k:'tomorrow',l:'Tomorrow',def:true},
+      {k:'upcoming',l:'Upcoming',def:true},{k:'recurring',l:'Recurring',def:true},
+      {k:'past',l:'Past',def:false},{k:'donecancelled',l:'Done / cancelled',def:false}],
+    items(){ return (state.meetings||[]).filter(m=>!m._deleted); },
+    bucket:_rpMeetingBucket,
+    run(mode,ids){ mode==='email'?doEmailMeetings(ids):doExportMeetingsTxt(ids); }
+  },
+  leaves:{
+    title:'Leaves',
+    buckets:[
+      {k:'onleave',l:'On leave now',def:true},{k:'upcoming',l:'Upcoming',def:true},
+      {k:'past',l:'Past',def:false}],
+    items(){ return (state.leaves||[]).filter(l=>!l._deleted); },
+    bucket:_rpLeaveBucket,
+    run(mode,ids){ mode==='email'?doEmailLeaves(ids):doExportLeavesTxt(ids); }
+  },
+  travel:{
+    title:'Travel & Expenses',
+    buckets:[
+      {k:'unpaid',l:'Unpaid',def:true},{k:'unclaimed',l:'Unclaimed',def:true},
+      {k:'settled',l:'Settled',def:false},{k:'resolved',l:'Hidden / auto-resolved',def:false}],
+    items(){ return (state.travelEntries||[]).filter(e=>!e._deleted); },
+    bucket:_rpTravelBucket,
+    run(mode,ids){ mode==='email'?doEmailTravel(ids):doExportTravelTxt(ids); }
+  }
+};
+
+function _rpSectionBtn(sec,mode,archKey){
+  if(archKey){ mode==='email'?doEmailSection(sec,archKey):doExportSectionTxt(sec,archKey); return; }
+  if(_RP_MODULES[sec]) openRangePicker(sec,mode);
+  else mode==='email'?doEmailSection(sec,null):doExportSectionTxt(sec,null);
+}
+function openRangePicker(mod,mode){
+  const def=_RP_MODULES[mod]; if(!def) return;
+  if(document.getElementById('range-picker-modal')) return;
+  const today=todayStr();
+  const items=def.items()||[];
+  if(!items.length){ toast('Nothing to '+(mode==='email'?'email':'export')); return; }
+  const counts={}; def.buckets.forEach(b=>counts[b.k]=0);
+  items.forEach(it=>{ const k=def.bucket(it,today); if(k in counts) counts[k]++; });
+  const saved=_rpLastSel[mod];
+  const sel=new Set(saved&&saved.length?saved:def.buckets.filter(b=>b.def).map(b=>b.k));
+  window._rpState={mod,mode,sel,counts,def};
+
+  const rows=def.buckets.map(b=>`<div class="rp-row" onclick="_rpToggle('${b.k}')">
+      <span class="rp-box" id="rp-box-${b.k}"></span>
+      <span class="rp-lbl" id="rp-lbl-${b.k}">${esc(b.l)}</span>
+      <span class="rp-num">${counts[b.k]||0}</span>
+    </div>`).join('');
+
+  const m=document.createElement('div');
+  m.className='modal-bg'; m.id='range-picker-modal';
+  m.onclick=function(){ m.remove(); window._rpState=null; };
+  m.innerHTML=`<div class="modal" onclick="event.stopPropagation()" style="max-width:340px;padding:16px">
+    <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:3px">${mode==='email'?'Email':'Export'} ${esc(def.title)}</div>
+    <div style="font-size:11.5px;color:var(--text3);margin-bottom:13px">Choose what to include</div>
+    <div class="rp-presets">
+      <button class="rp-preset" onclick="_rpPreset('def')">Active only</button>
+      <button class="rp-preset" onclick="_rpPreset('all')">Everything</button>
+    </div>
+    <div class="rp-list">${rows}</div>
+    <div class="rp-foot">
+      <span class="rp-count" id="rp-count"></span>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('range-picker-modal').remove();window._rpState=null">Cancel</button>
+      <button class="btn btn-accent btn-sm" id="rp-go" onclick="_rpRun()"></button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+  _rpSync();
+}
+function _rpToggle(k){
+  const S=window._rpState; if(!S) return;
+  if(S.sel.has(k)) S.sel.delete(k); else S.sel.add(k);
+  _rpSync();
+}
+function _rpPreset(which){
+  const S=window._rpState; if(!S) return;
+  S.sel=new Set(which==='all'?S.def.buckets.map(b=>b.k):S.def.buckets.filter(b=>b.def).map(b=>b.k));
+  _rpSync();
+}
+function _rpSync(){
+  const S=window._rpState; if(!S) return;
+  let total=0,sum=0;
+  S.def.buckets.forEach(b=>{
+    const n=S.counts[b.k]||0; total+=n;
+    const on=S.sel.has(b.k); if(on) sum+=n;
+    const box=document.getElementById('rp-box-'+b.k);
+    const lbl=document.getElementById('rp-lbl-'+b.k);
+    if(box){ box.className='rp-box'+(on?' on':''); box.textContent=on?'✓':''; }
+    if(lbl) lbl.style.color=on?'var(--text)':'var(--text2)';
+  });
+  const c=document.getElementById('rp-count');
+  if(c) c.textContent=sum+' of '+total+' selected';
+  const btn=document.getElementById('rp-go');
+  if(btn){
+    btn.textContent=(S.mode==='email'?'Email ':'Export ')+sum;
+    btn.style.opacity=sum?'1':'.45';
+  }
+}
+function _rpRun(){
+  const S=window._rpState; if(!S) return;
+  const today=todayStr();
+  const ids=new Set();
+  (S.def.items()||[]).forEach(it=>{ if(S.sel.has(S.def.bucket(it,today))) ids.add(it.id); });
+  if(!ids.size){ toast('Nothing selected'); return; }
+  _rpLastSel[S.mod]=[...S.sel];
+  const mode=S.mode, def=S.def;
+  document.getElementById('range-picker-modal')?.remove();
+  window._rpState=null;
+  def.run(mode,ids);
+}
+
 function doExportStoryTxt(sec,id,archKey){
   const arr=archKey?state.archive[archKey]?.sections[sec]||[]:state.sections[sec]||[];
   const s=arr.find(x=>x.id===id);
@@ -4142,7 +4487,7 @@ function doEmailStory(sec,id,archKey){
   if(!s){ toast('Story not found'); return; }
   sendMailto('[Newsroom] '+(s.title||'Story'), storyToText(s));
 }
-function doExportSectionTxt(sec,archKey){
+function doExportSectionTxt(sec,archKey,idSet){
   const name=secName(sec);
   // For the combined stories accordion, merge ibu + other
   let stories;
@@ -4153,6 +4498,8 @@ function doExportSectionTxt(sec,archKey){
   } else {
     stories=(archKey?state.archive[archKey]?.sections[sec]||[]:state.sections[sec]||[]).filter(s=>!s._deleted);
   }
+  if(idSet) stories=stories.filter(s=>idSet.has(s.id));
+  if(!stories.length){ toast('Nothing to export'); return; }
   const hr='─'.repeat(48);
   const lines=[name.toUpperCase(),hr,''];
   stories.forEach(s=>{lines.push(storyToText(s));lines.push('');});
@@ -4162,7 +4509,7 @@ function doExportSectionTxt(sec,archKey){
   document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href);
   toast(name+' exported ✓');
 }
-function doEmailSection(sec,archKey){
+function doEmailSection(sec,archKey,idSet){
   const name=secName(sec);
   let stories;
   if(sec==='ibu'){
@@ -4172,6 +4519,8 @@ function doEmailSection(sec,archKey){
   } else {
     stories=(archKey?state.archive[archKey]?.sections[sec]||[]:state.sections[sec]||[]).filter(s=>!s._deleted);
   }
+  if(idSet) stories=stories.filter(s=>idSet.has(s.id));
+  if(!stories.length){ toast('Nothing to email'); return; }
   const lines=[name.toUpperCase(),'─'.repeat(44)];
   stories.forEach(s=>{lines.push(storyToText(s));lines.push('');});
   sendMailto('[Newsroom] '+name+' — '+new Date().toLocaleDateString('en-GB'), lines.join('\n'));
@@ -4511,7 +4860,7 @@ function submitForm(sec,archKey){
       requested_by:g('f-requested-by'+sfx).trim(),
       correspondent:g('f-correspondent'+sfx).trim(),
       status:       g('f-status'+sfx),
-      remarks:      g('f-remarks'+sfx).trim(),
+      remarks:      g('f-remarks-new'+sfx).trim(),
       links:        g('f-links'+sfx).trim(),
       reminder:     g('f-reminder'+sfx),
       deadline_date:g('f-deadline-date'+sfx),
@@ -4562,10 +4911,10 @@ function submitForm(sec,archKey){
       if(!data.location && existing.location) data.location=existing.location;
       if(!data.field_location && existing.field_location) data.field_location=existing.field_location;
       if(existing.travel) data.travel=existing.travel;
-      // Stories: the edit form has no legacy-remark input (it uses remarksList instead),
-      // so data.remarks reads '' on edit. Preserve the existing legacy remark instead of
-      // wiping it. Upcoming events DO have an editable remarks box, so leave them alone.
-      if(!isUpcoming && !data.remarks && existing.remarks) data.remarks=existing.remarks;
+      // Neither Stories nor Upcoming has a legacy-remark input on edit any more
+      // (both use the remarksList CRUD panel), so data.remarks reads '' on edit.
+      // Preserve the existing legacy remark instead of wiping it.
+      if(!data.remarks && existing.remarks) data.remarks=existing.remarks;
     }
     updateStory(sec,ui.editMap[k],data,archKey); toast('Updated ✓');
   }
@@ -4821,7 +5170,7 @@ function deadlineBadge(s){
 function upcomingDueBadge(s){
   if(!s.expected_date) return '';
   const today=todayStr();
-  if(s.expected_date<today) return `<span class="deadline-badge overdue">⚠ Overdue expected</span>`;
+  if(_upIsExpired(s,todayStr())) return `<span class="deadline-badge overdue">⚠ Overdue expected</span>`;
   if(s.expected_date===today) return `<span class="deadline-badge">📅 Due today</span>`;
   const diff=new Date(s.expected_date+'T00:00:00').getTime()-Date.now();
   const days=Math.ceil(diff/86400000);
@@ -5367,26 +5716,23 @@ function renderUpcomingView(){
       <span class="acc-icon">🗓</span>
       <span class="acc-name">Upcoming Events</span>
       <div class="acc-meta">
-        <span class="sbadge sb-in-progress">${stories.filter(s=>s.status!=='completed'&&(!s.expected_date||s.expected_date>=today)).length} pending</span>
+        <span class="sbadge sb-in-progress">${stories.filter(s=>!_upIsExpired(s,today)&&s.status!=='completed').length} pending</span>
       </div>
     </div>
     <div style="border:0.5px solid var(--border);border-top:0;border-radius:0 0 10px 10px;padding:12px 16px 14px;margin-bottom:14px;">
       <div class="fi-form-footer">
-        <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doEmailSection('upcoming',null)" title="Email">✉<span class="bim-text"> Email</span></button>
-        <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doExportSectionTxt('upcoming',null)" title="Export">↓<span class="bim-text"> Export</span></button>
+        <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="openRangePicker('upcoming','email')" title="Email">✉<span class="bim-text"> Email</span></button>
+        <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="openRangePicker('upcoming','export')" title="Export">↓<span class="bim-text"> Export</span></button>
         <button class="btn btn-accent btn-sm btn-icon-mobile" onclick="toggleForm('upcoming',null)" title="Add">+<span class="bim-text"> Add</span></button>
       </div>`;
 
     if(isFormOpen) html+=renderForm('upcoming',null);
 
     // Bucket logic — same as renderAccordion for upcoming
-    const activeUpcoming = stories.filter(s=>
-      s.status!=='completed' &&
-      (!s.expected_date || s.expected_date >= today)
-    );
+    const activeUpcoming = stories.filter(s=>s.status!=='completed' && !_upIsExpired(s,today));
     const completedUpcoming = stories.filter(s=>s.status==='completed');
     const expiredUpcoming = stories
-      .filter(s=>s.expected_date && s.expected_date < today && s.status!=='completed')
+      .filter(s=>_upIsExpired(s,today))
       .sort((a,b)=>(b.expected_date||'').localeCompare(a.expected_date||''));
 
     const allActive=[...activeUpcoming,...completedUpcoming];
@@ -5501,28 +5847,24 @@ function renderNotesView(){
 /* ─── ARCHIVE ─── */
 function _renderUpcomingActiveGrouped(activeUpcoming, sec, archKey, today){
   if(!activeUpcoming.length) return '';
-  const todayMs=new Date(today+'T00:00:00').getTime();
-  // Sort: today → overdue → tomorrow → upcoming (by date) → no date
+  // Buckets come from _upBucket — the single source of truth shared with the
+  // range picker. It understands month-type keys ('YYYY-MM') and multi-day
+  // spans (expected_date_to), and routes deadline-overdue events to 'overdue'.
+  const _ord={today:0,overdue:1,tomorrow:2,upcoming:3,nodeadline:4};
   const upSortKey=s=>{
-    const d=s.expected_date;
-    if(!d) return 500000;
-    const diff=Math.round((new Date(d+'T00:00:00').getTime()-todayMs)/86400000);
-    if(diff===0) return 0;
-    if(diff<0)   return 1+Math.abs(diff)/100000;
-    if(diff===1) return 2;
-    return 2+diff;
+    const b=_upBucket(s,today);
+    const base=(_ord[b==='nodate'?'nodeadline':b]!==undefined?_ord[b==='nodate'?'nodeadline':b]:3)*100000;
+    const r=_upRange(s);
+    const diff=r?_rpDayDiff(r.start,today):0;
+    return base+(diff||0);
   };
   const sorted=[...activeUpcoming].sort((a,b)=>upSortKey(a)-upSortKey(b));
-  // Bucket
   const groups={today:[],overdue:[],tomorrow:[],upcoming:[],nodeadline:[]};
   sorted.forEach(s=>{
-    const d=s.expected_date;
-    if(!d){ groups.nodeadline.push(s); return; }
-    const diff=Math.round((new Date(d+'T00:00:00').getTime()-todayMs)/86400000);
-    if(diff===0)       groups.today.push(s);
-    else if(diff<0)    groups.overdue.push(s);
-    else if(diff===1)  groups.tomorrow.push(s);
-    else               groups.upcoming.push(s);
+    const b=_upBucket(s,today);
+    if(b==='nodate')          groups.nodeadline.push(s);
+    else if(groups[b])        groups[b].push(s);
+    else                      groups.upcoming.push(s);
   });
   const meta={
     today:     {label:'Today',       cls:'tsd-today',     icon:''},
@@ -5569,9 +5911,9 @@ function renderAccordion(sec,archKey){
   if(secObj.isUpcoming&&activeStories.length>0){
     // Collapsed ribbon: "X pending · Y done · Z expired"
     const today2=todayStr();
-    const pendingCnt=activeStories.filter(s=>s.status!=='completed'&&s.status!=='passed'&&s.status!=='not-done'&&(!s.expected_date||s.expected_date>=today2)).length;
+    const pendingCnt=activeStories.filter(s=>s.status!=='completed'&&s.status!=='passed'&&s.status!=='not-done'&&!_upIsExpired(s,today2)).length;
     const doneCnt=activeStories.filter(s=>s.status==='completed').length;
-    const expiredCnt=activeStories.filter(s=>s.expected_date&&s.expected_date<today2&&s.status!=='completed').length;
+    const expiredCnt=activeStories.filter(s=>_upIsExpired(s,today2)).length;
     const parts=[];
     if(pendingCnt) parts.push(pendingCnt+' pending');
     if(doneCnt)    parts.push(doneCnt+' done');
@@ -5612,7 +5954,7 @@ function renderAccordion(sec,archKey){
 
     if(sec.key==='upcoming'||secObj.isUpcoming){
       // Next upcoming event by date
-      const eligible=activeStories.filter(s=>s.expected_date&&s.expected_date>=today&&s.status!=='completed'&&s.status!=='on-hold');
+      const eligible=activeStories.filter(s=>s.expected_date&&!_upIsExpired(s,today)&&s.status!=='completed'&&s.status!=='on-hold');
       if(!eligible.length) return '';
       eligible.sort((a,b)=>a.expected_date.localeCompare(b.expected_date));
       const s=eligible[0];
@@ -5636,7 +5978,7 @@ function renderAccordion(sec,archKey){
       <span class="acc-summary">${(()=>{
   const today=todayStr();
   if(sec.key==='upcoming'||secObj.isUpcoming){
-    const eligible=activeStories.filter(s=>s.expected_date&&s.expected_date>=today&&s.status!=='completed'&&s.status!=='on-hold');
+    const eligible=activeStories.filter(s=>s.expected_date&&!_upIsExpired(s,today)&&s.status!=='completed'&&s.status!=='on-hold');
     if(!eligible.length) return '';
     eligible.sort((a,b)=>a.expected_date.localeCompare(b.expected_date));
     return esc(eligible[0].title||'');
@@ -5669,8 +6011,8 @@ function renderAccordion(sec,archKey){
     html+=`<div class="sec-head" style="flex-wrap:wrap;gap:6px;align-items:center">
       ${wwTabs}
       <div style="margin-left:auto;display:flex;gap:6px;flex-shrink:0">
-        <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doEmailSection('${sec.key}',${archKeyJS});event.stopPropagation()" title="Email">✉<span class="bim-text"> Email</span></button>
-        <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doExportSectionTxt('${sec.key}',${archKeyJS});event.stopPropagation()" title="Export">↓<span class="bim-text"> Export</span></button>
+        <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="_rpSectionBtn('${sec.key}','email',${archKeyJS});event.stopPropagation()" title="Email">✉<span class="bim-text"> Email</span></button>
+        <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="_rpSectionBtn('${sec.key}','export',${archKeyJS});event.stopPropagation()" title="Export">↓<span class="bim-text"> Export</span></button>
         <button class="btn btn-accent btn-sm btn-icon-mobile" onclick="toggleForm('${sec.key}',${archKeyJS});event.stopPropagation()" title="Add story">+<span class="bim-text"> Add</span></button>
       </div>
     </div>`;
@@ -5682,18 +6024,18 @@ function renderAccordion(sec,archKey){
   if(secObj.isUpcoming){
     const today=todayStr();
     // Buckets:
-    // 1. active    — not completed, expected_date >= today (or no date)
+    // 1. active    — not completed and not expired (span-aware, see _upIsExpired)
     // 2. completed — faded + struck-through at bottom, sorted by completedOn desc
     // 3. expired   — past expected_date, not completed — faded at bottom
     const activeUpcoming = stories.filter(s=>
       s.status!=='completed' &&
-      (!s.expected_date || s.expected_date >= today)
+      !_upIsExpired(s, today)
     );
     const completedUpcoming = stories
       .filter(s => s.status === 'completed')
       .sort((a,b) => (b.completedOn||b.created||0)-(a.completedOn||a.created||0));
     const expiredUpcoming = stories
-      .filter(s => s.expected_date && s.expected_date < today && s.status !== 'completed')
+      .filter(s => _upIsExpired(s, today))
       .sort((a,b) => (b.expected_date||'').localeCompare(a.expected_date||''));
 
     if(!activeUpcoming.length && !isFormOpen && !completedUpcoming.length && !expiredUpcoming.length){
@@ -5896,6 +6238,15 @@ function submitStoryRemark(sec, storyId, archKey){
   el.value=''; // clear before render so captureFormState saves empty string
   addStoryRemark(sec, storyId, text, archKey);
 }
+/* Form-panel twin of submitStoryRemark — reads the form's own textarea so the
+   two panels can never collide on a shared DOM id. */
+function submitStoryRemarkForm(sec, storyId, archKey){
+  const el=document.getElementById('sr-finput-'+storyId); if(!el) return;
+  if(!el.value.trim()){ toast('Enter remark text'); return; }
+  const text=el.value;
+  el.value='';
+  addStoryRemark(sec, storyId, text, archKey);
+}
 function submitStoryRemarkEdit(sec, storyId, remarkId, archKey){
   const el=document.getElementById('sr-edit-'+storyId+'-'+remarkId); if(!el) return;
   const text=el.value.trim(); if(!text){ toast('Enter remark text'); return; }
@@ -5986,8 +6337,8 @@ function renderFormRemarksList(sec, s, archKey){
     html+=`<div style="font-size:12px;color:var(--text3);padding:4px 0 8px">No remarks yet.</div>`;
   }
   html+=`<div style="display:flex;gap:6px;margin-top:8px;align-items:flex-end;flex-wrap:wrap">
-    <textarea class="ftextarea" id="sr-input-${s.id}" placeholder="Add a remark…" style="flex:1;min-width:140px;font-size:12px;min-height:44px;resize:vertical;white-space:pre-wrap"></textarea>
-    <button class="btn btn-accent btn-sm" onclick="submitStoryRemark('${sec}','${s.id}',${archKeyJS})">+ Add</button>
+    <textarea class="ftextarea" id="sr-finput-${s.id}" placeholder="Add a remark…" style="flex:1;min-width:140px;font-size:12px;min-height:44px;resize:vertical;white-space:pre-wrap"></textarea>
+    <button class="btn btn-accent btn-sm" onclick="submitStoryRemarkForm('${sec}','${s.id}',${archKeyJS})">+ Add</button>
   </div>`;
   html+=`</div>`;
   return html;
@@ -6500,8 +6851,8 @@ function renderTasksSection(){
     })()}
     <div class="acc-body${isOpen?' open':''}" id="acc-body-tasks">
     ${!isStandalone?`<div class="sec-head"><div style="margin-left:auto;display:flex;gap:6px">
-      <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doEmailTasks()" title="Email">✉<span class="bim-text"> Email</span></button>
-      <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doExportTasksTxt()" title="Export">↓<span class="bim-text"> Export</span></button>
+      <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="openRangePicker('tasks','email')" title="Email">✉<span class="bim-text"> Email</span></button>
+      <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="openRangePicker('tasks','export')" title="Export">↓<span class="bim-text"> Export</span></button>
       <button class="btn btn-accent btn-sm btn-icon-mobile" onclick="ui_taskForm=!ui_taskForm;ui_editTaskId=null;window._lastFormOpenTs=Date.now();render();setTimeout(()=>document.getElementById('tf-title')?.focus(),60)" title="Add task">+<span class="bim-text"> Add</span></button>
     </div></div>`:''}`;
 
@@ -6604,8 +6955,8 @@ function renderTasksSection(){
   </div>
   <div style="border:0.5px solid var(--border);border-top:0;border-radius:0 0 10px 10px;padding:12px 16px 14px;margin-bottom:14px;">
     <div class="fi-form-footer">
-      <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doEmailTasks()" title="Email">✉<span class="bim-text"> Email</span></button>
-      <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doExportTasksTxt()" title="Export">↓<span class="bim-text"> Export</span></button>
+      <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="openRangePicker('tasks','email')" title="Email">✉<span class="bim-text"> Email</span></button>
+      <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="openRangePicker('tasks','export')" title="Export">↓<span class="bim-text"> Export</span></button>
       <button class="btn btn-accent btn-sm btn-icon-mobile" onclick="ui_taskForm=!ui_taskForm;ui_editTaskId=null;window._lastFormOpenTs=Date.now();render();setTimeout(()=>document.getElementById('tf-title')?.focus(),60)" title="Add task">+<span class="bim-text"> Add</span></button>
     </div>`;
   }
@@ -7054,8 +7405,8 @@ function renderCombinedAccordion(archKey){
     ${_storiesStrip}
     <div class="acc-body${isOpen?' open':''}" id="acc-body-ibu">
       <div class="sec-head" style="flex-wrap:wrap;gap:6px;align-items:center">
-        <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doEmailSection('ibu',${archKeyJS});event.stopPropagation()" title="Email">✉<span class="bim-text"> Email</span></button>
-        <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doExportSectionTxt('ibu',${archKeyJS});event.stopPropagation()" title="Export">↓<span class="bim-text"> Export</span></button>
+        <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="_rpSectionBtn('ibu','email',${archKeyJS});event.stopPropagation()" title="Email">✉<span class="bim-text"> Email</span></button>
+        <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="_rpSectionBtn('ibu','export',${archKeyJS});event.stopPropagation()" title="Export">↓<span class="bim-text"> Export</span></button>
         <button class="btn btn-accent btn-sm btn-icon-mobile" onclick="toggleForm('ibu',${archKeyJS});event.stopPropagation()" title="Add story">+<span class="bim-text"> Add</span></button>
       </div>
       ${_ibuForm}${_otherForm}`;
@@ -7877,8 +8228,8 @@ function renderMeetingsSection(){
 
   let body=`<div id="meetings-section">`;
   body+=`${!isStandaloneMeet?`<div style="display:flex;justify-content:flex-end;gap:7px;flex-wrap:wrap;margin-bottom:10px">
-    <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doEmailMeetings()" title="Email">✉<span class="bim-text"> Email</span></button>
-    <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doExportMeetingsTxt()" title="Export">↓<span class="bim-text"> Export</span></button>
+    <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="openRangePicker('meetings','email')" title="Email">✉<span class="bim-text"> Email</span></button>
+    <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="openRangePicker('meetings','export')" title="Export">↓<span class="bim-text"> Export</span></button>
     <button class="btn btn-accent btn-sm btn-icon-mobile" onclick="ui_meetingForm=!ui_meetingForm;ui_editMeetingId=null;window._lastFormOpenTs=Date.now();render();setTimeout(()=>document.getElementById('mf-name')?.focus(),60)" title="Add meeting">+<span class="bim-text"> Add</span></button>
   </div>`:''}`;
   if(ui_meetingForm) body+=renderMeetingForm();
@@ -7906,8 +8257,8 @@ function renderMeetingsSection(){
       </div>
       <div style="border:0.5px solid var(--border);border-top:0;border-radius:0 0 10px 10px;padding:12px 16px 14px;margin-bottom:14px;">
         <div class="fi-form-footer">
-          <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doEmailMeetings()" title="Email">✉<span class="bim-text"> Email</span></button>
-          <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doExportMeetingsTxt()" title="Export">↓<span class="bim-text"> Export</span></button>
+          <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="openRangePicker('meetings','email')" title="Email">✉<span class="bim-text"> Email</span></button>
+          <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="openRangePicker('meetings','export')" title="Export">↓<span class="bim-text"> Export</span></button>
           <button class="btn btn-accent btn-sm btn-icon-mobile" onclick="ui_meetingForm=!ui_meetingForm;ui_editMeetingId=null;render();setTimeout(()=>document.getElementById('mf-name')?.focus(),60)" title="Add meeting">+<span class="bim-text"> Add</span></button>
         </div>
         ${body}
@@ -8095,8 +8446,8 @@ function renderRemarksAccordion(){
       </div>
       <div style="border:0.5px solid var(--border);border-top:0;border-radius:0 0 10px 10px;padding:12px 16px 14px;margin-bottom:14px;">
         <div class="fi-form-footer">
-          <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doEmailNotes()" title="Email">✉<span class="bim-text"> Email</span></button>
-          <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doExportNotesTxt()" title="Export">↓<span class="bim-text"> Export</span></button>
+          <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="openRangePicker('notes','email')" title="Email">✉<span class="bim-text"> Email</span></button>
+          <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="openRangePicker('notes','export')" title="Export">↓<span class="bim-text"> Export</span></button>
           <button class="btn btn-accent btn-sm btn-icon-mobile" onclick="ui_noteForm=!ui_noteForm;renderKeepRemarks();setTimeout(()=>document.getElementById('nf-headline')?.focus(),60)" title="Add note">+<span class="bim-text"> Add</span></button>
         </div>
         ${body}
@@ -8144,8 +8495,8 @@ function renderRemarksAccordion(){
     })()}
     <div class="acc-body${isOpen?' open':''}" id="acc-body-remarks">
       <div class="sec-head">
-        <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doEmailNotes()" title="Email">✉<span class="bim-text"> Email</span></button>
-        <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doExportNotesTxt()" title="Export">↓<span class="bim-text"> Export</span></button>
+        <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="openRangePicker('notes','email')" title="Email">✉<span class="bim-text"> Email</span></button>
+        <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="openRangePicker('notes','export')" title="Export">↓<span class="bim-text"> Export</span></button>
         <button class="btn btn-accent btn-sm btn-icon-mobile" onclick="ui_noteForm=!ui_noteForm;renderKeepRemarks();setTimeout(()=>document.getElementById('nf-headline')?.focus(),60)" title="Add note">+<span class="bim-text"> Add</span></button>
       </div>
       ${body}
@@ -8193,9 +8544,50 @@ function leaveDays(from,to){
   if(!from||!to) return 0;
   return Math.max(1,Math.round((new Date(to+'T00:00:00')-new Date(from+'T00:00:00'))/86400000)+1);
 }
-function getOnLeaveToday(){
-  const today=todayStr();
-  return(state.leaves||[]).filter(l=>l.dateFrom&&l.dateTo&&l.dateFrom<=today&&l.dateTo>=today);
+function _leaveEnd(l){ return l.dateTo||l.dateFrom||''; }
+function getOnLeaveOn(ds){
+  const d=ds||todayStr();
+  return (state.leaves||[]).filter(l=>!l._deleted&&l.dateFrom&&l.dateFrom<=d&&_leaveEnd(l)>=d);
+}
+function getOnLeaveToday(){ return getOnLeaveOn(todayStr()); }
+
+/* Shared name formatter — every place that lists who is on leave uses this,
+   so the desktop summary, the mobile info strip and the pill can never
+   disagree. Overflow is shown as "+N more" instead of being cut silently. */
+function _leaveNames(arr,max){
+  const names=(arr||[]).map(l=>String(l.employeeName||'').trim().split(' ')[0]).filter(Boolean);
+  if(!names.length) return '';
+  const lim=max||3;
+  if(names.length<=lim) return esc(names.join(' · '));
+  return esc(names.slice(0,lim).join(' · '))+' +'+(names.length-lim)+' more';
+}
+function _leaveNamesFull(arr){
+  return esc((arr||[]).map(l=>String(l.employeeName||'?').trim()).filter(Boolean).join(', '));
+}
+
+/* Coinciding leaves — walks the horizon day by day and collapses consecutive
+   days sharing the same set of people into a single run. */
+function getLeaveOverlapRuns(startDs,horizon){
+  const lv=(state.leaves||[]).filter(l=>!l._deleted&&l.dateFrom);
+  const runs=[];
+  if(lv.length<2) return runs;
+  const days=horizon||60;
+  for(let i=0;i<days;i++){
+    const d=addDays(startDs,i);
+    const on=lv.filter(l=>l.dateFrom<=d&&_leaveEnd(l)>=d);
+    if(on.length<2) continue;
+    const key=on.map(l=>l.id).sort().join('|');
+    const last=runs[runs.length-1];
+    if(last&&last.key===key&&addDays(last.to,1)===d){ last.to=d; continue; }
+    runs.push({key,from:d,to:d,leaves:on});
+  }
+  return runs;
+}
+function _leaveRunLabel(r){
+  const f=new Date(r.from+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+  if(r.from===r.to) return f;
+  const t=new Date(r.to+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+  return f+' – '+t;
 }
 function renderOnLeavePill(){
   const wrap=document.getElementById('onleave-pill-wrap');
@@ -8204,8 +8596,7 @@ function renderOnLeavePill(){
   if(!onLeave.length){ wrap.innerHTML=''; }
   else {
     const hasPending=onLeave.some(l=>l.status==='pending');
-    const names=onLeave.map(l=>(l.employeeName||'?').split(' ')[0]).join(', ');
-    wrap.innerHTML=`<div class="onleave-pill${hasPending?' has-pending':''}" onclick="jumpToLeaves()" title="Click to view leave details">🌴 On leave: ${esc(names)}</div>`;
+    wrap.innerHTML=`<div class="onleave-pill${hasPending?' has-pending':''}" onclick="jumpToLeaves()" title="Click to view leave details">🌴 On leave: ${_leaveNames(onLeave,4)}</div>`;
   }
   renderMobileLeaveRow();
 }
@@ -9454,7 +9845,7 @@ function _teRenderBody(){
   const autoResolved=state.travelAutoResolved||[];
   // Active: not manually dismissed AND not auto-resolved
   const stories=_teGetStories().filter(({s})=>!dismissed.includes(s.id)&&!autoResolved.includes(s.id)).sort((a,b)=>{const da=a.s.deadline_date||'9999-99-99',db=b.s.deadline_date||'9999-99-99';if(da<today&&db<today)return da.localeCompare(db);if(da<today)return -1;if(db<today)return 1;return da.localeCompare(db);});
-  let html=`<div style="display:flex;gap:6px;align-items:center;margin-bottom:12px"><div style="flex:1"></div><button onclick="doEmailTravel()" class="btn btn-ghost btn-sm btn-icon-mobile" title="Email">✉<span class="bim-text"> Email</span></button><button onclick="doExportTravelTxt()" class="btn btn-ghost btn-sm btn-icon-mobile" title="Export">↓<span class="bim-text"> Export</span></button><button onclick="_teOpenForm({})" class="btn btn-accent btn-sm btn-icon-mobile" title="Add">+<span class="bim-text"> Add</span></button></div>`;
+  let html=`<div style="display:flex;gap:6px;align-items:center;margin-bottom:12px"><div style="flex:1"></div><button onclick="openRangePicker('travel','email')" class="btn btn-ghost btn-sm btn-icon-mobile" title="Email">✉<span class="bim-text"> Email</span></button><button onclick="openRangePicker('travel','export')" class="btn btn-ghost btn-sm btn-icon-mobile" title="Export">↓<span class="bim-text"> Export</span></button><button onclick="_teOpenForm({})" class="btn btn-accent btn-sm btn-icon-mobile" title="Add">+<span class="bim-text"> Add</span></button></div>`;
   if(_te.open) html+=_teBuildForm();
   stories.forEach(({sec,s})=>{
     const entries=_teEntriesForStory(s.id),expenses=entries.filter(e=>e.type==='expense'),unclaimed=expenses.filter(e=>_teGetClaimed(e)!=='yes').length,allClaimed=expenses.length>0&&unclaimed===0;
@@ -9752,8 +10143,8 @@ function renderTravelSection(){
 function toggleTravelSeg(eid){ _teToggle(eid); }
 
 // ── Export / Email ────────────────────────────────────────
-function doExportTravelTxt(){
-  const entries=(state.travelEntries||[]).filter(e=>!e._deleted);
+function doExportTravelTxt(idSet){
+  const entries=(state.travelEntries||[]).filter(e=>!e._deleted&&(!idSet||idSet.has(e.id)));
   if(!entries.length){ toast('No travel entries to export'); return; }
   const hr='─'.repeat(48);
   const pad=(l,v)=>v?(l+':').padEnd(18)+v:'';
@@ -9807,8 +10198,8 @@ function doExportTravelTxt(){
   toast('Travel & Expenses exported ✓');
 }
 
-function doEmailTravel(){
-  const entries=(state.travelEntries||[]).filter(e=>!e._deleted);
+function doEmailTravel(idSet){
+  const entries=(state.travelEntries||[]).filter(e=>!e._deleted&&(!idSet||idSet.has(e.id)));
   if(!entries.length){ toast('No travel entries to email'); return; }
   const lines=['TRAVEL & EXPENSES',''];
   const byStory={};
@@ -9857,6 +10248,7 @@ function leaveCalcForPerson(name){
     ? `${now.getFullYear()}-04-01`
     : `${now.getFullYear()-1}-04-01`;
   const entries=(state.leaves||[]).filter(l=>
+    !l._deleted &&
     (l.employeeName||'').toLowerCase()===name.toLowerCase() &&
     l.dateFrom >= fyStart
   );
@@ -9974,8 +10366,8 @@ function leavesToolbarHTML(isStandalone){
   return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
     ${tabs}
     <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
-      <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doEmailLeaves()" title="Email">✉<span class="bim-text"> Email</span></button>
-      <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="doExportLeavesTxt()" title="Export">↓<span class="bim-text"> Export</span></button>
+      <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="openRangePicker('leaves','email')" title="Email">✉<span class="bim-text"> Email</span></button>
+      <button class="btn btn-ghost btn-sm btn-icon-mobile" onclick="openRangePicker('leaves','export')" title="Export">↓<span class="bim-text"> Export</span></button>
       <button class="btn btn-accent btn-sm btn-icon-mobile" onclick="${addOnclick}" title="Add leave">+<span class="bim-text"> Add</span></button>
     </div>
   </div>`;
@@ -9985,10 +10377,11 @@ function renderLeavesSection(){
   if(!state.leaves)state.leaves=[];
   const isStandaloneLeave=ui.view==='leaves';
   const today=todayStr();
-  const activeLeaves=(state.leaves).filter(l=>l.dateTo>=today);
-  const onLeaveToday=activeLeaves.filter(l=>l.dateFrom<=today);
+  const _lvAll=(state.leaves||[]).filter(l=>!l._deleted&&l.dateFrom);
+  const activeLeaves=_lvAll.filter(l=>_leaveEnd(l)>=today);
+  const onLeaveToday=getOnLeaveToday();
   const upcomingLeaves=activeLeaves.filter(l=>l.dateFrom>today);
-  const pastLeaves=(state.leaves).filter(l=>l.dateTo<today);
+  const pastLeaves=_lvAll.filter(l=>_leaveEnd(l)<today);
 
   const isOpenL=ui.openSections.has('leaves');
   const accHeaderL=`<div class="accordion${isOpenL?' acc-open':''}" id="acc-leaves">
@@ -9997,7 +10390,7 @@ function renderLeavesSection(){
       <span class="acc-spacer"></span>
       <span class="acc-summary">${(()=>{
         const ol=getOnLeaveToday();
-        if(ol.length) return ol.slice(0,4).map(l=>(l.employeeName||'').split(' ')[0]).filter(Boolean).join(' · ');
+        if(ol.length) return _leaveNames(ol,4);
         const ul=upcomingLeaves.slice().sort((a,b)=>a.dateFrom.localeCompare(b.dateFrom));
         if(!ul.length) return '';
         const nx=ul[0];
@@ -10018,9 +10411,9 @@ function renderLeavesSection(){
       if(!_ol.length&&!_ul.length) return '';
       let _name='', _meta='';
       if(_ol.length){
-        _name=_ol.slice(0,3).map(l=>(l.employeeName||'?').split(' ')[0]).filter(Boolean).join(' · ');
-        const _soonest=_ol.slice().sort((a,b)=>a.dateTo.localeCompare(b.dateTo))[0];
-        _meta='Until '+new Date(_soonest.dateTo+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+        _name=_leaveNames(_ol,3);
+        const _soonest=_ol.slice().sort((a,b)=>_leaveEnd(a).localeCompare(_leaveEnd(b)))[0];
+        _meta='Until '+new Date(_leaveEnd(_soonest)+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'});
       } else {
         const _nx=_ul[0];
         _name=esc(_nx.employeeName||'');
@@ -10078,11 +10471,20 @@ function renderLeavesSection(){
       const onToday=[...activeLeaves].filter(l=>l.dateFrom<=today).sort((a,b)=>a.dateFrom.localeCompare(b.dateFrom));
       const upcoming=[...activeLeaves].filter(l=>l.dateFrom>today).sort((a,b)=>a.dateFrom.localeCompare(b.dateFrom));
       if(onToday.length){
-        statusHtml+=`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);display:flex;align-items:center;gap:5px;margin-bottom:7px"><span style="width:6px;height:6px;border-radius:50%;background:#D97706;display:inline-block;flex-shrink:0"></span>On leave today</div>`;
+        statusHtml+=`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);display:flex;align-items:center;gap:5px;margin-bottom:7px"><span style="width:6px;height:6px;border-radius:50%;background:#D97706;display:inline-block;flex-shrink:0"></span>On leave today${onToday.length>1?` <span class="lv-conc-count">${onToday.length}</span>`:''}</div>`;
+        if(onToday.length>1){
+          statusHtml+=`<div class="lv-concurrent"><span class="lv-conc-ico">🌴</span><span class="lv-conc-txt"><b>${onToday.length} staff off today</b> — ${_leaveNamesFull(onToday)}</span></div>`;
+        }
         onToday.forEach(l=>{ statusHtml+=renderLeaveCard(l,today,false); });
       }
       if(upcoming.length){
         statusHtml+=`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);display:flex;align-items:center;gap:5px;margin-bottom:7px;margin-top:${onToday.length?'12px':'0'}"><span style="width:6px;height:6px;border-radius:50%;background:#1D4ED8;display:inline-block;flex-shrink:0"></span>Upcoming</div>`;
+        const _runs=getLeaveOverlapRuns(addDays(today,1),60);
+        if(_runs.length){
+          statusHtml+=`<div class="lv-overlap"><div class="lv-overlap-hdr">⚠ Overlapping leave ahead</div>${
+            _runs.slice(0,4).map(r=>`<div class="lv-overlap-row"><span class="lv-overlap-when">${esc(_leaveRunLabel(r))}</span><span class="lv-overlap-who">${_leaveNamesFull(r.leaves)}</span></div>`).join('')
+          }${_runs.length>4?`<div class="lv-overlap-more">+${_runs.length-4} more overlap period${_runs.length-4===1?'':'s'}</div>`:''}</div>`;
+        }
         upcoming.forEach(l=>{ statusHtml+=renderLeaveCard(l,today,false); });
       }
     }
@@ -10098,7 +10500,7 @@ function renderLeavesSection(){
   // ── By-person tab content ──
   let byPersonHtml='';
   if(ui_leavesTab==='byPerson'){
-    byPersonHtml=renderLeavesByPerson(state.leaves,today);
+    byPersonHtml=renderLeavesByPerson(_lvAll,today);
   }
 
   const bodyHtml=`<div id="leaves-section" style="scroll-margin-top:180px">
@@ -10121,7 +10523,7 @@ function renderLeavesSection(){
   }
   // Accordion (today view / dashboard) — show tabs + toolbar same as standalone
   const accordionBodyContent=ui_leavesTab==='byPerson'
-    ? renderLeavesByPerson(state.leaves,today)
+    ? renderLeavesByPerson(_lvAll,today)
     : statusHtml;
   let html=`<div id="leaves-section" style="scroll-margin-top:180px">
   ${leavesToolbarHTML(false)}
@@ -10250,7 +10652,7 @@ function renderUpcomingRow(sec,s,archKey){
   const archKeyJS=archKey?`'${archKey}'`:'null';
   const today=todayStr();
 
-  const isExpired=s.expected_date&&s.expected_date<today&&s.status!=='completed';
+  const isExpired=_upIsExpired(s,today);
   const isCompleted=s.status==='completed';
   const isOverdue=false; // overdue is now just "expired" — handled by isExpired
 
@@ -10318,6 +10720,7 @@ function renderUpcomingRow(sec,s,archKey){
       ${s.deadline_date?`<div class="uc-field"><span class="uc-flbl">Deadline</span><span class="uc-fval">${esc(fmtDate(s.deadline_date)+(s.deadline_uk?' · '+s.deadline_uk+' '+ukLabel():'')+(s.deadline_ist?' / '+s.deadline_ist+' IST':'')+'')}</span></div>`:''}
       ${s.reminder&&s.reminder!=='off'?`<div class="uc-field"><span class="uc-flbl">Reminder</span><span class="uc-fval">⏰ ${esc(s.reminder)}</span></div>`:''}
     </div>
+    ${s.remarks?`<div class="card-legacy-remark" onclick="event.stopPropagation()">💬 ${esc(s.remarks)}</div>`:''}
     ${buildStoryRemarksHTML(sec, s, archKey)}
     ${linksHtml}
     ${s.completion_note||s.completion_links?`<div class="completion-box"><div class="completion-label">✅ Completion Notes</div>${s.completion_note?`<div class="completion-note">${esc(s.completion_note)}</div>`:''} ${clHtml}</div>`:''}
@@ -10828,7 +11231,7 @@ function renderUpcomingForm(sec,archKey,isEdit,sfx,archKeyJS,editStoryObj){
   const hasWhen=!!(ev.expected_date||ev.expected_type);
   const hasDeadline=!!(ev.deadline_date||ev.deadline_uk);
   const hasPeople=!!(ev.correspondent||ev.requested_by||ev.status&&ev.status!=='not-started');
-  const hasRemarks=!!(ev.remarks||ev.links);
+  const hasRemarks=!!(ev.remarks||ev.links||(ev.remarksList&&ev.remarksList.length));
   const _secToggle=(bid)=>`(function(t){const b=document.getElementById('${bid}');const c=t.querySelector('.fsec-chev');const isHidden=b.classList.contains('hidden');b.classList.toggle('hidden',!isHidden);c.classList.toggle('open',isHidden);})(this)`;
   return`<div class="form-wrap" id="story-form-${sec}${archKey?'-arch':''}">
   <div class="form-title">${isEdit?'✏ Edit Event':'+ New Event'}</div>
@@ -10905,7 +11308,9 @@ function renderUpcomingForm(sec,archKey,isEdit,sfx,archKeyJS,editStoryObj){
       <span class="fsec-chev${hasRemarks?' open':''}">▸</span>
     </div>
     <div id="fsec-rl-${sfx.slice(1)}" class="fsec-fields${hasRemarks?'':' hidden'}">
-      <div class="fgroup full"><label class="flabel">Remarks</label><textarea class="ftextarea" id="f-remarks${sfx}" placeholder="Context, previous coverage, contacts, logistics…" style="white-space:pre-wrap;min-height:72px">${esc(ev.remarks||'')}</textarea></div>
+      <div class="fgroup full"><label class="flabel">Remarks</label>${(ev&&ev.id)
+        ? renderFormRemarksList(sec, ev, archKey)
+        : `<textarea class="ftextarea" id="f-remarks-new${sfx}" placeholder="Context, previous coverage, contacts, logistics…" style="white-space:pre-wrap;min-height:72px"></textarea>`}</div>
       <div class="fgroup full"><label class="flabel">Reference links <span class="flabel-hint">(comma-separated)</span></label><input class="finput" id="f-links${sfx}" placeholder="https://…" value="${esc(ev.links||'')}"></div>
     </div>
 

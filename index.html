@@ -820,20 +820,6 @@ body {
 .sremark-inline-form textarea::placeholder { color: var(--text3); }
 /* Leave remarks CRUD */
 .leave-remarks-section { margin: 8px 0 4px; padding-top: 8px; border-top: 1px solid var(--border); }
-/* ── Concurrent / overlapping leave (Aug 2026) ── */
-.lv-conc-count { display:inline-flex; align-items:center; justify-content:center; min-width:15px; height:15px; padding:0 4px; border-radius:20px; background:var(--urgent); color:#fff; font-size:9.5px; font-weight:700; font-family:var(--mono); letter-spacing:0; }
-.lv-concurrent { display:flex; align-items:flex-start; gap:7px; padding:7px 10px; margin-bottom:8px; border-radius:var(--radius); background:var(--urgent-bg); border:0.5px solid rgba(220,38,38,.25); }
-.lv-conc-ico { font-size:12px; flex-shrink:0; line-height:1.5; }
-.lv-conc-txt { font-size:11.5px; color:var(--text2); line-height:1.5; }
-.lv-conc-txt b { color:var(--urgent); font-weight:600; }
-.lv-overlap { border:0.5px solid var(--border); border-radius:var(--radius); background:var(--surface2); padding:8px 10px; margin-bottom:9px; }
-.lv-overlap-hdr { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--progress); font-family:var(--mono); margin-bottom:5px; }
-.lv-overlap-row { display:flex; align-items:baseline; gap:8px; padding:3px 0; border-top:0.5px dashed var(--border); }
-.lv-overlap-row:first-of-type { border-top:0; }
-.lv-overlap-when { font-size:11px; font-family:var(--mono); color:var(--text2); flex-shrink:0; }
-.lv-overlap-who { font-size:11.5px; color:var(--text3); flex:1; line-height:1.45; }
-.lv-overlap-more { font-size:10.5px; color:var(--text3); font-style:italic; padding-top:4px; }
-@media (max-width: 720px) { .lv-overlap-row { flex-direction:column; gap:1px; } .lv-overlap-who { font-size:11px; } }
 /* ── Export / email range picker (Aug 2026) ── */
 .rp-presets { display: flex; gap: 5px; margin-bottom: 12px; flex-wrap: wrap; }
 .rp-preset { font-size: 11px; padding: 3px 10px; border-radius: 20px; background: transparent; color: var(--text2); border: 0.5px solid var(--border); font-family: var(--font); cursor: pointer; }
@@ -8555,39 +8541,26 @@ function getOnLeaveToday(){ return getOnLeaveOn(todayStr()); }
    so the desktop summary, the mobile info strip and the pill can never
    disagree. Overflow is shown as "+N more" instead of being cut silently. */
 function _leaveNames(arr,max){
-  const names=(arr||[]).map(l=>String(l.employeeName||'').trim().split(' ')[0]).filter(Boolean);
+  const seen=new Set(), names=[];
+  (arr||[]).forEach(l=>{
+    const n=String(l.employeeName||'').trim().split(' ')[0];
+    if(!n) return;
+    const k=n.toLowerCase();
+    if(seen.has(k)) return;
+    seen.add(k); names.push(n);
+  });
   if(!names.length) return '';
   const lim=max||3;
   if(names.length<=lim) return esc(names.join(' · '));
-  return esc(names.slice(0,lim).join(' · '))+' +'+(names.length-lim)+' more';
+  return esc(names.slice(0,lim).join(' · '))+' · +'+(names.length-lim);
 }
-function _leaveNamesFull(arr){
-  return esc((arr||[]).map(l=>String(l.employeeName||'?').trim()).filter(Boolean).join(', '));
-}
-
-/* Coinciding leaves — walks the horizon day by day and collapses consecutive
-   days sharing the same set of people into a single run. */
-function getLeaveOverlapRuns(startDs,horizon){
-  const lv=(state.leaves||[]).filter(l=>!l._deleted&&l.dateFrom);
-  const runs=[];
-  if(lv.length<2) return runs;
-  const days=horizon||60;
-  for(let i=0;i<days;i++){
-    const d=addDays(startDs,i);
-    const on=lv.filter(l=>l.dateFrom<=d&&_leaveEnd(l)>=d);
-    if(on.length<2) continue;
-    const key=on.map(l=>l.id).sort().join('|');
-    const last=runs[runs.length-1];
-    if(last&&last.key===key&&addDays(last.to,1)===d){ last.to=d; continue; }
-    runs.push({key,from:d,to:d,leaves:on});
-  }
-  return runs;
-}
-function _leaveRunLabel(r){
-  const f=new Date(r.from+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
-  if(r.from===r.to) return f;
-  const t=new Date(r.to+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'});
-  return f+' – '+t;
+/* The soonest upcoming leave plus anyone whose leave coincides with it, so the
+   collapsed accordion names everyone off together instead of just the first. */
+function _leaveNextCluster(list){
+  const ul=(list||[]).filter(l=>l.dateFrom).sort((a,b)=>a.dateFrom.localeCompare(b.dateFrom));
+  if(!ul.length) return null;
+  const nx=ul[0], end=_leaveEnd(nx);
+  return { next:nx, group:ul.filter(l=>l.dateFrom<=end&&_leaveEnd(l)>=nx.dateFrom) };
 }
 function renderOnLeavePill(){
   const wrap=document.getElementById('onleave-pill-wrap');
@@ -10391,12 +10364,12 @@ function renderLeavesSection(){
       <span class="acc-summary">${(()=>{
         const ol=getOnLeaveToday();
         if(ol.length) return _leaveNames(ol,4);
-        const ul=upcomingLeaves.slice().sort((a,b)=>a.dateFrom.localeCompare(b.dateFrom));
-        if(!ul.length) return '';
-        const nx=ul[0];
+        const cl=_leaveNextCluster(upcomingLeaves);
+        if(!cl) return '';
+        const nx=cl.next;
         const diff=Math.round((new Date(nx.dateFrom+'T00:00:00').getTime()-new Date(today+'T00:00:00').getTime())/86400000);
         const when=diff===0?'Today':diff===1?'Tomorrow':'From '+new Date(nx.dateFrom+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
-        return esc(nx.employeeName||'')+' · '+when;
+        return _leaveNames(cl.group,3)+' · '+when;
       })()}</span>
       <div class="acc-meta">
         ${onLeaveToday.length?`<span class="sbadge sb-urgent">${onLeaveToday.length} on leave</span>`:''}
@@ -10415,8 +10388,9 @@ function renderLeavesSection(){
         const _soonest=_ol.slice().sort((a,b)=>_leaveEnd(a).localeCompare(_leaveEnd(b)))[0];
         _meta='Until '+new Date(_leaveEnd(_soonest)+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'});
       } else {
-        const _nx=_ul[0];
-        _name=esc(_nx.employeeName||'');
+        const _cl=_leaveNextCluster(_ul);
+        const _nx=_cl.next;
+        _name=_leaveNames(_cl.group,3);
         const _diff=Math.round((new Date(_nx.dateFrom+'T00:00:00').getTime()-new Date(todayStr()+'T00:00:00').getTime())/86400000);
         _meta=_diff===0?'Today':_diff===1?'Tomorrow':'From '+new Date(_nx.dateFrom+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
       }
@@ -10471,20 +10445,11 @@ function renderLeavesSection(){
       const onToday=[...activeLeaves].filter(l=>l.dateFrom<=today).sort((a,b)=>a.dateFrom.localeCompare(b.dateFrom));
       const upcoming=[...activeLeaves].filter(l=>l.dateFrom>today).sort((a,b)=>a.dateFrom.localeCompare(b.dateFrom));
       if(onToday.length){
-        statusHtml+=`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);display:flex;align-items:center;gap:5px;margin-bottom:7px"><span style="width:6px;height:6px;border-radius:50%;background:#D97706;display:inline-block;flex-shrink:0"></span>On leave today${onToday.length>1?` <span class="lv-conc-count">${onToday.length}</span>`:''}</div>`;
-        if(onToday.length>1){
-          statusHtml+=`<div class="lv-concurrent"><span class="lv-conc-ico">🌴</span><span class="lv-conc-txt"><b>${onToday.length} staff off today</b> — ${_leaveNamesFull(onToday)}</span></div>`;
-        }
+        statusHtml+=`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);display:flex;align-items:center;gap:5px;margin-bottom:7px"><span style="width:6px;height:6px;border-radius:50%;background:#D97706;display:inline-block;flex-shrink:0"></span>On leave today</div>`;
         onToday.forEach(l=>{ statusHtml+=renderLeaveCard(l,today,false); });
       }
       if(upcoming.length){
         statusHtml+=`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);display:flex;align-items:center;gap:5px;margin-bottom:7px;margin-top:${onToday.length?'12px':'0'}"><span style="width:6px;height:6px;border-radius:50%;background:#1D4ED8;display:inline-block;flex-shrink:0"></span>Upcoming</div>`;
-        const _runs=getLeaveOverlapRuns(addDays(today,1),60);
-        if(_runs.length){
-          statusHtml+=`<div class="lv-overlap"><div class="lv-overlap-hdr">⚠ Overlapping leave ahead</div>${
-            _runs.slice(0,4).map(r=>`<div class="lv-overlap-row"><span class="lv-overlap-when">${esc(_leaveRunLabel(r))}</span><span class="lv-overlap-who">${_leaveNamesFull(r.leaves)}</span></div>`).join('')
-          }${_runs.length>4?`<div class="lv-overlap-more">+${_runs.length-4} more overlap period${_runs.length-4===1?'':'s'}</div>`:''}</div>`;
-        }
         upcoming.forEach(l=>{ statusHtml+=renderLeaveCard(l,today,false); });
       }
     }

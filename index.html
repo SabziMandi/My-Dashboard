@@ -4473,6 +4473,40 @@ function doEmailStory(sec,id,archKey){
   if(!s){ toast('Story not found'); return; }
   sendMailto('[Newsroom] '+(s.title||'Story'), storyToText(s));
 }
+/* Upcoming Events export/email ordering. Grouped by the same buckets the board
+   and the range picker use, and date-sorted inside each group — ascending for
+   what's ahead, descending for what's behind (most recently expired first),
+   mirroring how the board itself orders them. Every other section keeps its
+   stored array order; Stories especially, where drag-and-drop reordering is a
+   deliberate priority sequence that a date sort would discard. */
+const _UP_EXPORT_GROUPS=[
+  ['overdue','OVERDUE'],['today','TODAY'],['tomorrow','TOMORROW'],
+  ['upcoming','UPCOMING'],['nodate','NO DATE'],
+  ['expired','EXPIRED'],['completed','COMPLETED']
+];
+function _upcomingExportLines(stories){
+  const today=todayStr();
+  const buckets={};
+  (stories||[]).forEach(s=>{ const b=_upBucket(s,today); (buckets[b]=buckets[b]||[]).push(s); });
+  const out=[];
+  _UP_EXPORT_GROUPS.forEach(([k,label])=>{
+    const arr=buckets[k];
+    if(!arr||!arr.length) return;
+    const desc=(k==='expired'||k==='completed');
+    arr.sort((a,b)=>{
+      const ra=_upRange(a), rb=_upRange(b);
+      if(!ra&&!rb) return String(a.title||'').localeCompare(String(b.title||''));
+      if(!ra) return 1;
+      if(!rb) return -1;
+      const c=desc?rb.start.localeCompare(ra.start):ra.start.localeCompare(rb.start);
+      return c||String(a.title||'').localeCompare(String(b.title||''));
+    });
+    out.push(label+' ('+arr.length+')');
+    out.push('·'.repeat(44));
+    arr.forEach(s=>{ out.push(storyToText(s)); out.push(''); });
+  });
+  return out;
+}
 function doExportSectionTxt(sec,archKey,idSet){
   const name=secName(sec);
   // For the combined stories accordion, merge ibu + other
@@ -4488,7 +4522,8 @@ function doExportSectionTxt(sec,archKey,idSet){
   if(!stories.length){ toast('Nothing to export'); return; }
   const hr='─'.repeat(48);
   const lines=[name.toUpperCase(),hr,''];
-  stories.forEach(s=>{lines.push(storyToText(s));lines.push('');});
+  if(sec==='upcoming') _upcomingExportLines(stories).forEach(l=>lines.push(l));
+  else stories.forEach(s=>{lines.push(storyToText(s));lines.push('');});
   const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download=sec+'-'+new Date().toISOString().slice(0,10)+'.txt';
@@ -4507,8 +4542,9 @@ function doEmailSection(sec,archKey,idSet){
   }
   if(idSet) stories=stories.filter(s=>idSet.has(s.id));
   if(!stories.length){ toast('Nothing to email'); return; }
-  const lines=[name.toUpperCase(),'─'.repeat(44)];
-  stories.forEach(s=>{lines.push(storyToText(s));lines.push('');});
+  const lines=[name.toUpperCase(),'─'.repeat(44),''];
+  if(sec==='upcoming') _upcomingExportLines(stories).forEach(l=>lines.push(l));
+  else stories.forEach(s=>{lines.push(storyToText(s));lines.push('');});
   sendMailto('[Newsroom] '+name+' — '+new Date().toLocaleDateString('en-GB'), lines.join('\n'));
 }
 function doEmailAll(){
